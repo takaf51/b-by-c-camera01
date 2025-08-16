@@ -3,6 +3,7 @@ import Home from './routes/Home.svelte';
 import Login from './routes/Login.svelte';
 import LoginDigit from './routes/LoginDigit.svelte';
 import Register from './routes/Register.svelte';
+import EventList from './routes/EventList.svelte';
 import NotFound from './routes/NotFound.svelte';
 
 export const routes = {
@@ -13,6 +14,9 @@ export const routes = {
   '/login': Login,
   '/login/digit': LoginDigit,
   '/register': Register,
+
+  // イベント
+  '/event/list': EventList,
 
   // 404
   '*': NotFound,

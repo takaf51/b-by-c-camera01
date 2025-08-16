@@ -13,9 +13,12 @@
   {#if $auth.isAuthenticated}
     <div class="welcome">
       <h2>ようこそ、{$auth.user?.name || 'ゲスト'}さん</h2>
-      <p>認証が完了しました。</p>
+      <p>認証が完了しました。美容体験イベントを探してみましょう。</p>
 
       <div class="actions">
+        <a href="/event/list" use:link class="btn btn-primary">
+          イベント一覧
+        </a>
         <button on:click={handleLogout} class="logout-btn"> ログアウト </button>
       </div>
     </div>

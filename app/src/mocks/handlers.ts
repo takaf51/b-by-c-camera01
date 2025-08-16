@@ -98,9 +98,110 @@ export const authHandlers = [
   }),
 ];
 
-// その他のAPIハンドラ（今後追加予定）
+// イベント関連のAPIハンドラ
 export const eventHandlers = [
-  // イベント関連のモックハンドラを後で追加
+  // イベント一覧取得
+  http.get('/api/event/list', ({ request }) => {
+    const url = new URL(request.url);
+    const page = parseInt(url.searchParams.get('page') || '1');
+    const limit = parseInt(url.searchParams.get('limit') || '20');
+    const status = url.searchParams.get('status');
+
+    console.log('MSW: Event list request - page:', page, 'limit:', limit, 'status:', status);
+
+    // モックイベントデータ
+    const allEvents = [
+      {
+        id: 1,
+        title: 'ビューティ体験イベント Vol.1',
+        description: '最新の美容機器を体験できるイベントです。プロのスタッフがサポートします。',
+        status: 'active',
+        startDate: '2024-01-15T10:00:00Z',
+        endDate: '2024-01-15T18:00:00Z',
+        maxParticipants: 20,
+        currentParticipants: 12,
+        imageUrl: '/images/events/event1.jpg',
+        eventCode: 'BEAUTY001'
+      },
+      {
+        id: 2,
+        title: 'フェイシャルケア無料診断',
+        description: 'AI技術を使った肌診断を無料で体験できます。',
+        status: 'upcoming',
+        startDate: '2024-01-20T14:00:00Z',
+        endDate: '2024-01-20T17:00:00Z',
+        maxParticipants: 15,
+        currentParticipants: 3,
+        imageUrl: '/images/events/event2.jpg',
+        eventCode: 'FACIAL002'
+      },
+      {
+        id: 3,
+        title: 'スキンケアセミナー',
+        description: '専門家による正しいスキンケア方法のセミナーです。',
+        status: 'completed',
+        startDate: '2024-01-10T13:00:00Z',
+        endDate: '2024-01-10T16:00:00Z',
+        maxParticipants: 30,
+        currentParticipants: 25,
+        imageUrl: '/images/events/event3.jpg',
+        eventCode: 'SKIN003'
+      },
+      {
+        id: 4,
+        title: '新春ビューティフェア',
+        description: '年始特別企画のビューティイベントです。',
+        status: 'upcoming',
+        startDate: '2024-02-01T10:00:00Z',
+        endDate: '2024-02-01T18:00:00Z',
+        currentParticipants: 0,
+        imageUrl: '/images/events/event4.jpg',
+        eventCode: 'FAIR004'
+      }
+    ];
+
+    // ステータスでフィルタ
+    let filteredEvents = status 
+      ? allEvents.filter(event => event.status === status)
+      : allEvents;
+
+    // ページネーション
+    const totalCount = filteredEvents.length;
+    const totalPages = Math.ceil(totalCount / limit);
+    const startIndex = (page - 1) * limit;
+    const endIndex = startIndex + limit;
+    const paginatedEvents = filteredEvents.slice(startIndex, endIndex);
+
+    return HttpResponse.json({
+      events: paginatedEvents,
+      totalCount,
+      currentPage: page,
+      totalPages
+    });
+  }),
+
+  // イベント詳細取得
+  http.get('/api/event/detail/:id', ({ params }) => {
+    const id = parseInt(params.id as string);
+    
+    console.log('MSW: Event detail request for ID:', id);
+
+    // モックイベント詳細
+    const event = {
+      id,
+      title: `イベント ${id}`,
+      description: `イベント ${id} の詳細説明です。美容機器を使った体験ができます。`,
+      status: 'active',
+      startDate: '2024-01-15T10:00:00Z',
+      endDate: '2024-01-15T18:00:00Z',
+      maxParticipants: 20,
+      currentParticipants: 10,
+      imageUrl: `/images/events/event${id}.jpg`,
+      eventCode: `EVENT${id.toString().padStart(3, '0')}`
+    };
+
+    return HttpResponse.json(event);
+  }),
 ];
 
 export const planHandlers = [
