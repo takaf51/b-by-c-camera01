@@ -8,6 +8,10 @@
   } from '../stores/event';
   import { getEventStatusLabel } from '../domain/event';
   import type { Event } from '../domain/event';
+  import Layout from '../components/Layout.svelte';
+  import Button from '../components/Button.svelte';
+  import Loading from '../components/Loading.svelte';
+  import ErrorBanner from '../components/ErrorBanner.svelte';
 
   // Reactive store subscriptions
   $: events = $eventStore.events;
@@ -67,7 +71,7 @@
   }
 </script>
 
-<div class="event-list-container">
+<Layout title="Beauty Experience - イベント一覧">
   <header class="page-header">
     <h1>イベント一覧</h1>
     <p>美容体験イベントに参加して、新しい発見をしましょう</p>
@@ -91,18 +95,12 @@
 
   <!-- エラー表示 -->
   {#if error}
-    <div class="error-banner">
-      <p>⚠️ {error.message}</p>
-      <button on:click={clearError} class="error-close-btn">✕</button>
-    </div>
+    <ErrorBanner message={error.message} type="error" on:dismiss={clearError} />
   {/if}
 
   <!-- ローディング表示 -->
   {#if loading}
-    <div class="loading">
-      <div class="spinner"></div>
-      <p>イベントを読み込み中...</p>
-    </div>
+    <Loading message="イベントを読み込み中..." />
   {:else}
     <!-- イベントリスト -->
     <div class="events-grid">
@@ -151,21 +149,21 @@
             </div>
 
             <div class="event-actions">
-              <button
-                class="btn btn-primary"
+              <Button
+                variant="primary"
                 on:click={() => goToEventDetail(event.id)}
               >
                 詳細を見る
-              </button>
+              </Button>
 
               {#if canParticipate(event)}
-                <button class="btn btn-secondary"> 参加する </button>
+                <Button variant="secondary">参加する</Button>
               {:else if event.status === 'completed'}
-                <button class="btn btn-disabled" disabled> 終了済み </button>
+                <Button variant="disabled" disabled>終了済み</Button>
               {:else if event.maxParticipants && event.currentParticipants >= event.maxParticipants}
-                <button class="btn btn-disabled" disabled> 満員 </button>
+                <Button variant="disabled" disabled>満員</Button>
               {:else}
-                <button class="btn btn-disabled" disabled> 参加不可 </button>
+                <Button variant="disabled" disabled>参加不可</Button>
               {/if}
             </div>
           </div>
@@ -177,49 +175,40 @@
     {#if events.length === 0}
       <div class="empty-state">
         <p>🔍 条件に合うイベントが見つかりませんでした</p>
-        <button
-          class="btn btn-primary"
-          on:click={() => eventStore.loadEventList()}
-        >
+        <Button variant="primary" on:click={() => eventStore.loadEventList()}>
           すべてのイベントを表示
-        </button>
+        </Button>
       </div>
     {/if}
 
     <!-- ページネーション -->
     {#if pagination.totalPages > 1}
       <div class="pagination">
-        <button
-          class="btn btn-outline"
+        <Button
+          variant="outline"
           disabled={!pagination.hasPrevPage || loading}
           on:click={goToPrevPage}
         >
           ← 前のページ
-        </button>
+        </Button>
 
         <span class="page-info">
           {pagination.currentPage} / {pagination.totalPages} ページ
         </span>
 
-        <button
-          class="btn btn-outline"
+        <Button
+          variant="outline"
           disabled={!pagination.hasNextPage || loading}
           on:click={goToNextPage}
         >
           次のページ →
-        </button>
+        </Button>
       </div>
     {/if}
   {/if}
-</div>
+</Layout>
 
 <style>
-  .event-list-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 20px;
-  }
-
   .page-header {
     text-align: center;
     margin-bottom: 30px;
@@ -253,49 +242,6 @@
     border: 1px solid #ddd;
     border-radius: 4px;
     font-size: 1rem;
-  }
-
-  .error-banner {
-    background-color: #fee;
-    border: 1px solid #fcc;
-    border-radius: 4px;
-    padding: 15px;
-    margin-bottom: 20px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .error-close-btn {
-    background: none;
-    border: none;
-    font-size: 1.2rem;
-    cursor: pointer;
-    color: #c66;
-  }
-
-  .loading {
-    text-align: center;
-    padding: 60px 20px;
-  }
-
-  .spinner {
-    width: 40px;
-    height: 40px;
-    border: 4px solid #f3f3f3;
-    border-top: 4px solid #007bff;
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto 15px;
-  }
-
-  @keyframes spin {
-    0% {
-      transform: rotate(0deg);
-    }
-    100% {
-      transform: rotate(360deg);
-    }
   }
 
   .events-grid {
@@ -395,58 +341,6 @@
   .event-actions {
     display: flex;
     gap: 10px;
-  }
-
-  .btn {
-    padding: 10px 16px;
-    border: none;
-    border-radius: 4px;
-    font-size: 0.9rem;
-    cursor: pointer;
-    transition: background-color 0.2s;
-    text-decoration: none;
-    display: inline-block;
-    text-align: center;
-  }
-
-  .btn-primary {
-    background-color: #007bff;
-    color: white;
-  }
-
-  .btn-primary:hover {
-    background-color: #0056b3;
-  }
-
-  .btn-secondary {
-    background-color: #28a745;
-    color: white;
-  }
-
-  .btn-secondary:hover {
-    background-color: #1e7e34;
-  }
-
-  .btn-outline {
-    background-color: transparent;
-    color: #007bff;
-    border: 1px solid #007bff;
-  }
-
-  .btn-outline:hover {
-    background-color: #007bff;
-    color: white;
-  }
-
-  .btn-disabled {
-    background-color: #6c757d;
-    color: white;
-    cursor: not-allowed;
-  }
-
-  .btn:disabled {
-    opacity: 0.6;
-    cursor: not-allowed;
   }
 
   .empty-state {
