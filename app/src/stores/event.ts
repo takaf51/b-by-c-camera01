@@ -4,7 +4,7 @@
  */
 
 import { writable, derived } from 'svelte/store';
-import type { Event, EventListRequest, EventError } from '../domain/event';
+import type { Event, EventDetail, EventListRequest, EventError } from '../domain/event';
 import { createEventUseCase } from '../usecases/EventUseCase';
 import { createEventRepository } from '../repositories/EventRepository';
 
@@ -21,6 +21,12 @@ interface EventState {
   totalCount: number;
 }
 
+interface EventDetailState {
+  eventDetail: EventDetail | null;
+  isLoading: boolean;
+  error: EventError | null;
+}
+
 // =============================================================================
 // Initial State
 // =============================================================================
@@ -32,6 +38,12 @@ const initialState: EventState = {
   currentPage: 1,
   totalPages: 1,
   totalCount: 0,
+};
+
+const initialDetailState: EventDetailState = {
+  eventDetail: null,
+  isLoading: false,
+  error: null,
 };
 
 // =============================================================================
@@ -143,11 +155,67 @@ function createEventStore() {
   };
 }
 
+function createEventDetailStore() {
+  const { subscribe, set, update } = writable<EventDetailState>(initialDetailState);
+
+  // Initialize dependencies
+  const eventRepository = createEventRepository();
+  const eventUseCase = createEventUseCase(eventRepository);
+
+  return {
+    subscribe,
+
+    // ==========================================================================
+    // Actions
+    // ==========================================================================
+
+    /**
+     * イベント詳細を取得
+     */
+    async loadEventDetail(id: number) {
+      update(state => ({ ...state, isLoading: true, error: null }));
+
+      try {
+        const eventDetail = await eventUseCase.getEventDetail(id);
+        
+        update(state => ({
+          ...state,
+          eventDetail,
+          isLoading: false,
+          error: null,
+        }));
+      } catch (error) {
+        const eventError = error as EventError;
+        update(state => ({
+          ...state,
+          isLoading: false,
+          error: eventError,
+        }));
+      }
+    },
+
+    /**
+     * エラーをクリア
+     */
+    clearError() {
+      update(state => ({ ...state, error: null }));
+    },
+
+    /**
+     * ストアをリセット
+     */
+    reset() {
+      set(initialDetailState);
+    },
+  };
+}
+
 // =============================================================================
 // Store Instance
 // =============================================================================
 
 export const eventStore = createEventStore();
+export const eventDetailStore = createEventDetailStore();
 
 // =============================================================================
 // Derived Stores
@@ -197,4 +265,32 @@ export const eventsPagination = derived(
     hasNextPage: $eventStore.currentPage < $eventStore.totalPages,
     hasPrevPage: $eventStore.currentPage > 1,
   })
+);
+
+// =============================================================================
+// Event Detail Derived Stores
+// =============================================================================
+
+/**
+ * イベント詳細の読み込み状態
+ */
+export const isEventDetailLoading = derived(
+  eventDetailStore,
+  $eventDetailStore => $eventDetailStore.isLoading
+);
+
+/**
+ * イベント詳細のエラー状態
+ */
+export const eventDetailError = derived(
+  eventDetailStore,
+  $eventDetailStore => $eventDetailStore.error
+);
+
+/**
+ * 現在のイベント詳細
+ */
+export const currentEventDetail = derived(
+  eventDetailStore,
+  $eventDetailStore => $eventDetailStore.eventDetail
 );

@@ -20,6 +20,25 @@ export interface Event {
   eventCode: string; // X-Event-Code header用
 }
 
+export interface EventDetail extends Event {
+  longDescription?: string;
+  location?: string;
+  requirements?: string[];
+  benefits?: string[];
+  organizer?: {
+    name: string;
+    contact?: string;
+  };
+  schedule?: EventScheduleItem[];
+  images?: string[];
+}
+
+export interface EventScheduleItem {
+  time: string;
+  title: string;
+  description?: string;
+}
+
 export type EventStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
 
 export interface EventListRequest {
@@ -121,4 +140,62 @@ export function getEventStatusLabel(status: EventStatus): string {
   };
   
   return labels[status];
+}
+
+// =============================================================================
+// Event Detail Utility Functions
+// =============================================================================
+
+export function formatEventDateTime(event: Event): {
+  dateRange: string;
+  timeRange: string;
+  duration: string;
+} {
+  const startDate = new Date(event.startDate);
+  const endDate = new Date(event.endDate);
+  
+  const isSameDay = startDate.toDateString() === endDate.toDateString();
+  
+  const dateRange = isSameDay
+    ? startDate.toLocaleDateString('ja-JP', { 
+        year: 'numeric', 
+        month: 'long', 
+        day: 'numeric',
+        weekday: 'long'
+      })
+    : `${startDate.toLocaleDateString('ja-JP', { 
+        month: 'long', 
+        day: 'numeric'
+      })} - ${endDate.toLocaleDateString('ja-JP', { 
+        month: 'long', 
+        day: 'numeric' 
+      })}`;
+  
+  const timeRange = `${startDate.toLocaleTimeString('ja-JP', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  })} - ${endDate.toLocaleTimeString('ja-JP', { 
+    hour: '2-digit', 
+    minute: '2-digit' 
+  })}`;
+  
+  const durationMs = endDate.getTime() - startDate.getTime();
+  const hours = Math.floor(durationMs / (1000 * 60 * 60));
+  const minutes = Math.floor((durationMs % (1000 * 60 * 60)) / (1000 * 60));
+  
+  const duration = hours > 0 
+    ? `${hours}時間${minutes > 0 ? `${minutes}分` : ''}`
+    : `${minutes}分`;
+  
+  return { dateRange, timeRange, duration };
+}
+
+export function getParticipationRate(event: Event): number {
+  if (!event.maxParticipants) return 0;
+  return Math.round((event.currentParticipants / event.maxParticipants) * 100);
+}
+
+export function getRemainingSlots(event: Event): number | null {
+  if (!event.maxParticipants) return null;
+  return Math.max(0, event.maxParticipants - event.currentParticipants);
 }

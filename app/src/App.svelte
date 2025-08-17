@@ -1,17 +1,14 @@
 <script lang="ts">
-  // Hello World version for initial commit
+  import Router from 'svelte-spa-router';
+  import { routes } from './routes';
 </script>
 
-<main>
-  <h1>Hello World!</h1>
-  <p>B-by-C Camera App - Svelte SPA</p>
-</main>
+<Router {routes} />
 
 <style>
-  main {
-    min-height: 100vh;
-    display: grid;
-    place-items: center;
+  :global(body) {
+    margin: 0;
+    padding: 0;
     font-family:
       system-ui,
       -apple-system,
@@ -20,17 +17,10 @@
       Helvetica,
       Arial,
       sans-serif;
-    text-align: center;
+    background-color: #f9fafb;
   }
 
-  h1 {
-    color: #333;
-    font-size: 3rem;
-    margin-bottom: 1rem;
-  }
-
-  p {
-    color: #666;
-    font-size: 1.2rem;
+  :global(*) {
+    box-sizing: border-box;
   }
 </style>

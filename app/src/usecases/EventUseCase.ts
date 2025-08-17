@@ -5,6 +5,7 @@
 
 import type { 
   Event, 
+  EventDetail,
   EventListRequest, 
   EventListResponse, 
   EventError 
@@ -25,7 +26,7 @@ export interface EventUseCase {
   /**
    * イベント詳細を取得
    */
-  getEventDetail(id: number): Promise<Event>;
+  getEventDetail(id: number): Promise<EventDetail>;
 }
 
 // =============================================================================
@@ -64,7 +65,7 @@ export class EventUseCaseImpl implements EventUseCase {
     }
   }
 
-  async getEventDetail(id: number): Promise<Event> {
+  async getEventDetail(id: number): Promise<EventDetail> {
     if (id <= 0) {
       throw {
         type: 'validation',
@@ -74,7 +75,10 @@ export class EventUseCaseImpl implements EventUseCase {
     }
 
     try {
-      return await this.eventRepository.getEventDetail(id);
+      const eventDetail = await this.eventRepository.getEventDetail(id);
+      
+      // ビジネスロジック: 詳細情報の整理・加工
+      return this.enhanceEventDetail(eventDetail);
     } catch (error) {
       throw this.handleRepositoryError(error);
     }
@@ -126,6 +130,23 @@ export class EventUseCaseImpl implements EventUseCase {
       'type' in error &&
       'message' in error
     );
+  }
+
+  /**
+   * イベント詳細の情報を整理・加工
+   */
+  private enhanceEventDetail(eventDetail: EventDetail): EventDetail {
+    return {
+      ...eventDetail,
+      // ビジネスロジック: スケジュールを時間順でソート
+      schedule: eventDetail.schedule?.sort((a, b) => {
+        return a.time.localeCompare(b.time);
+      }),
+      // ビジネスロジック: 空の配列をundefinedに統一
+      requirements: eventDetail.requirements?.length ? eventDetail.requirements : undefined,
+      benefits: eventDetail.benefits?.length ? eventDetail.benefits : undefined,
+      images: eventDetail.images?.length ? eventDetail.images : undefined,
+    };
   }
 }
 

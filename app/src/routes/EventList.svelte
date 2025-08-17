@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte';
+  import { push } from 'svelte-spa-router';
   import {
     eventStore,
     isEventsLoading,
@@ -66,8 +67,7 @@
 
   // イベント詳細ページへの遷移
   function goToEventDetail(eventId: number) {
-    // TODO: 後でルーティング実装時に追加
-    console.log('Navigate to event detail:', eventId);
+    push(`/event/detail/${eventId}`);
   }
 </script>
 

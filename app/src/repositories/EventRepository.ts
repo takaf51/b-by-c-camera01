@@ -3,8 +3,8 @@
  * イベント関連のAPI通信を抽象化
  */
 
-import type { Event, EventListRequest, EventListResponse, EventError } from '../domain/event';
-import { httpClient } from '../lib/http';
+import type { Event, EventDetail, EventListRequest, EventListResponse, EventError } from '../domain/event';
+import { createHttpClient } from '../lib/http';
 
 // =============================================================================
 // Repository Interface
@@ -19,7 +19,7 @@ export interface EventRepository {
   /**
    * イベント詳細を取得
    */
-  getEventDetail(id: number): Promise<Event>;
+  getEventDetail(id: number): Promise<EventDetail>;
 }
 
 // =============================================================================
@@ -27,6 +27,8 @@ export interface EventRepository {
 // =============================================================================
 
 export class HttpEventRepository implements EventRepository {
+  private httpClient = createHttpClient();
+
   async getEventList(request: EventListRequest = {}): Promise<EventListResponse> {
     try {
       const params = new URLSearchParams();
@@ -38,9 +40,7 @@ export class HttpEventRepository implements EventRepository {
       const queryString = params.toString();
       const url = `/api/event/list${queryString ? `?${queryString}` : ''}`;
       
-      const response = await httpClient(url, {
-        method: 'GET',
-      });
+      const response = await this.httpClient.get(url);
 
       return this.transformEventListResponse(response);
     } catch (error) {
@@ -48,13 +48,11 @@ export class HttpEventRepository implements EventRepository {
     }
   }
 
-  async getEventDetail(id: number): Promise<Event> {
+  async getEventDetail(id: number): Promise<EventDetail> {
     try {
-      const response = await httpClient(`/api/event/detail/${id}`, {
-        method: 'GET',
-      });
+      const response = await this.httpClient.get(`/api/event/detail/${id}`);
 
-      return this.transformEventResponse(response);
+      return this.transformEventDetailResponse(response);
     } catch (error) {
       throw this.normalizeError(error);
     }
@@ -85,6 +83,26 @@ export class HttpEventRepository implements EventRepository {
       currentParticipants: event.currentParticipants || event.current_participants || 0,
       imageUrl: event.imageUrl || event.image_url,
       eventCode: event.eventCode || event.event_code || '',
+    };
+  }
+
+  private transformEventDetailResponse(event: any): EventDetail {
+    return {
+      ...this.transformEventResponse(event),
+      longDescription: event.longDescription || event.long_description,
+      location: event.location,
+      requirements: event.requirements || [],
+      benefits: event.benefits || [],
+      organizer: event.organizer ? {
+        name: event.organizer.name || '',
+        contact: event.organizer.contact,
+      } : undefined,
+      schedule: event.schedule?.map((item: any) => ({
+        time: item.time || '',
+        title: item.title || '',
+        description: item.description,
+      })) || [],
+      images: event.images || [],
     };
   }
 
