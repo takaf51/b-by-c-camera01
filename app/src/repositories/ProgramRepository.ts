@@ -38,7 +38,7 @@ export class HttpProgramRepository implements ProgramRepository {
       if (request.status) params.append('status', request.status);
       
       const queryString = params.toString();
-      const url = `/api/program/list${queryString ? `?${queryString}` : ''}`;
+      const url = `/api/plan/list${queryString ? `?${queryString}` : ''}`;
       
       const response = await this.httpClient.get(url);
 
@@ -50,7 +50,7 @@ export class HttpProgramRepository implements ProgramRepository {
 
   async getProgramDetail(id: number): Promise<ProgramDetail> {
     try {
-      const response = await this.httpClient.get(`/api/program/detail/${id}`);
+      const response = await this.httpClient.get(`/api/plan/detail/${id}`);
 
       return this.transformProgramDetailResponse(response);
     } catch (error) {

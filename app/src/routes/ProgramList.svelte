@@ -5,11 +5,10 @@
     programStore,
     isProgramLoading,
     programError,
-    programPagination,
   } from '../stores/program';
-  import { getProgramStatusLabel } from '../domain/program';
   import type { Program } from '../domain/program';
-  import Layout from '../components/Layout.svelte';
+  import { auth } from '../stores/auth';
+  import Header from '../components/Header.svelte';
   import Button from '../components/Button.svelte';
   import Loading from '../components/Loading.svelte';
   import ErrorBanner from '../components/ErrorBanner.svelte';
@@ -18,364 +17,345 @@
   $: programs = $programStore.programs;
   $: loading = $isProgramLoading;
   $: error = $programError;
-  $: pagination = $programPagination;
-
-  // 選択されたステータスフィルタ
-  let selectedStatus: Program['status'] | 'all' = 'all';
 
   // 初回データ読み込み
   onMount(() => {
     programStore.loadPrograms();
   });
 
-  // ステータスフィルタ変更時の処理
-  function handleStatusFilter() {
-    const request = selectedStatus === 'all' ? {} : { status: selectedStatus };
-    programStore.loadPrograms(request);
-  }
-
-  // ページネーション
-  function goToNextPage() {
-    if (pagination.currentPage < pagination.totalPages) {
-      const request =
-        selectedStatus === 'all'
-          ? { page: pagination.currentPage + 1 }
-          : { page: pagination.currentPage + 1, status: selectedStatus };
-      programStore.loadPrograms(request);
-    }
-  }
-
-  function goToPrevPage() {
-    if (pagination.currentPage > 1) {
-      const request =
-        selectedStatus === 'all'
-          ? { page: pagination.currentPage - 1 }
-          : { page: pagination.currentPage - 1, status: selectedStatus };
-      programStore.loadPrograms(request);
-    }
+  // プログラム詳細ページへの遷移
+  function goToProgramDetail(programId: number) {
+    push(`/plan/detail/${programId}`);
   }
 
   // エラー解除
   function clearError() {
     programStore.clearError();
   }
-
-  // プログラム参加可否の判定
-  function canParticipate(program: Program): boolean {
-    if (program.status !== 'active' && program.status !== 'upcoming') {
-      return false;
-    }
-    if (
-      program.maxParticipants &&
-      program.currentParticipants >= program.maxParticipants
-    ) {
-      return false;
-    }
-    return true;
-  }
-
-  // プログラム詳細ページへの遷移
-  function goToProgramDetail(programId: number) {
-    push(`/program/detail/${programId}`);
-  }
 </script>
 
-<Layout title="Beauty Experience - プログラム一覧">
-  <header class="page-header">
-    <h1>プログラム一覧</h1>
-    <p>美容体験プログラムに参加して、新しい発見をしましょう</p>
-  </header>
+<!-- ヘッダー: ロゴのみ -->
+<Header />
 
-  <!-- ステータスフィルタ -->
-  <div class="filter-section">
-    <label for="status-filter">プログラムステータス:</label>
-    <select
-      id="status-filter"
-      bind:value={selectedStatus}
-      on:change={handleStatusFilter}
-    >
-      <option value="all">すべて</option>
-      <option value="active">開催中</option>
-      <option value="upcoming">開催予定</option>
-      <option value="completed">終了</option>
-      <option value="cancelled">キャンセル</option>
-    </select>
+<div class="container">
+  <!-- ユーザー名表示 -->
+  {#if $auth.user}
+    <div class="user-welcome">
+      <span class="user-name">{$auth.user.name} さん</span>
+    </div>
+  {/if}
+
+  <!-- サービスキャッチフレーズとロゴ -->
+  <div class="service-intro">
+    <div class="intro-box">
+      <p class="catchphrase">
+        自分（ i ）を愛でる（＝）ように<br />360°見つめ直し（！）
+      </p>
+      <div class="logo-container">
+        <img src="/assets/images/logo.svg" alt="ロゴ" class="service-logo" />
+      </div>
+      <div class="brand-name">EQUAL=i</div>
+    </div>
   </div>
 
   <!-- エラー表示 -->
   {#if error}
-    <ErrorBanner message={error.message} type="error" on:dismiss={clearError} />
+    <div class="error-container">
+      <ErrorBanner
+        type="error"
+        message={error.message || 'エラーが発生しました'}
+        dismissible
+        on:dismiss={clearError}
+      />
+    </div>
   {/if}
 
   <!-- ローディング表示 -->
   {#if loading}
     <Loading message="プログラムを読み込み中..." />
   {:else}
-    <!-- プログラムリスト -->
-    <div class="programs-grid">
-      {#each programs as program (program.id)}
-        <article class="program-card">
-          <!-- プログラム画像 -->
-          {#if program.imageUrl}
-            <div class="program-image">
-              <img src={program.imageUrl} alt={program.title} />
-            </div>
-          {/if}
+    <!-- プログラム一覧 -->
+    <div class="program-section">
+      <h4 class="program-list-title">プログラムを選択</h4>
 
-          <!-- プログラム情報 -->
-          <div class="program-info">
-            <header class="program-header">
-              <h2>{program.title}</h2>
-              <span class="status-badge status-{program.status}">
-                {getProgramStatusLabel(program.status)}
-              </span>
-            </header>
+      {#if programs.length > 0}
+        <ul class="program-list">
+          {#each programs as program (program.id)}
+            <li class="program-item">
+              <div class="program-box">
+                <!-- プログラム画像 -->
+                <div class="program-image">
+                  {#if program.imageUrl}
+                    <div
+                      class="image-bg"
+                      style="background-image: url('{program.imageUrl}')"
+                    ></div>
+                  {:else}
+                    <div class="image-placeholder"></div>
+                  {/if}
+                </div>
 
-            <p class="program-description">{program.description}</p>
+                <!-- プログラム情報 -->
+                <div class="program-info">
+                  <div class="program-title">{program.title}</div>
+                  <div class="program-actions">
+                    <Button
+                      variant="primary"
+                      fullWidth
+                      on:click={() => goToProgramDetail(program.id)}
+                    >
+                      詳細を見る
+                    </Button>
+                  </div>
+                </div>
 
-            <div class="program-meta">
-              <div class="program-dates">
-                <p>
-                  <strong>開始:</strong>
-                  {new Date(program.startDate).toLocaleDateString('ja-JP')}
-                </p>
-                <p>
-                  <strong>終了:</strong>
-                  {new Date(program.endDate).toLocaleDateString('ja-JP')}
-                </p>
-              </div>
-
-              <div class="program-participants">
-                {#if program.maxParticipants}
-                  <p>
-                    <strong>参加者:</strong>
-                    {program.currentParticipants} / {program.maxParticipants}名
-                  </p>
-                {:else}
-                  <p>
-                    <strong>参加者:</strong>
-                    {program.currentParticipants}名
-                  </p>
+                <!-- 近日公開オーバーレイ -->
+                {#if program.status === 'upcoming'}
+                  <div class="overlay">
+                    <span class="overlay-text">近日公開予定</span>
+                  </div>
                 {/if}
               </div>
-            </div>
-
-            <div class="program-actions">
-              <Button
-                variant="primary"
-                on:click={() => goToProgramDetail(program.id)}
-              >
-                詳細を見る
-              </Button>
-
-              {#if canParticipate(program)}
-                <Button variant="secondary">参加する</Button>
-              {:else if program.status === 'completed'}
-                <Button variant="disabled" disabled>終了済み</Button>
-              {:else if program.maxParticipants && program.currentParticipants >= program.maxParticipants}
-                <Button variant="disabled" disabled>満員</Button>
-              {:else}
-                <Button variant="disabled" disabled>参加不可</Button>
-              {/if}
-            </div>
-          </div>
-        </article>
-      {/each}
+            </li>
+          {/each}
+        </ul>
+      {:else}
+        <div class="empty-state">
+          <p>プログラムはありません。</p>
+        </div>
+      {/if}
     </div>
-
-    <!-- 検索結果が空の場合 -->
-    {#if programs.length === 0}
-      <div class="empty-state">
-        <p>🔍 条件に合うプログラムが見つかりませんでした</p>
-        <Button variant="primary" on:click={() => programStore.loadPrograms()}>
-          すべてのプログラムを表示
-        </Button>
-      </div>
-    {/if}
-
-    <!-- ページネーション -->
-    {#if pagination.totalPages > 1}
-      <div class="pagination">
-        <Button
-          variant="outline"
-          disabled={pagination.currentPage <= 1 || loading}
-          on:click={goToPrevPage}
-        >
-          ← 前のページ
-        </Button>
-
-        <span class="page-info">
-          {pagination.currentPage} / {pagination.totalPages} ページ
-        </span>
-
-        <Button
-          variant="outline"
-          disabled={pagination.currentPage >= pagination.totalPages || loading}
-          on:click={goToNextPage}
-        >
-          次のページ →
-        </Button>
-      </div>
-    {/if}
   {/if}
-</Layout>
+</div>
 
 <style>
-  .page-header {
-    text-align: center;
-    margin-bottom: 30px;
+  .container {
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
   }
 
-  .page-header h1 {
-    font-size: 2rem;
-    color: #333;
-    margin-bottom: 10px;
-  }
-
-  .page-header p {
-    color: #666;
-    font-size: 1.1rem;
-  }
-
-  .filter-section {
-    margin-bottom: 30px;
+  /* ユーザー名表示 */
+  .user-welcome {
+    padding: 16px 24px;
     display: flex;
-    align-items: center;
-    gap: 10px;
+    justify-content: flex-start;
   }
 
-  .filter-section label {
-    font-weight: bold;
+  .user-name {
+    background: rgba(255, 255, 255, 0.7);
     color: #333;
-  }
-
-  .filter-section select {
-    padding: 8px 12px;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    font-size: 1rem;
-  }
-
-  .programs-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: 30px;
-    margin-bottom: 40px;
-  }
-
-  .program-card {
-    border: 1px solid #ddd;
+    padding: 16px 24px;
     border-radius: 8px;
-    overflow: hidden;
-    background: white;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    transition:
-      transform 0.2s,
-      box-shadow 0.2s;
+    font-weight: bold;
+    display: inline-block;
   }
 
-  .program-card:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  /* サービス紹介セクション */
+  .service-intro {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 32px;
+    padding: 0 1rem;
+  }
+
+  .intro-box {
+    border-radius: 12px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    max-width: 800px;
+    height: 500px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+  }
+
+  .catchphrase {
+    margin-bottom: 1rem;
+    text-align: center;
+    font-size: 1.1rem;
+    color: #fff;
+    line-height: 1.6;
+  }
+
+  .logo-container {
+    margin-bottom: 24px;
+  }
+
+  .service-logo {
+    max-height: 320px;
+    max-width: 90%;
+    filter: brightness(0) invert(1); /* ロゴを白くする */
+  }
+
+  .brand-name {
+    font-family: 'PT Serif', serif;
+    font-size: 1.4rem;
+    color: #fff;
+  }
+
+  /* プログラム一覧セクション */
+  .program-section {
+    padding: 0 1rem 2rem;
+  }
+
+  .program-list-title {
+    font-size: 1.4rem;
+    margin-bottom: 1.2rem;
+    color: #fff;
+    font-weight: 600;
+    text-align: center;
+  }
+
+  .program-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  .program-item {
+    margin-bottom: 20px;
+    text-align: center;
+  }
+
+  .program-box {
+    display: flex;
+    background: #333;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    max-width: 600px;
+    margin: 0 auto;
+    min-height: 250px;
+    position: relative;
   }
 
   .program-image {
-    height: 200px;
-    overflow: hidden;
+    width: 40%;
+    min-width: 120px;
+    background: #333;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem;
   }
 
-  .program-image img {
+  .image-bg {
+    background-size: cover;
+    background-position: center;
+    padding: 1rem;
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    border-radius: 10px;
+  }
+
+  .image-placeholder {
+    width: 100%;
+    height: 140px;
+    background: #555;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #888;
   }
 
   .program-info {
-    padding: 20px;
-  }
-
-  .program-header {
+    width: 60%;
+    padding: 24px 20px;
     display: flex;
-    justify-content: space-between;
+    background: #333;
+    flex-direction: column;
+    justify-content: flex-start;
     align-items: flex-start;
-    margin-bottom: 15px;
+    height: 100%;
+    position: relative;
   }
 
-  .program-header h2 {
-    font-size: 1.4rem;
-    color: #333;
-    margin: 0;
-    flex: 1;
-  }
-
-  .status-badge {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-    font-weight: bold;
-    white-space: nowrap;
-    margin-left: 10px;
-  }
-
-  .status-active {
-    background-color: #d4edda;
-    color: #155724;
-  }
-  .status-upcoming {
-    background-color: #d1ecf1;
-    color: #0c5460;
-  }
-  .status-completed {
-    background-color: #f8d7da;
-    color: #721c24;
-  }
-  .status-cancelled {
-    background-color: #e2e3e5;
-    color: #383d41;
-  }
-
-  .program-description {
-    color: #666;
-    line-height: 1.5;
-    margin-bottom: 15px;
-  }
-
-  .program-meta {
-    margin-bottom: 20px;
-    font-size: 0.9rem;
-  }
-
-  .program-meta p {
-    margin: 5px 0;
-    color: #555;
+  .program-title {
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 2rem;
+    color: #fff;
+    text-align: left;
   }
 
   .program-actions {
+    margin-top: auto;
+    width: 100%;
     display: flex;
-    gap: 10px;
+    justify-content: flex-start;
+  }
+
+  /* オーバーレイ（近日公開等） */
+  .overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2;
+    border-radius: 10px;
+  }
+
+  .overlay-text {
+    color: #fff;
+    font-size: 1.1rem;
+    font-weight: bold;
+    text-align: center;
+  }
+
+  .error-container {
+    padding: 0 1rem;
+    margin-bottom: 1rem;
   }
 
   .empty-state {
     text-align: center;
-    padding: 60px 20px;
-    color: #666;
+    padding: 2rem;
+    color: rgba(255, 255, 255, 0.8);
   }
 
-  .empty-state p {
-    font-size: 1.2rem;
-    margin-bottom: 20px;
-  }
+  /* レスポンシブ */
+  @media (max-width: 768px) {
+    .intro-box {
+      height: 400px;
+      padding: 1rem;
+    }
 
-  .pagination {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    gap: 20px;
-    margin-top: 40px;
-  }
+    .service-logo {
+      max-height: 200px;
+    }
 
-  .page-info {
-    font-weight: bold;
-    color: #333;
+    .program-box {
+      flex-direction: column;
+      max-width: 100%;
+    }
+
+    .program-image,
+    .program-info {
+      width: 100%;
+    }
+
+    .program-info {
+      padding: 16px 10px;
+      align-items: center;
+    }
+
+    .program-title {
+      text-align: center;
+      margin-bottom: 1rem;
+    }
   }
 </style>

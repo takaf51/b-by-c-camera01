@@ -50,7 +50,7 @@
     const success = await authActions.verifyDigit(email, digit);
     if (success) {
       // ログイン成功 - ホーム画面へ
-      push('/');
+      push('/plan/list');
     }
   }
 

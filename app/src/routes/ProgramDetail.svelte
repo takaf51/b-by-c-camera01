@@ -7,17 +7,11 @@
     programDetailError,
     currentProgramDetail,
   } from '../stores/program';
-  import {
-    getProgramStatusLabel,
-    formatProgramDateTime,
-    getParticipationRate,
-    getRemainingSlots,
-    canParticipateInProgram,
-  } from '../domain/program';
-  import Layout from '../components/Layout.svelte';
+  import Header from '../components/Header.svelte';
   import Button from '../components/Button.svelte';
   import Loading from '../components/Loading.svelte';
   import ErrorBanner from '../components/ErrorBanner.svelte';
+  import Layout from '../components/Layout.svelte';
 
   export let params: { id: string } = { id: '' };
 
@@ -29,37 +23,48 @@
   // Program ID from route params
   $: programId = parseInt(params.id);
 
-  // プログラム情報の計算
-  $: dateTimeInfo = programDetail ? formatProgramDateTime(programDetail) : null;
-  $: participationRate = programDetail
-    ? getParticipationRate(programDetail)
-    : 0;
-  $: remainingSlots = programDetail ? getRemainingSlots(programDetail) : null;
-  $: canParticipate = programDetail
-    ? canParticipateInProgram(programDetail)
-    : false;
+  // モーダル表示状態
+  let showStartModal = false;
 
-  onMount(() => {
+  // ライフサイクル
+  onMount(async () => {
     if (programId && !isNaN(programId)) {
-      programDetailStore.loadProgramDetail(programId);
+      await programDetailStore.loadProgramDetail(programId);
     }
   });
 
   onDestroy(() => {
-    // コンポーネント離脱時にストアをリセット
     programDetailStore.reset();
   });
 
+  // 戻るボタン
   function handleBackToList() {
-    push('/program/list');
+    push('/plan/list');
   }
 
-  function handleParticipate() {
-    // TODO: 参加申し込み機能の実装
-    console.log('参加申し込み:', programDetail?.id);
-    alert('参加申し込み機能は今後実装予定です');
+  // プログラム開始
+  function handleStartProgram() {
+    showStartModal = true;
   }
 
+  // カメラ起動
+  function handleStartCamera() {
+    // TODO: カメラページの実装後に追加
+    push(`/plan/${programId}/camera`);
+  }
+
+  // ファイル選択
+  function handleFileUpload() {
+    // TODO: ファイルアップロードの実装後に追加
+    console.log('ファイル選択');
+  }
+
+  // モーダルを閉じる
+  function closeModal() {
+    showStartModal = false;
+  }
+
+  // エラークリア
   function clearError() {
     programDetailStore.clearError();
   }
@@ -70,240 +75,137 @@
     ? `${programDetail.title} - Beauty Experience`
     : 'プログラム詳細 - Beauty Experience'}
 >
-  <div class="program-detail-container">
-    <!-- 戻るボタン -->
-    <div class="back-navigation">
-      <Button variant="outline" on:click={handleBackToList}>
-        ← プログラム一覧に戻る
-      </Button>
-    </div>
+  <!-- ヘッダー（戻るボタン付き） -->
+  <Header showBackButton={true} backUrl="/plan/list" />
 
+  <div class="program-detail">
     <!-- エラー表示 -->
     {#if error}
-      <ErrorBanner
-        message={error.message}
-        type="error"
-        on:dismiss={clearError}
-      />
+      <div class="error-container">
+        <ErrorBanner
+          type="error"
+          message={error.message || 'エラーが発生しました'}
+          dismissible
+          on:dismiss={clearError}
+        />
+      </div>
     {/if}
 
     <!-- ローディング表示 -->
     {#if loading}
-      <Loading message="プログラム詳細を読み込み中..." />
+      <div class="loading-container">
+        <Loading message="プログラム詳細を読み込み中..." />
+      </div>
     {:else if programDetail}
-      <article class="program-detail">
-        <!-- ヘッダー画像 -->
-        {#if programDetail.imageUrl}
-          <div class="program-hero">
-            <img
-              src={programDetail.imageUrl}
-              alt={programDetail.title}
-              class="hero-image"
-            />
-            <div class="hero-overlay">
-              <span class="status-badge status-{programDetail.status}">
-                {getProgramStatusLabel(programDetail.status)}
-              </span>
-            </div>
-          </div>
-        {/if}
+      <!-- プログラム画像 -->
+      {#if programDetail.imageUrl}
+        <img
+          src={programDetail.imageUrl}
+          alt={programDetail.title}
+          class="hero-image"
+        />
+      {/if}
 
+      <div class="content">
         <!-- プログラム基本情報 -->
-        <header class="program-header">
-          <h1 class="program-title">{programDetail.title}</h1>
-          <p class="program-description">{programDetail.description}</p>
-        </header>
+        <div class="program-header">
+          <h3 class="program-title">{programDetail.title}</h3>
 
-        <!-- 参加情報 -->
-        <section class="participation-info">
-          <div class="participation-card">
-            <div class="participation-stats">
-              {#if programDetail.maxParticipants}
-                <div class="stat">
-                  <span class="stat-number"
-                    >{programDetail.currentParticipants}</span
-                  >
-                  <span class="stat-label"
-                    >/ {programDetail.maxParticipants}名</span
-                  >
-                </div>
-                <div class="progress-bar">
-                  <div
-                    class="progress-fill"
-                    style="width: {participationRate}%"
-                  ></div>
-                </div>
-                {#if remainingSlots !== null}
-                  <p class="remaining-slots">
-                    残り<strong>{remainingSlots}名</strong>
-                  </p>
-                {/if}
-              {:else}
-                <div class="stat">
-                  <span class="stat-number"
-                    >{programDetail.currentParticipants}</span
-                  >
-                  <span class="stat-label">名参加</span>
-                </div>
-              {/if}
+          {#if programDetail.longDescription}
+            <div class="program-caption">
+              {programDetail.longDescription}
             </div>
+          {/if}
 
-            <div class="participation-action">
-              {#if canParticipate}
-                <Button
-                  variant="primary"
-                  size="large"
-                  on:click={handleParticipate}
-                >
-                  参加申し込み
-                </Button>
-              {:else if programDetail.status === 'completed'}
-                <Button variant="disabled" disabled size="large">
-                  終了済み
-                </Button>
-              {:else if programDetail.maxParticipants && programDetail.currentParticipants >= programDetail.maxParticipants}
-                <Button variant="disabled" disabled size="large">満員</Button>
-              {:else}
-                <Button variant="disabled" disabled size="large">
-                  参加不可
-                </Button>
-              {/if}
-            </div>
-          </div>
-        </section>
-
-        <!-- プログラム詳細情報 -->
-        <div class="program-content">
-          <div class="content-main">
-            <!-- 詳細説明 -->
-            {#if programDetail.longDescription}
-              <section class="section">
-                <h2>詳細説明</h2>
-                <div class="long-description">
-                  {#each programDetail.longDescription.split('\n') as paragraph}
-                    {#if paragraph.trim()}
-                      <p>{paragraph}</p>
-                    {/if}
-                  {/each}
-                </div>
-              </section>
-            {/if}
-
-            <!-- スケジュール -->
-            {#if programDetail.schedule && programDetail.schedule.length > 0}
-              <section class="section">
-                <h2>タイムスケジュール</h2>
-                <div class="schedule-list">
-                  {#each programDetail.schedule as item}
-                    <div class="schedule-item">
-                      <div class="schedule-time">{item.time}</div>
-                      <div class="schedule-content">
-                        <h3>{item.title}</h3>
-                        {#if item.description}
-                          <p>{item.description}</p>
-                        {/if}
-                      </div>
-                    </div>
-                  {/each}
-                </div>
-              </section>
-            {/if}
-
-            <!-- 参加条件 -->
-            {#if programDetail.requirements && programDetail.requirements.length > 0}
-              <section class="section">
-                <h2>参加条件</h2>
-                <ul class="requirements-list">
-                  {#each programDetail.requirements as requirement}
-                    <li>{requirement}</li>
-                  {/each}
-                </ul>
-              </section>
-            {/if}
-
-            <!-- 特典 -->
-            {#if programDetail.benefits && programDetail.benefits.length > 0}
-              <section class="section">
-                <h2>参加特典</h2>
-                <ul class="benefits-list">
-                  {#each programDetail.benefits as benefit}
-                    <li>{benefit}</li>
-                  {/each}
-                </ul>
-              </section>
-            {/if}
-          </div>
-
-          <div class="content-sidebar">
-            <!-- 開催情報 -->
-            <section class="info-card">
-              <h3>開催情報</h3>
-              <div class="info-list">
-                {#if dateTimeInfo}
-                  <div class="info-item">
-                    <span class="info-label">開催日</span>
-                    <span class="info-value">{dateTimeInfo.dateRange}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-label">時間</span>
-                    <span class="info-value">{dateTimeInfo.timeRange}</span>
-                  </div>
-                  <div class="info-item">
-                    <span class="info-label">所要時間</span>
-                    <span class="info-value">{dateTimeInfo.duration}</span>
-                  </div>
-                {/if}
-                {#if programDetail.location}
-                  <div class="info-item">
-                    <span class="info-label">会場</span>
-                    <span class="info-value">{programDetail.location}</span>
-                  </div>
-                {/if}
-              </div>
-            </section>
-
-            <!-- 主催者情報 -->
-            {#if programDetail.organizer}
-              <section class="info-card">
-                <h3>主催者</h3>
-                <div class="info-list">
-                  <div class="info-item">
-                    <span class="info-label">団体名</span>
-                    <span class="info-value"
-                      >{programDetail.organizer.name}</span
-                    >
-                  </div>
-                  {#if programDetail.organizer.contact}
-                    <div class="info-item">
-                      <span class="info-label">連絡先</span>
-                      <span class="info-value"
-                        >{programDetail.organizer.contact}</span
-                      >
-                    </div>
-                  {/if}
-                </div>
-              </section>
-            {/if}
+          <div class="program-meta">
+            <span class="period-badge">30日間</span>
+            <span class="period-info">
+              プログラム期間:
+              <span class="dates">
+                {new Date(programDetail.startDate).toLocaleDateString('ja-JP', {
+                  year: 'numeric',
+                  month: 'long',
+                  day: 'numeric',
+                })}
+                〜
+                {new Date(programDetail.endDate).toLocaleDateString('ja-JP', {
+                  month: 'long',
+                  day: 'numeric',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+              </span>
+            </span>
           </div>
         </div>
 
-        <!-- 追加画像 -->
-        {#if programDetail.images && programDetail.images.length > 1}
-          <section class="section">
-            <h2>プログラム画像</h2>
-            <div class="image-gallery">
-              {#each programDetail.images as image, index}
-                <img
-                  src={image}
-                  alt={`${programDetail.title} - 画像 ${index + 1}`}
-                  class="gallery-image"
-                />
+        <!-- プログラム開始ボタン -->
+        <div class="start-section">
+          <Button
+            variant="primary"
+            size="large"
+            fullWidth
+            on:click={handleStartProgram}
+          >
+            プログラムを開始
+          </Button>
+        </div>
+
+        <!-- プログラム詳細説明 -->
+        {#if programDetail.description}
+          <div class="description-section">
+            <p class="description">{programDetail.description}</p>
+          </div>
+        {/if}
+
+        <!-- 詳細セクション -->
+        {#if programDetail.requirements && programDetail.requirements.length > 0}
+          <div class="detail-section">
+            <h4 class="section-title">こんな方におすすめ</h4>
+            <div class="section-content">
+              {#each programDetail.requirements as requirement}
+                <p>{requirement}</p>
               {/each}
             </div>
-          </section>
+          </div>
         {/if}
-      </article>
-    {:else if !loading}
+
+        {#if programDetail.benefits && programDetail.benefits.length > 0}
+          <div class="detail-section">
+            <h4 class="section-title">変わるポイント</h4>
+            <div class="section-content">
+              {#each programDetail.benefits as benefit}
+                <p>{benefit}</p>
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        <div class="detail-section">
+          <h4 class="section-title">部位</h4>
+          <div class="section-content">
+            <p>顔全体、首、デコルテ</p>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4 class="section-title">注意事項</h4>
+          <div class="section-content">
+            <p>
+              施術前後の飲食は控えめにしてください。肌に異常を感じた場合は使用を中止してください。
+            </p>
+          </div>
+        </div>
+
+        <div class="detail-section">
+          <h4 class="section-title">使用アイテム</h4>
+          <div class="section-content">
+            <p>専用美容機器、専用ジェル、クレンジング</p>
+          </div>
+        </div>
+      </div>
+    {:else}
+      <!-- プログラムが見つからない -->
       <div class="not-found">
         <h2>プログラムが見つかりません</h2>
         <p>指定されたプログラムは存在しないか、削除された可能性があります。</p>
@@ -313,341 +215,241 @@
       </div>
     {/if}
   </div>
+
+  <!-- プログラム開始モーダル -->
+  {#if showStartModal}
+    <div
+      class="modal-overlay"
+      on:click={closeModal}
+      on:keydown={closeModal}
+      role="dialog"
+      aria-modal="true"
+    >
+      <div
+        class="modal-content"
+        on:click|stopPropagation
+        on:keydown|stopPropagation
+        role="document"
+      >
+        <div class="modal-header">
+          <h4>はじめに施術前の写真を<br />アップロードしましょう</h4>
+        </div>
+
+        <div class="modal-body">
+          <div class="modal-buttons">
+            <Button
+              variant="outline"
+              fullWidth
+              on:click={handleStartCamera}
+              class="modal-button"
+            >
+              カメラを起動する
+            </Button>
+
+            <Button
+              variant="outline"
+              fullWidth
+              on:click={handleFileUpload}
+              class="modal-button"
+            >
+              ファイルを選択する
+            </Button>
+          </div>
+
+          <p class="modal-note">
+            写真の精度によっては、正確に測定できない可能性がございます。予めご了承ください。
+          </p>
+        </div>
+
+        <div class="modal-footer">
+          <Button variant="secondary" fullWidth on:click={closeModal}>
+            中止する
+          </Button>
+        </div>
+      </div>
+    </div>
+  {/if}
 </Layout>
 
 <style>
-  .program-detail-container {
-    max-width: 1200px;
-    margin: 0 auto;
-  }
-
-  .back-navigation {
-    margin-bottom: 2rem;
-  }
-
   .program-detail {
-    background: white;
-    border-radius: 8px;
-    overflow: hidden;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  /* Hero Section */
-  .program-hero {
-    position: relative;
-    height: 300px;
-    overflow: hidden;
+    min-height: 100vh;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
   }
 
   .hero-image {
     width: 100%;
-    height: 100%;
-    object-fit: cover;
+    height: auto;
+    display: block;
   }
 
-  .hero-overlay {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
+  .content {
+    padding: 0 1rem 2rem;
   }
 
-  .status-badge {
-    padding: 0.5rem 1rem;
-    border-radius: 20px;
-    font-size: 0.875rem;
-    font-weight: bold;
-    white-space: nowrap;
-  }
-
-  .status-active {
-    background-color: #d4edda;
-    color: #155724;
-  }
-  .status-upcoming {
-    background-color: #d1ecf1;
-    color: #0c5460;
-  }
-  .status-completed {
-    background-color: #f8d7da;
-    color: #721c24;
-  }
-  .status-cancelled {
-    background-color: #e2e3e5;
-    color: #383d41;
-  }
-
-  /* Header */
   .program-header {
-    padding: 2rem;
-    border-bottom: 1px solid #e5e7eb;
+    margin-bottom: 1.5rem;
+    text-align: left;
   }
 
   .program-title {
-    font-size: 2rem;
-    color: #1f2937;
-    margin: 0 0 1rem 0;
-    line-height: 1.3;
+    font-size: 1.3rem;
+    font-weight: bold;
+    margin-bottom: 0.5rem;
+    color: #fff;
   }
 
-  .program-description {
-    font-size: 1.125rem;
-    color: #6b7280;
-    margin: 0;
+  .program-caption {
+    margin-bottom: 1rem;
+    color: rgba(255, 255, 255, 0.9);
     line-height: 1.6;
   }
 
-  /* Participation Info */
-  .participation-info {
-    padding: 2rem;
-    background-color: #f9fafb;
-    border-bottom: 1px solid #e5e7eb;
-  }
-
-  .participation-card {
+  .program-meta {
+    border-bottom: 1px solid #fff;
+    padding-bottom: 1rem;
     display: flex;
-    align-items: center;
-    gap: 2rem;
-    max-width: 600px;
-    margin: 0 auto;
-  }
-
-  .participation-stats {
-    flex: 1;
-  }
-
-  .stat {
-    display: flex;
-    align-items: baseline;
+    flex-direction: column;
     gap: 0.5rem;
-    margin-bottom: 0.75rem;
   }
 
-  .stat-number {
-    font-size: 2rem;
-    font-weight: bold;
-    color: #3b82f6;
-  }
-
-  .stat-label {
-    font-size: 1rem;
-    color: #6b7280;
-  }
-
-  .progress-bar {
-    width: 100%;
-    height: 8px;
-    background-color: #e5e7eb;
+  .period-badge {
+    padding: 0.3rem;
+    border: 1px solid #fff;
+    margin-right: 0.3rem;
     border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 0.5rem;
+    display: inline-block;
+    font-size: 0.9rem;
   }
 
-  .progress-fill {
-    height: 100%;
-    background-color: #3b82f6;
-    transition: width 0.3s ease;
+  .period-info {
+    font-size: 0.9rem;
   }
 
-  .remaining-slots {
-    font-size: 0.875rem;
-    color: #6b7280;
-    margin: 0;
+  .dates {
+    font-weight: normal;
   }
 
-  .participation-action {
-    flex-shrink: 0;
+  .start-section {
+    margin-bottom: 1rem;
+    text-align: center;
   }
 
-  /* Content */
-  .program-content {
-    display: grid;
-    grid-template-columns: 1fr 300px;
-    gap: 2rem;
-    padding: 2rem;
+  .description-section {
+    margin-bottom: 3rem;
   }
 
-  .content-main {
-    min-width: 0;
+  .description {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
+    white-space: pre-line;
   }
 
-  .content-sidebar {
-    display: flex;
-    flex-direction: column;
-    gap: 1.5rem;
+  .detail-section {
+    margin-bottom: 3rem;
   }
 
-  .section {
-    margin-bottom: 2rem;
-  }
-
-  .section h2 {
+  .section-title {
     font-size: 1.5rem;
-    color: #1f2937;
-    margin: 0 0 1rem 0;
-    padding-bottom: 0.5rem;
-    border-bottom: 2px solid #3b82f6;
-  }
-
-  .long-description p {
-    margin: 0 0 1rem 0;
-    line-height: 1.7;
-    color: #374151;
-  }
-
-  /* Schedule */
-  .schedule-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
-  .schedule-item {
-    display: flex;
-    gap: 1rem;
-    padding: 1rem;
-    background-color: #f9fafb;
-    border-radius: 8px;
-    border-left: 4px solid #3b82f6;
-  }
-
-  .schedule-time {
-    font-weight: bold;
-    color: #3b82f6;
-    min-width: 60px;
-    flex-shrink: 0;
-  }
-
-  .schedule-content h3 {
-    margin: 0 0 0.5rem 0;
-    font-size: 1.125rem;
-    color: #1f2937;
-  }
-
-  .schedule-content p {
-    margin: 0;
-    color: #6b7280;
-    line-height: 1.5;
-  }
-
-  /* Lists */
-  .requirements-list,
-  .benefits-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-  }
-
-  .requirements-list li,
-  .benefits-list li {
-    padding: 0.75rem 1rem;
     margin-bottom: 0.5rem;
-    background-color: #f9fafb;
-    border-radius: 8px;
-    border-left: 4px solid #10b981;
+    font-weight: bold;
+    color: #fff;
   }
 
-  .requirements-list li {
-    border-left-color: #f59e0b;
+  .section-content {
+    color: rgba(255, 255, 255, 0.9);
+    line-height: 1.6;
   }
 
-  /* Info Cards */
-  .info-card {
-    background-color: #f9fafb;
-    border-radius: 8px;
-    padding: 1.5rem;
+  .section-content p {
+    margin: 0.5rem 0;
   }
 
-  .info-card h3 {
-    margin: 0 0 1rem 0;
-    font-size: 1.125rem;
-    color: #1f2937;
+  .error-container,
+  .loading-container {
+    padding: 1rem;
   }
 
-  .info-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-  }
-
-  .info-item {
-    display: flex;
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .info-label {
-    font-size: 0.875rem;
-    color: #6b7280;
-    font-weight: 500;
-  }
-
-  .info-value {
-    color: #1f2937;
-    line-height: 1.4;
-  }
-
-  /* Image Gallery */
-  .image-gallery {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 1rem;
-  }
-
-  .gallery-image {
-    width: 100%;
-    height: 200px;
-    object-fit: cover;
-    border-radius: 8px;
-  }
-
-  /* Not Found */
   .not-found {
     text-align: center;
-    padding: 4rem 2rem;
-    background: white;
-    border-radius: 8px;
+    padding: 3rem 1rem;
+    color: rgba(255, 255, 255, 0.9);
   }
 
   .not-found h2 {
-    color: #1f2937;
+    color: #fff;
     margin-bottom: 1rem;
   }
 
-  .not-found p {
-    color: #6b7280;
-    margin-bottom: 2rem;
+  /* モーダルスタイル */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.9);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem;
   }
 
-  /* Responsive Design */
+  .modal-content {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 8px;
+    padding: 2rem;
+    text-align: center;
+    min-width: 260px;
+    max-width: 400px;
+    width: 100%;
+    color: #000;
+  }
+
+  .modal-header h4 {
+    font-size: 1.3rem;
+    margin-bottom: 1rem;
+    font-weight: bold;
+    line-height: 1.4;
+  }
+
+  .modal-body {
+    margin-bottom: 1rem;
+  }
+
+  .modal-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+
+  .modal-note {
+    font-size: 0.9rem;
+    color: #666;
+    text-align: left;
+    line-height: 1.4;
+    margin: 0;
+  }
+
   @media (max-width: 768px) {
-    .program-content {
-      grid-template-columns: 1fr;
-    }
-
-    .content-sidebar {
-      order: -1;
-    }
-
-    .participation-card {
-      flex-direction: column;
-      text-align: center;
+    .content {
+      padding: 0 0.5rem 1rem;
     }
 
     .program-title {
-      font-size: 1.5rem;
+      font-size: 1.1rem;
     }
 
-    .schedule-item {
-      flex-direction: column;
-      gap: 0.5rem;
+    .section-title {
+      font-size: 1.3rem;
     }
 
-    .schedule-time {
-      min-width: auto;
-    }
-
-    .image-gallery {
-      grid-template-columns: 1fr;
+    .modal-content {
+      padding: 1.5rem;
+      margin: 0 0.5rem;
     }
   }
 </style>

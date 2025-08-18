@@ -101,7 +101,7 @@ export const authHandlers = [
 // プログラム関連のAPIハンドラ
 export const programHandlers = [
   // プログラム一覧取得
-  http.get('/api/program/list', ({ request }) => {
+  http.get('/api/plan/list', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '20');
@@ -181,7 +181,7 @@ export const programHandlers = [
   }),
 
   // プログラム詳細取得
-  http.get('/api/program/detail/:id', ({ params }) => {
+  http.get('/api/plan/detail/:id', ({ params }) => {
     const id = parseInt(params.id as string);
     
     console.log('MSW: Program detail request for ID:', id);
