@@ -98,19 +98,19 @@ export const authHandlers = [
   }),
 ];
 
-// イベント関連のAPIハンドラ
-export const eventHandlers = [
-  // イベント一覧取得
-  http.get('/api/event/list', ({ request }) => {
+// プログラム関連のAPIハンドラ
+export const programHandlers = [
+  // プログラム一覧取得
+  http.get('/api/program/list', ({ request }) => {
     const url = new URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '20');
     const status = url.searchParams.get('status');
 
-    console.log('MSW: Event list request - page:', page, 'limit:', limit, 'status:', status);
+    console.log('MSW: Program list request - page:', page, 'limit:', limit, 'status:', status);
 
-    // モックイベントデータ
-    const allEvents = [
+    // モックプログラムデータ
+    const allPrograms = [
       {
         id: 1,
         title: 'ビューティ体験イベント Vol.1',
@@ -120,8 +120,8 @@ export const eventHandlers = [
         endDate: '2024-01-15T18:00:00Z',
         maxParticipants: 20,
         currentParticipants: 12,
-        imageUrl: '/images/events/event1.jpg',
-        eventCode: 'BEAUTY001'
+        imageUrl: '/images/programs/event1.jpg',
+        programCode: 'BEAUTY001'
       },
       {
         id: 2,
@@ -132,8 +132,8 @@ export const eventHandlers = [
         endDate: '2024-01-20T17:00:00Z',
         maxParticipants: 15,
         currentParticipants: 3,
-        imageUrl: '/images/events/event2.jpg',
-        eventCode: 'FACIAL002'
+        imageUrl: '/images/programs/event2.jpg',
+        programCode: 'FACIAL002'
       },
       {
         id: 3,
@@ -144,8 +144,8 @@ export const eventHandlers = [
         endDate: '2024-01-10T16:00:00Z',
         maxParticipants: 30,
         currentParticipants: 25,
-        imageUrl: '/images/events/event3.jpg',
-        eventCode: 'SKIN003'
+        imageUrl: '/images/programs/event3.jpg',
+        programCode: 'SKIN003'
       },
       {
         id: 4,
@@ -155,15 +155,15 @@ export const eventHandlers = [
         startDate: '2024-02-01T10:00:00Z',
         endDate: '2024-02-01T18:00:00Z',
         currentParticipants: 0,
-        imageUrl: '/images/events/event4.jpg',
-        eventCode: 'FAIR004'
+        imageUrl: '/images/programs/event4.jpg',
+        programCode: 'FAIR004'
       }
     ];
 
     // ステータスでフィルタ
     let filteredEvents = status 
-      ? allEvents.filter(event => event.status === status)
-      : allEvents;
+      ? allPrograms.filter(event => event.status === status)
+      : allPrograms;
 
     // ページネーション
     const totalCount = filteredEvents.length;
@@ -173,21 +173,21 @@ export const eventHandlers = [
     const paginatedEvents = filteredEvents.slice(startIndex, endIndex);
 
     return HttpResponse.json({
-      events: paginatedEvents,
+      programs: paginatedEvents,
       totalCount,
       currentPage: page,
       totalPages
     });
   }),
 
-  // イベント詳細取得
-  http.get('/api/event/detail/:id', ({ params }) => {
+  // プログラム詳細取得
+  http.get('/api/program/detail/:id', ({ params }) => {
     const id = parseInt(params.id as string);
     
-    console.log('MSW: Event detail request for ID:', id);
+    console.log('MSW: Program detail request for ID:', id);
 
-    // モックイベント詳細データベース
-    const eventDetailData: Record<number, any> = {
+    // モックプログラム詳細データベース
+    const programDetailData: Record<number, any> = {
       1: {
         id: 1,
         title: 'ビューティ体験イベント Vol.1',
@@ -202,8 +202,8 @@ export const eventHandlers = [
         endDate: '2024-01-15T18:00:00Z',
         maxParticipants: 20,
         currentParticipants: 12,
-        imageUrl: '/images/events/event1.jpg',
-        eventCode: 'BEAUTY001',
+        imageUrl: '/images/programs/event1.jpg',
+        programCode: 'BEAUTY001',
         location: '東京都渋谷区渋谷1-1-1 ビューティセンター3F',
         requirements: [
           '18歳以上の方',
@@ -263,9 +263,9 @@ export const eventHandlers = [
           }
         ],
         images: [
-          '/images/events/event1-main.jpg',
-          '/images/events/event1-demo.jpg',
-          '/images/events/event1-venue.jpg'
+          '/images/programs/event1-main.jpg',
+          '/images/programs/event1-demo.jpg',
+          '/images/programs/event1-venue.jpg'
         ]
       },
       2: {
@@ -282,8 +282,8 @@ export const eventHandlers = [
         endDate: '2024-01-20T17:00:00Z',
         maxParticipants: 15,
         currentParticipants: 3,
-        imageUrl: '/images/events/event2.jpg',
-        eventCode: 'FACIAL002',
+        imageUrl: '/images/programs/event2.jpg',
+        programCode: 'FACIAL002',
         location: '東京都新宿区新宿2-2-2 スキンケアサロン',
         requirements: [
           '20歳以上の方',
@@ -321,14 +321,14 @@ export const eventHandlers = [
           }
         ],
         images: [
-          '/images/events/event2-main.jpg',
-          '/images/events/event2-ai.jpg'
+          '/images/programs/event2-main.jpg',
+          '/images/programs/event2-ai.jpg'
         ]
       }
     };
 
     // 存在しないIDの場合はデフォルトデータを返す
-    const eventDetail = eventDetailData[id] || {
+    const eventDetail = programDetailData[id] || {
       id,
       title: `イベント ${id}`,
       description: `イベント ${id} の詳細説明です。`,
@@ -338,8 +338,8 @@ export const eventHandlers = [
       endDate: '2024-01-15T18:00:00Z',
       maxParticipants: 20,
       currentParticipants: 10,
-      imageUrl: `/images/events/event${id}.jpg`,
-      eventCode: `EVENT${id.toString().padStart(3, '0')}`,
+      imageUrl: `/images/programs/event${id}.jpg`,
+      programCode: `EVENT${id.toString().padStart(3, '0')}`,
       location: `東京都渋谷区 イベント会場${id}`,
       requirements: ['18歳以上の方'],
       benefits: ['特別体験', 'サンプルプレゼント'],
@@ -359,7 +359,7 @@ export const eventHandlers = [
           description: 'イベントの主要プログラム'
         }
       ],
-      images: [`/images/events/event${id}.jpg`]
+      images: [`/images/programs/event${id}.jpg`]
     };
 
     return HttpResponse.json(eventDetail);
@@ -371,4 +371,4 @@ export const planHandlers = [
 ];
 
 // 全ハンドラをエクスポート
-export const handlers = [...authHandlers, ...eventHandlers, ...planHandlers];
+export const handlers = [...authHandlers, ...programHandlers, ...planHandlers];

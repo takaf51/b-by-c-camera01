@@ -1,26 +1,26 @@
 /**
- * Event Domain Types
- * イベント関連のドメイン型とバリデーション
+ * Program Domain Types
+ * プログラム関連のドメイン型とバリデーション
  */
 
 // =============================================================================
 // Base Types
 // =============================================================================
 
-export interface Event {
+export interface Program {
   id: number;
   title: string;
   description: string;
-  status: EventStatus;
+  status: ProgramStatus;
   startDate: string; // ISO 8601
   endDate: string;   // ISO 8601
   maxParticipants?: number;
   currentParticipants: number;
   imageUrl?: string;
-  eventCode: string; // X-Event-Code header用
+  programCode: string; // X-Program-Code header用
 }
 
-export interface EventDetail extends Event {
+export interface ProgramDetail extends Program {
   longDescription?: string;
   location?: string;
   requirements?: string[];
@@ -29,26 +29,26 @@ export interface EventDetail extends Event {
     name: string;
     contact?: string;
   };
-  schedule?: EventScheduleItem[];
+  schedule?: ProgramScheduleItem[];
   images?: string[];
 }
 
-export interface EventScheduleItem {
+export interface ProgramScheduleItem {
   time: string;
   title: string;
   description?: string;
 }
 
-export type EventStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
+export type ProgramStatus = 'upcoming' | 'active' | 'completed' | 'cancelled';
 
-export interface EventListRequest {
+export interface ProgramListRequest {
   page?: number;
   limit?: number;
-  status?: EventStatus;
+  status?: ProgramStatus;
 }
 
-export interface EventListResponse {
-  events: Event[];
+export interface ProgramListResponse {
+  programs: Program[];
   totalCount: number;
   currentPage: number;
   totalPages: number;
@@ -58,7 +58,7 @@ export interface EventListResponse {
 // Error Types
 // =============================================================================
 
-export interface EventError {
+export interface ProgramError {
   type: 'validation' | 'network' | 'server' | 'unknown';
   message: string;
   field?: string;
@@ -68,11 +68,11 @@ export interface EventError {
 // Validation Functions
 // =============================================================================
 
-export function isValidEventStatus(status: string): status is EventStatus {
+export function isValidProgramStatus(status: string): status is ProgramStatus {
   return ['upcoming', 'active', 'completed', 'cancelled'].includes(status);
 }
 
-export function validateEventListRequest(request: EventListRequest): EventError | null {
+export function validateProgramListRequest(request: ProgramListRequest): ProgramError | null {
   if (request.page !== undefined && request.page < 1) {
     return {
       type: 'validation',
@@ -89,10 +89,10 @@ export function validateEventListRequest(request: EventListRequest): EventError 
     };
   }
 
-  if (request.status && !isValidEventStatus(request.status)) {
+  if (request.status && !isValidProgramStatus(request.status)) {
     return {
       type: 'validation',
-      message: 'Invalid event status',
+      message: 'Invalid program status',
       field: 'status'
     };
   }
@@ -104,35 +104,35 @@ export function validateEventListRequest(request: EventListRequest): EventError 
 // Utility Functions
 // =============================================================================
 
-export function isEventActive(event: Event): boolean {
+export function isProgramActive(program: Program): boolean {
   const now = new Date();
-  const startDate = new Date(event.startDate);
-  const endDate = new Date(event.endDate);
+  const startDate = new Date(program.startDate);
+  const endDate = new Date(program.endDate);
   
-  return event.status === 'active' && now >= startDate && now <= endDate;
+  return program.status === 'active' && now >= startDate && now <= endDate;
 }
 
-export function isEventUpcoming(event: Event): boolean {
+export function isProgramUpcoming(program: Program): boolean {
   const now = new Date();
-  const startDate = new Date(event.startDate);
+  const startDate = new Date(program.startDate);
   
-  return event.status === 'upcoming' && now < startDate;
+  return program.status === 'upcoming' && now < startDate;
 }
 
-export function canParticipateInEvent(event: Event): boolean {
-  if (!isEventActive(event) && !isEventUpcoming(event)) {
+export function canParticipateInProgram(program: Program): boolean {
+  if (!isProgramActive(program) && !isProgramUpcoming(program)) {
     return false;
   }
 
-  if (event.maxParticipants && event.currentParticipants >= event.maxParticipants) {
+  if (program.maxParticipants && program.currentParticipants >= program.maxParticipants) {
     return false;
   }
 
   return true;
 }
 
-export function getEventStatusLabel(status: EventStatus): string {
-  const labels: Record<EventStatus, string> = {
+export function getProgramStatusLabel(status: ProgramStatus): string {
+  const labels: Record<ProgramStatus, string> = {
     upcoming: '開催予定',
     active: '開催中',
     completed: '終了',
@@ -143,16 +143,16 @@ export function getEventStatusLabel(status: EventStatus): string {
 }
 
 // =============================================================================
-// Event Detail Utility Functions
+// Program Detail Utility Functions
 // =============================================================================
 
-export function formatEventDateTime(event: Event): {
+export function formatProgramDateTime(program: Program): {
   dateRange: string;
   timeRange: string;
   duration: string;
 } {
-  const startDate = new Date(event.startDate);
-  const endDate = new Date(event.endDate);
+  const startDate = new Date(program.startDate);
+  const endDate = new Date(program.endDate);
   
   const isSameDay = startDate.toDateString() === endDate.toDateString();
   
@@ -190,12 +190,12 @@ export function formatEventDateTime(event: Event): {
   return { dateRange, timeRange, duration };
 }
 
-export function getParticipationRate(event: Event): number {
-  if (!event.maxParticipants) return 0;
-  return Math.round((event.currentParticipants / event.maxParticipants) * 100);
+export function getParticipationRate(program: Program): number {
+  if (!program.maxParticipants) return 0;
+  return Math.round((program.currentParticipants / program.maxParticipants) * 100);
 }
 
-export function getRemainingSlots(event: Event): number | null {
-  if (!event.maxParticipants) return null;
-  return Math.max(0, event.maxParticipants - event.currentParticipants);
+export function getRemainingSlots(program: Program): number | null {
+  if (!program.maxParticipants) return null;
+  return Math.max(0, program.maxParticipants - program.currentParticipants);
 }

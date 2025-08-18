@@ -3,8 +3,8 @@ import Home from './routes/Home.svelte';
 import Login from './routes/Login.svelte';
 import LoginDigit from './routes/LoginDigit.svelte';
 import Register from './routes/Register.svelte';
-import EventList from './routes/EventList.svelte';
-import EventDetail from './routes/EventDetail.svelte';
+import ProgramList from './routes/ProgramList.svelte';
+import ProgramDetail from './routes/ProgramDetail.svelte';
 import NotFound from './routes/NotFound.svelte';
 
 export const routes = {
@@ -16,9 +16,9 @@ export const routes = {
   '/login/digit': LoginDigit,
   '/register': Register,
 
-  // イベント
-  '/event/list': EventList,
-  '/event/detail/:id': EventDetail,
+  // プログラム
+  '/program/list': ProgramList,
+  '/program/detail/:id': ProgramDetail,
 
   // 404
   '*': NotFound,

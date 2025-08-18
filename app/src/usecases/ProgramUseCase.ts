@@ -1,84 +1,84 @@
 /**
- * Event UseCase
- * イベント関連のビジネスロジックを管理
+ * Program UseCase
+ * プログラム関連のビジネスロジックを管理
  */
 
 import type { 
-  Event, 
-  EventDetail,
-  EventListRequest, 
-  EventListResponse, 
-  EventError 
-} from '../domain/event';
-import { validateEventListRequest } from '../domain/event';
-import type { EventRepository } from '../repositories/EventRepository';
+  Program, 
+  ProgramDetail,
+  ProgramListRequest, 
+  ProgramListResponse, 
+  ProgramError 
+} from '../domain/program';
+import { validateProgramListRequest } from '../domain/program';
+import type { ProgramRepository } from '../repositories/ProgramRepository';
 
 // =============================================================================
 // UseCase Interface
 // =============================================================================
 
-export interface EventUseCase {
+export interface ProgramUseCase {
   /**
-   * イベント一覧を取得（バリデーション付き）
+   * プログラム一覧を取得（バリデーション付き）
    */
-  getEventList(request?: EventListRequest): Promise<EventListResponse>;
+  getProgramList(request?: ProgramListRequest): Promise<ProgramListResponse>;
   
   /**
-   * イベント詳細を取得
+   * プログラム詳細を取得
    */
-  getEventDetail(id: number): Promise<EventDetail>;
+  getProgramDetail(id: number): Promise<ProgramDetail>;
 }
 
 // =============================================================================
 // Implementation
 // =============================================================================
 
-export class EventUseCaseImpl implements EventUseCase {
-  constructor(private eventRepository: EventRepository) {}
+export class ProgramUseCaseImpl implements ProgramUseCase {
+  constructor(private programRepository: ProgramRepository) {}
 
-  async getEventList(request: EventListRequest = {}): Promise<EventListResponse> {
+  async getProgramList(request: ProgramListRequest = {}): Promise<ProgramListResponse> {
     // バリデーション
-    const validationError = validateEventListRequest(request);
+    const validationError = validateProgramListRequest(request);
     if (validationError) {
       throw validationError;
     }
 
     // デフォルト値の設定
-    const normalizedRequest: EventListRequest = {
+    const normalizedRequest: ProgramListRequest = {
       page: request.page || 1,
       limit: request.limit || 20,
       status: request.status,
     };
 
     try {
-      const response = await this.eventRepository.getEventList(normalizedRequest);
+      const response = await this.programRepository.getProgramList(normalizedRequest);
       
-      // ビジネスロジック: イベントの並び順を調整
-      const sortedEvents = this.sortEventsByPriority(response.events);
+      // ビジネスロジック: プログラムの並び順を調整
+      const sortedPrograms = this.sortProgramsByPriority(response.programs);
       
       return {
         ...response,
-        events: sortedEvents,
+        programs: sortedPrograms,
       };
     } catch (error) {
       throw this.handleRepositoryError(error);
     }
   }
 
-  async getEventDetail(id: number): Promise<EventDetail> {
+  async getProgramDetail(id: number): Promise<ProgramDetail> {
     if (id <= 0) {
       throw {
         type: 'validation',
-        message: 'Invalid event ID',
+        message: 'Invalid program ID',
         field: 'id'
-      } as EventError;
+      } as ProgramError;
     }
 
     try {
-      const eventDetail = await this.eventRepository.getEventDetail(id);
+      const programDetail = await this.programRepository.getProgramDetail(id);
       
       // ビジネスロジック: 詳細情報の整理・加工
-      return this.enhanceEventDetail(eventDetail);
+      return this.enhanceProgramDetail(programDetail);
     } catch (error) {
       throw this.handleRepositoryError(error);
     }
@@ -89,13 +89,13 @@ export class EventUseCaseImpl implements EventUseCase {
   // =============================================================================
 
   /**
-   * イベントを優先度順にソート
+   * プログラムを優先度順にソート
    * ビジネスルール: active > upcoming > completed > cancelled
    */
-  private sortEventsByPriority(events: Event[]): Event[] {
+  private sortProgramsByPriority(programs: Program[]): Program[] {
     const priorityOrder = { active: 1, upcoming: 2, completed: 3, cancelled: 4 };
     
-    return events.sort((a, b) => {
+    return programs.sort((a, b) => {
       // ステータス優先度でソート
       const aPriority = priorityOrder[a.status];
       const bPriority = priorityOrder[b.status];
@@ -112,8 +112,8 @@ export class EventUseCaseImpl implements EventUseCase {
   /**
    * Repository エラーをUseCase エラーに変換
    */
-  private handleRepositoryError(error: unknown): EventError {
-    if (this.isEventError(error)) {
+  private handleRepositoryError(error: unknown): ProgramError {
+    if (this.isProgramError(error)) {
       return error;
     }
 
@@ -123,7 +123,7 @@ export class EventUseCaseImpl implements EventUseCase {
     };
   }
 
-  private isEventError(error: unknown): error is EventError {
+  private isProgramError(error: unknown): error is ProgramError {
     return (
       typeof error === 'object' &&
       error !== null &&
@@ -133,19 +133,19 @@ export class EventUseCaseImpl implements EventUseCase {
   }
 
   /**
-   * イベント詳細の情報を整理・加工
+   * プログラム詳細の情報を整理・加工
    */
-  private enhanceEventDetail(eventDetail: EventDetail): EventDetail {
+  private enhanceProgramDetail(programDetail: ProgramDetail): ProgramDetail {
     return {
-      ...eventDetail,
+      ...programDetail,
       // ビジネスロジック: スケジュールを時間順でソート
-      schedule: eventDetail.schedule?.sort((a, b) => {
+      schedule: programDetail.schedule?.sort((a, b) => {
         return a.time.localeCompare(b.time);
       }),
       // ビジネスロジック: 空の配列をundefinedに統一
-      requirements: eventDetail.requirements?.length ? eventDetail.requirements : undefined,
-      benefits: eventDetail.benefits?.length ? eventDetail.benefits : undefined,
-      images: eventDetail.images?.length ? eventDetail.images : undefined,
+      requirements: programDetail.requirements?.length ? programDetail.requirements : undefined,
+      benefits: programDetail.benefits?.length ? programDetail.benefits : undefined,
+      images: programDetail.images?.length ? programDetail.images : undefined,
     };
   }
 }
@@ -154,6 +154,6 @@ export class EventUseCaseImpl implements EventUseCase {
 // Factory Function
 // =============================================================================
 
-export function createEventUseCase(eventRepository: EventRepository): EventUseCase {
-  return new EventUseCaseImpl(eventRepository);
+export function createProgramUseCase(programRepository: ProgramRepository): ProgramUseCase {
+  return new ProgramUseCaseImpl(programRepository);
 }
