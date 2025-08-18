@@ -2,18 +2,18 @@
   import { onMount, onDestroy } from 'svelte';
   import { push } from 'svelte-spa-router';
   import {
-    eventDetailStore,
-    isEventDetailLoading,
-    eventDetailError,
-    currentEventDetail,
-  } from '../stores/event';
+    programDetailStore,
+    isProgramDetailLoading,
+    programDetailError,
+    currentProgramDetail,
+  } from '../stores/program';
   import {
-    getEventStatusLabel,
-    formatEventDateTime,
+    getProgramStatusLabel,
+    formatProgramDateTime,
     getParticipationRate,
     getRemainingSlots,
-    canParticipateInEvent,
-  } from '../domain/event';
+    canParticipateInProgram,
+  } from '../domain/program';
   import Layout from '../components/Layout.svelte';
   import Button from '../components/Button.svelte';
   import Loading from '../components/Loading.svelte';
@@ -22,55 +22,59 @@
   export let params: { id: string } = { id: '' };
 
   // Reactive store subscriptions
-  $: eventDetail = $currentEventDetail;
-  $: loading = $isEventDetailLoading;
-  $: error = $eventDetailError;
+  $: programDetail = $currentProgramDetail;
+  $: loading = $isProgramDetailLoading;
+  $: error = $programDetailError;
 
-  // Event ID from route params
-  $: eventId = parseInt(params.id);
+  // Program ID from route params
+  $: programId = parseInt(params.id);
 
-  // イベント情報の計算
-  $: dateTimeInfo = eventDetail ? formatEventDateTime(eventDetail) : null;
-  $: participationRate = eventDetail ? getParticipationRate(eventDetail) : 0;
-  $: remainingSlots = eventDetail ? getRemainingSlots(eventDetail) : null;
-  $: canParticipate = eventDetail ? canParticipateInEvent(eventDetail) : false;
+  // プログラム情報の計算
+  $: dateTimeInfo = programDetail ? formatProgramDateTime(programDetail) : null;
+  $: participationRate = programDetail
+    ? getParticipationRate(programDetail)
+    : 0;
+  $: remainingSlots = programDetail ? getRemainingSlots(programDetail) : null;
+  $: canParticipate = programDetail
+    ? canParticipateInProgram(programDetail)
+    : false;
 
   onMount(() => {
-    if (eventId && !isNaN(eventId)) {
-      eventDetailStore.loadEventDetail(eventId);
+    if (programId && !isNaN(programId)) {
+      programDetailStore.loadProgramDetail(programId);
     }
   });
 
   onDestroy(() => {
     // コンポーネント離脱時にストアをリセット
-    eventDetailStore.reset();
+    programDetailStore.reset();
   });
 
   function handleBackToList() {
-    push('/event/list');
+    push('/program/list');
   }
 
   function handleParticipate() {
     // TODO: 参加申し込み機能の実装
-    console.log('参加申し込み:', eventDetail?.id);
+    console.log('参加申し込み:', programDetail?.id);
     alert('参加申し込み機能は今後実装予定です');
   }
 
   function clearError() {
-    eventDetailStore.clearError();
+    programDetailStore.clearError();
   }
 </script>
 
 <Layout
-  title={eventDetail
-    ? `${eventDetail.title} - Beauty Experience`
-    : 'イベント詳細 - Beauty Experience'}
+  title={programDetail
+    ? `${programDetail.title} - Beauty Experience`
+    : 'プログラム詳細 - Beauty Experience'}
 >
-  <div class="event-detail-container">
+  <div class="program-detail-container">
     <!-- 戻るボタン -->
     <div class="back-navigation">
       <Button variant="outline" on:click={handleBackToList}>
-        ← イベント一覧に戻る
+        ← プログラム一覧に戻る
       </Button>
     </div>
 
@@ -85,42 +89,42 @@
 
     <!-- ローディング表示 -->
     {#if loading}
-      <Loading message="イベント詳細を読み込み中..." />
-    {:else if eventDetail}
-      <article class="event-detail">
+      <Loading message="プログラム詳細を読み込み中..." />
+    {:else if programDetail}
+      <article class="program-detail">
         <!-- ヘッダー画像 -->
-        {#if eventDetail.imageUrl}
-          <div class="event-hero">
+        {#if programDetail.imageUrl}
+          <div class="program-hero">
             <img
-              src={eventDetail.imageUrl}
-              alt={eventDetail.title}
+              src={programDetail.imageUrl}
+              alt={programDetail.title}
               class="hero-image"
             />
             <div class="hero-overlay">
-              <span class="status-badge status-{eventDetail.status}">
-                {getEventStatusLabel(eventDetail.status)}
+              <span class="status-badge status-{programDetail.status}">
+                {getProgramStatusLabel(programDetail.status)}
               </span>
             </div>
           </div>
         {/if}
 
-        <!-- イベント基本情報 -->
-        <header class="event-header">
-          <h1 class="event-title">{eventDetail.title}</h1>
-          <p class="event-description">{eventDetail.description}</p>
+        <!-- プログラム基本情報 -->
+        <header class="program-header">
+          <h1 class="program-title">{programDetail.title}</h1>
+          <p class="program-description">{programDetail.description}</p>
         </header>
 
         <!-- 参加情報 -->
         <section class="participation-info">
           <div class="participation-card">
             <div class="participation-stats">
-              {#if eventDetail.maxParticipants}
+              {#if programDetail.maxParticipants}
                 <div class="stat">
                   <span class="stat-number"
-                    >{eventDetail.currentParticipants}</span
+                    >{programDetail.currentParticipants}</span
                   >
                   <span class="stat-label"
-                    >/ {eventDetail.maxParticipants}名</span
+                    >/ {programDetail.maxParticipants}名</span
                   >
                 </div>
                 <div class="progress-bar">
@@ -137,7 +141,7 @@
               {:else}
                 <div class="stat">
                   <span class="stat-number"
-                    >{eventDetail.currentParticipants}</span
+                    >{programDetail.currentParticipants}</span
                   >
                   <span class="stat-label">名参加</span>
                 </div>
@@ -153,11 +157,11 @@
                 >
                   参加申し込み
                 </Button>
-              {:else if eventDetail.status === 'completed'}
+              {:else if programDetail.status === 'completed'}
                 <Button variant="disabled" disabled size="large">
                   終了済み
                 </Button>
-              {:else if eventDetail.maxParticipants && eventDetail.currentParticipants >= eventDetail.maxParticipants}
+              {:else if programDetail.maxParticipants && programDetail.currentParticipants >= programDetail.maxParticipants}
                 <Button variant="disabled" disabled size="large">満員</Button>
               {:else}
                 <Button variant="disabled" disabled size="large">
@@ -168,15 +172,15 @@
           </div>
         </section>
 
-        <!-- イベント詳細情報 -->
-        <div class="event-content">
+        <!-- プログラム詳細情報 -->
+        <div class="program-content">
           <div class="content-main">
             <!-- 詳細説明 -->
-            {#if eventDetail.longDescription}
+            {#if programDetail.longDescription}
               <section class="section">
                 <h2>詳細説明</h2>
                 <div class="long-description">
-                  {#each eventDetail.longDescription.split('\n') as paragraph}
+                  {#each programDetail.longDescription.split('\n') as paragraph}
                     {#if paragraph.trim()}
                       <p>{paragraph}</p>
                     {/if}
@@ -186,11 +190,11 @@
             {/if}
 
             <!-- スケジュール -->
-            {#if eventDetail.schedule && eventDetail.schedule.length > 0}
+            {#if programDetail.schedule && programDetail.schedule.length > 0}
               <section class="section">
                 <h2>タイムスケジュール</h2>
                 <div class="schedule-list">
-                  {#each eventDetail.schedule as item}
+                  {#each programDetail.schedule as item}
                     <div class="schedule-item">
                       <div class="schedule-time">{item.time}</div>
                       <div class="schedule-content">
@@ -206,11 +210,11 @@
             {/if}
 
             <!-- 参加条件 -->
-            {#if eventDetail.requirements && eventDetail.requirements.length > 0}
+            {#if programDetail.requirements && programDetail.requirements.length > 0}
               <section class="section">
                 <h2>参加条件</h2>
                 <ul class="requirements-list">
-                  {#each eventDetail.requirements as requirement}
+                  {#each programDetail.requirements as requirement}
                     <li>{requirement}</li>
                   {/each}
                 </ul>
@@ -218,11 +222,11 @@
             {/if}
 
             <!-- 特典 -->
-            {#if eventDetail.benefits && eventDetail.benefits.length > 0}
+            {#if programDetail.benefits && programDetail.benefits.length > 0}
               <section class="section">
                 <h2>参加特典</h2>
                 <ul class="benefits-list">
-                  {#each eventDetail.benefits as benefit}
+                  {#each programDetail.benefits as benefit}
                     <li>{benefit}</li>
                   {/each}
                 </ul>
@@ -249,29 +253,31 @@
                     <span class="info-value">{dateTimeInfo.duration}</span>
                   </div>
                 {/if}
-                {#if eventDetail.location}
+                {#if programDetail.location}
                   <div class="info-item">
                     <span class="info-label">会場</span>
-                    <span class="info-value">{eventDetail.location}</span>
+                    <span class="info-value">{programDetail.location}</span>
                   </div>
                 {/if}
               </div>
             </section>
 
             <!-- 主催者情報 -->
-            {#if eventDetail.organizer}
+            {#if programDetail.organizer}
               <section class="info-card">
                 <h3>主催者</h3>
                 <div class="info-list">
                   <div class="info-item">
                     <span class="info-label">団体名</span>
-                    <span class="info-value">{eventDetail.organizer.name}</span>
+                    <span class="info-value"
+                      >{programDetail.organizer.name}</span
+                    >
                   </div>
-                  {#if eventDetail.organizer.contact}
+                  {#if programDetail.organizer.contact}
                     <div class="info-item">
                       <span class="info-label">連絡先</span>
                       <span class="info-value"
-                        >{eventDetail.organizer.contact}</span
+                        >{programDetail.organizer.contact}</span
                       >
                     </div>
                   {/if}
@@ -282,14 +288,14 @@
         </div>
 
         <!-- 追加画像 -->
-        {#if eventDetail.images && eventDetail.images.length > 1}
+        {#if programDetail.images && programDetail.images.length > 1}
           <section class="section">
-            <h2>イベント画像</h2>
+            <h2>プログラム画像</h2>
             <div class="image-gallery">
-              {#each eventDetail.images as image, index}
+              {#each programDetail.images as image, index}
                 <img
                   src={image}
-                  alt={`${eventDetail.title} - 画像 ${index + 1}`}
+                  alt={`${programDetail.title} - 画像 ${index + 1}`}
                   class="gallery-image"
                 />
               {/each}
@@ -299,10 +305,10 @@
       </article>
     {:else if !loading}
       <div class="not-found">
-        <h2>イベントが見つかりません</h2>
-        <p>指定されたイベントは存在しないか、削除された可能性があります。</p>
+        <h2>プログラムが見つかりません</h2>
+        <p>指定されたプログラムは存在しないか、削除された可能性があります。</p>
         <Button variant="primary" on:click={handleBackToList}>
-          イベント一覧に戻る
+          プログラム一覧に戻る
         </Button>
       </div>
     {/if}
@@ -310,7 +316,7 @@
 </Layout>
 
 <style>
-  .event-detail-container {
+  .program-detail-container {
     max-width: 1200px;
     margin: 0 auto;
   }
@@ -319,7 +325,7 @@
     margin-bottom: 2rem;
   }
 
-  .event-detail {
+  .program-detail {
     background: white;
     border-radius: 8px;
     overflow: hidden;
@@ -327,7 +333,7 @@
   }
 
   /* Hero Section */
-  .event-hero {
+  .program-hero {
     position: relative;
     height: 300px;
     overflow: hidden;
@@ -371,19 +377,19 @@
   }
 
   /* Header */
-  .event-header {
+  .program-header {
     padding: 2rem;
     border-bottom: 1px solid #e5e7eb;
   }
 
-  .event-title {
+  .program-title {
     font-size: 2rem;
     color: #1f2937;
     margin: 0 0 1rem 0;
     line-height: 1.3;
   }
 
-  .event-description {
+  .program-description {
     font-size: 1.125rem;
     color: #6b7280;
     margin: 0;
@@ -453,7 +459,7 @@
   }
 
   /* Content */
-  .event-content {
+  .program-content {
     display: grid;
     grid-template-columns: 1fr 300px;
     gap: 2rem;
@@ -614,7 +620,7 @@
 
   /* Responsive Design */
   @media (max-width: 768px) {
-    .event-content {
+    .program-content {
       grid-template-columns: 1fr;
     }
 
@@ -627,7 +633,7 @@
       text-align: center;
     }
 
-    .event-title {
+    .program-title {
       font-size: 1.5rem;
     }
 

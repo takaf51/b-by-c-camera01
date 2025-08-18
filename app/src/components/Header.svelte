@@ -24,7 +24,7 @@
   // Navigation items
   $: navigationItems = [
     { href: '/', label: 'ホーム', auth: false },
-    { href: '/event/list', label: 'イベント', auth: true },
+    { href: '/program/list', label: 'プログラム', auth: true },
     // 今後追加予定
     // { href: '/plan/list', label: 'プラン', auth: true },
     // { href: '/mypage', label: 'マイページ', auth: true },

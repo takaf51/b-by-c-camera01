@@ -4,7 +4,7 @@ import { AuthError, NetworkError } from '../domain/auth';
 export interface HttpConfig {
   baseUrl: string;
   getToken?: () => string | null;
-  getEventCode?: () => string | null;
+  getProgramCode?: () => string | null;
   getPlanCode?: () => string | null;
 }
 
@@ -109,10 +109,10 @@ export class HttpClient {
       headers.Authorization = `Bearer ${token}`;
     }
 
-    // イベントコードの付与
-    const eventCode = this.config.getEventCode?.();
-    if (eventCode) {
-      headers['X-Event-Code'] = eventCode;
+    // プログラムコードの付与
+    const programCode = this.config.getProgramCode?.();
+    if (programCode) {
+      headers['X-Program-Code'] = programCode;
     }
 
     // プランコードの付与
@@ -173,13 +173,13 @@ export class HttpClient {
 // 環境変数からHTTPクライアントを作成
 export function createHttpClient(
   getToken?: () => string | null,
-  getEventCode?: () => string | null,
+  getProgramCode?: () => string | null,
   getPlanCode?: () => string | null
 ): HttpClient {
   const config: HttpConfig = {
     baseUrl: import.meta.env.VITE_API_BASE_URL || '',
     getToken,
-    getEventCode,
+    getProgramCode,
     getPlanCode,
   };
 

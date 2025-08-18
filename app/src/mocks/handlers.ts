@@ -113,14 +113,14 @@ export const programHandlers = [
     const allPrograms = [
       {
         id: 1,
-        title: 'ビューティ体験イベント Vol.1',
-        description: '最新の美容機器を体験できるイベントです。プロのスタッフがサポートします。',
+        title: 'ビューティ体験プログラム Vol.1',
+        description: '最新の美容機器を体験できるプログラムです。プロのスタッフがサポートします。',
         status: 'active',
         startDate: '2024-01-15T10:00:00Z',
         endDate: '2024-01-15T18:00:00Z',
         maxParticipants: 20,
         currentParticipants: 12,
-        imageUrl: '/images/programs/event1.jpg',
+        imageUrl: '/images/programs/program1.jpg',
         programCode: 'BEAUTY001'
       },
       {
@@ -132,7 +132,7 @@ export const programHandlers = [
         endDate: '2024-01-20T17:00:00Z',
         maxParticipants: 15,
         currentParticipants: 3,
-        imageUrl: '/images/programs/event2.jpg',
+        imageUrl: '/images/programs/program2.jpg',
         programCode: 'FACIAL002'
       },
       {
@@ -144,25 +144,25 @@ export const programHandlers = [
         endDate: '2024-01-10T16:00:00Z',
         maxParticipants: 30,
         currentParticipants: 25,
-        imageUrl: '/images/programs/event3.jpg',
+        imageUrl: '/images/programs/program3.jpg',
         programCode: 'SKIN003'
       },
       {
         id: 4,
         title: '新春ビューティフェア',
-        description: '年始特別企画のビューティイベントです。',
+        description: '年始特別企画のビューティプログラムです。',
         status: 'upcoming',
         startDate: '2024-02-01T10:00:00Z',
         endDate: '2024-02-01T18:00:00Z',
         currentParticipants: 0,
-        imageUrl: '/images/programs/event4.jpg',
+        imageUrl: '/images/programs/program4.jpg',
         programCode: 'FAIR004'
       }
     ];
 
     // ステータスでフィルタ
     let filteredEvents = status 
-      ? allPrograms.filter(event => event.status === status)
+      ? allPrograms.filter(program => program.status === status)
       : allPrograms;
 
     // ページネーション
@@ -190,19 +190,19 @@ export const programHandlers = [
     const programDetailData: Record<number, any> = {
       1: {
         id: 1,
-        title: 'ビューティ体験イベント Vol.1',
-        description: '最新の美容機器を体験できるイベントです。プロのスタッフがサポートします。',
-        longDescription: `最新の美容機器を実際に体験できる特別なイベントです。
+        title: 'ビューティ体験プログラム Vol.1',
+        description: '最新の美容機器を体験できるプログラムです。プロのスタッフがサポートします。',
+        longDescription: `最新の美容機器を実際に体験できる特別なプログラムです。
 
-このイベントでは、最先端のスキンケア機器やフェイシャルケア機器を実際に使用して、その効果を体感いただけます。経験豊富なプロのスタッフが一人ひとりに合わせてサポートし、機器の使用方法から効果的なケア方法まで丁寧にご案内いたします。
+このプログラムでは、最先端のスキンケア機器やフェイシャルケア機器を実際に使用して、その効果を体感いただけます。経験豊富なプロのスタッフが一人ひとりに合わせてサポートし、機器の使用方法から効果的なケア方法まで丁寧にご案内いたします。
 
-イベント終了後には、参加者限定の特別価格での製品購入も可能です。`,
+プログラム終了後には、参加者限定の特別価格での製品購入も可能です。`,
         status: 'active',
         startDate: '2024-01-15T10:00:00Z',
         endDate: '2024-01-15T18:00:00Z',
         maxParticipants: 20,
         currentParticipants: 12,
-        imageUrl: '/images/programs/event1.jpg',
+        imageUrl: '/images/programs/program1.jpg',
         programCode: 'BEAUTY001',
         location: '東京都渋谷区渋谷1-1-1 ビューティセンター3F',
         requirements: [
@@ -218,13 +218,13 @@ export const programHandlers = [
         ],
         organizer: {
           name: 'ビューティテック株式会社',
-          contact: 'event@beauty-tech.co.jp'
+          contact: 'program@beauty-tech.co.jp'
         },
         schedule: [
           {
             time: '10:00',
             title: '受付開始・ウェルカムドリンク',
-            description: '参加者確認とイベント概要の説明'
+            description: '参加者確認とプログラム概要の説明'
           },
           {
             time: '10:30',
@@ -263,9 +263,9 @@ export const programHandlers = [
           }
         ],
         images: [
-          '/images/programs/event1-main.jpg',
-          '/images/programs/event1-demo.jpg',
-          '/images/programs/event1-venue.jpg'
+          '/images/programs/program1-main.jpg',
+          '/images/programs/program1-demo.jpg',
+          '/images/programs/program1-venue.jpg'
         ]
       },
       2: {
@@ -274,7 +274,7 @@ export const programHandlers = [
         description: 'AI技術を使った肌診断を無料で体験できます。',
         longDescription: `最新のAI技術を駆使した肌診断システムで、あなたの肌状態を詳しく分析します。
 
-このイベントでは、高精度な肌診断機器を使用して、肌の水分量、油分、ハリ、シミ、しわなどを総合的に分析し、一人ひとりに最適なスキンケア方法をご提案いたします。
+このプログラムでは、高精度な肌診断機器を使用して、肌の水分量、油分、ハリ、シミ、しわなどを総合的に分析し、一人ひとりに最適なスキンケア方法をご提案いたします。
 
 診断結果に基づいた個別のアドバイスも専門スタッフが行います。`,
         status: 'upcoming',
@@ -282,7 +282,7 @@ export const programHandlers = [
         endDate: '2024-01-20T17:00:00Z',
         maxParticipants: 15,
         currentParticipants: 3,
-        imageUrl: '/images/programs/event2.jpg',
+        imageUrl: '/images/programs/program2.jpg',
         programCode: 'FACIAL002',
         location: '東京都新宿区新宿2-2-2 スキンケアサロン',
         requirements: [
@@ -321,48 +321,48 @@ export const programHandlers = [
           }
         ],
         images: [
-          '/images/programs/event2-main.jpg',
-          '/images/programs/event2-ai.jpg'
+          '/images/programs/program2-main.jpg',
+          '/images/programs/program2-ai.jpg'
         ]
       }
     };
 
     // 存在しないIDの場合はデフォルトデータを返す
-    const eventDetail = programDetailData[id] || {
+    const programDetail = programDetailData[id] || {
       id,
-      title: `イベント ${id}`,
-      description: `イベント ${id} の詳細説明です。`,
-      longDescription: `イベント ${id} の詳細な説明がここに入ります。このイベントでは様々な体験ができます。`,
+      title: `プログラム ${id}`,
+      description: `プログラム ${id} の詳細説明です。`,
+      longDescription: `プログラム ${id} の詳細な説明がここに入ります。このプログラムでは様々な体験ができます。`,
       status: 'active',
       startDate: '2024-01-15T10:00:00Z',
       endDate: '2024-01-15T18:00:00Z',
       maxParticipants: 20,
       currentParticipants: 10,
-      imageUrl: `/images/programs/event${id}.jpg`,
+      imageUrl: `/images/programs/program${id}.jpg`,
       programCode: `EVENT${id.toString().padStart(3, '0')}`,
-      location: `東京都渋谷区 イベント会場${id}`,
+      location: `東京都渋谷区 プログラム会場${id}`,
       requirements: ['18歳以上の方'],
       benefits: ['特別体験', 'サンプルプレゼント'],
       organizer: {
-        name: `イベント運営${id}`,
-        contact: `event${id}@example.com`
+        name: `プログラム運営${id}`,
+        contact: `program${id}@example.com`
       },
       schedule: [
         {
           time: '10:00',
           title: '受付開始',
-          description: 'イベント受付'
+          description: 'プログラム受付'
         },
         {
           time: '11:00',
-          title: 'メインイベント',
-          description: 'イベントの主要プログラム'
+          title: 'メインプログラム',
+          description: 'プログラムの主要プログラム'
         }
       ],
-      images: [`/images/programs/event${id}.jpg`]
+      images: [`/images/programs/program${id}.jpg`]
     };
 
-    return HttpResponse.json(eventDetail);
+    return HttpResponse.json(programDetail);
   }),
 ];
 

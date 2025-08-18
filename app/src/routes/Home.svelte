@@ -16,11 +16,11 @@
     {#if $auth.isAuthenticated}
       <div class="welcome">
         <h2>ようこそ、{$auth.user?.name || 'ゲスト'}さん</h2>
-        <p>認証が完了しました。美容体験イベントを探してみましょう。</p>
+        <p>認証が完了しました。美容体験プログラムを探してみましょう。</p>
 
         <div class="actions">
-          <a href="/event/list" use:link class="link-button">
-            <Button variant="primary">イベント一覧</Button>
+          <a href="/program/list" use:link class="link-button">
+            <Button variant="primary">プログラム一覧</Button>
           </a>
           <Button
             variant="danger"

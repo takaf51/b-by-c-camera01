@@ -36,7 +36,7 @@ function createAuthUseCase(): AuthUseCase {
   // HTTPクライアント作成（トークン取得関数を渡す）
   const httpClient = createHttpClient(
     () => get(authState).token, // 現在のトークンを取得
-    () => import.meta.env.VITE_EVENT_CODE,
+    () => import.meta.env.VITE_PROGRAM_CODE,
     () => import.meta.env.VITE_PLAN_CODE
   );
 

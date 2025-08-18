@@ -2,84 +2,93 @@
   import { onMount } from 'svelte';
   import { push } from 'svelte-spa-router';
   import {
-    eventStore,
-    isEventsLoading,
-    eventsError,
-    eventsPagination,
-  } from '../stores/event';
-  import { getEventStatusLabel } from '../domain/event';
-  import type { Event } from '../domain/event';
+    programStore,
+    isProgramLoading,
+    programError,
+    programPagination,
+  } from '../stores/program';
+  import { getProgramStatusLabel } from '../domain/program';
+  import type { Program } from '../domain/program';
   import Layout from '../components/Layout.svelte';
   import Button from '../components/Button.svelte';
   import Loading from '../components/Loading.svelte';
   import ErrorBanner from '../components/ErrorBanner.svelte';
 
   // Reactive store subscriptions
-  $: events = $eventStore.events;
-  $: loading = $isEventsLoading;
-  $: error = $eventsError;
-  $: pagination = $eventsPagination;
+  $: programs = $programStore.programs;
+  $: loading = $isProgramLoading;
+  $: error = $programError;
+  $: pagination = $programPagination;
 
   // 選択されたステータスフィルタ
-  let selectedStatus: Event['status'] | 'all' = 'all';
+  let selectedStatus: Program['status'] | 'all' = 'all';
 
   // 初回データ読み込み
   onMount(() => {
-    eventStore.loadEventList();
+    programStore.loadPrograms();
   });
 
   // ステータスフィルタ変更時の処理
   function handleStatusFilter() {
-    if (selectedStatus === 'all') {
-      eventStore.filterByStatus();
-    } else {
-      eventStore.filterByStatus(selectedStatus);
-    }
+    const request = selectedStatus === 'all' ? {} : { status: selectedStatus };
+    programStore.loadPrograms(request);
   }
 
   // ページネーション
   function goToNextPage() {
-    eventStore.loadNextPage();
+    if (pagination.currentPage < pagination.totalPages) {
+      const request =
+        selectedStatus === 'all'
+          ? { page: pagination.currentPage + 1 }
+          : { page: pagination.currentPage + 1, status: selectedStatus };
+      programStore.loadPrograms(request);
+    }
   }
 
   function goToPrevPage() {
-    eventStore.loadPrevPage();
+    if (pagination.currentPage > 1) {
+      const request =
+        selectedStatus === 'all'
+          ? { page: pagination.currentPage - 1 }
+          : { page: pagination.currentPage - 1, status: selectedStatus };
+      programStore.loadPrograms(request);
+    }
   }
 
   // エラー解除
   function clearError() {
-    eventStore.clearError();
+    programStore.clearError();
   }
 
-  // イベント参加可否の判定
-  function canParticipate(event: Event): boolean {
-    if (event.status !== 'active' && event.status !== 'upcoming') {
+  // プログラム参加可否の判定
+  function canParticipate(program: Program): boolean {
+    if (program.status !== 'active' && program.status !== 'upcoming') {
       return false;
     }
     if (
-      event.maxParticipants &&
-      event.currentParticipants >= event.maxParticipants
+      program.maxParticipants &&
+      program.currentParticipants >= program.maxParticipants
     ) {
       return false;
     }
     return true;
   }
 
-  // イベント詳細ページへの遷移
-  function goToEventDetail(eventId: number) {
-    push(`/event/detail/${eventId}`);
+  // プログラム詳細ページへの遷移
+  function goToProgramDetail(programId: number) {
+    push(`/program/detail/${programId}`);
   }
 </script>
 
-<Layout title="Beauty Experience - イベント一覧">
+<Layout title="Beauty Experience - プログラム一覧">
   <header class="page-header">
-    <h1>イベント一覧</h1>
-    <p>美容体験イベントに参加して、新しい発見をしましょう</p>
+    <h1>プログラム一覧</h1>
+    <p>美容体験プログラムに参加して、新しい発見をしましょう</p>
   </header>
 
   <!-- ステータスフィルタ -->
   <div class="filter-section">
-    <label for="status-filter">イベントステータス:</label>
+    <label for="status-filter">プログラムステータス:</label>
     <select
       id="status-filter"
       bind:value={selectedStatus}
@@ -100,67 +109,70 @@
 
   <!-- ローディング表示 -->
   {#if loading}
-    <Loading message="イベントを読み込み中..." />
+    <Loading message="プログラムを読み込み中..." />
   {:else}
-    <!-- イベントリスト -->
-    <div class="events-grid">
-      {#each events as event (event.id)}
-        <article class="event-card">
-          <!-- イベント画像 -->
-          {#if event.imageUrl}
-            <div class="event-image">
-              <img src={event.imageUrl} alt={event.title} />
+    <!-- プログラムリスト -->
+    <div class="programs-grid">
+      {#each programs as program (program.id)}
+        <article class="program-card">
+          <!-- プログラム画像 -->
+          {#if program.imageUrl}
+            <div class="program-image">
+              <img src={program.imageUrl} alt={program.title} />
             </div>
           {/if}
 
-          <!-- イベント情報 -->
-          <div class="event-info">
-            <header class="event-header">
-              <h2>{event.title}</h2>
-              <span class="status-badge status-{event.status}">
-                {getEventStatusLabel(event.status)}
+          <!-- プログラム情報 -->
+          <div class="program-info">
+            <header class="program-header">
+              <h2>{program.title}</h2>
+              <span class="status-badge status-{program.status}">
+                {getProgramStatusLabel(program.status)}
               </span>
             </header>
 
-            <p class="event-description">{event.description}</p>
+            <p class="program-description">{program.description}</p>
 
-            <div class="event-meta">
-              <div class="event-dates">
+            <div class="program-meta">
+              <div class="program-dates">
                 <p>
                   <strong>開始:</strong>
-                  {new Date(event.startDate).toLocaleDateString('ja-JP')}
+                  {new Date(program.startDate).toLocaleDateString('ja-JP')}
                 </p>
                 <p>
                   <strong>終了:</strong>
-                  {new Date(event.endDate).toLocaleDateString('ja-JP')}
+                  {new Date(program.endDate).toLocaleDateString('ja-JP')}
                 </p>
               </div>
 
-              <div class="event-participants">
-                {#if event.maxParticipants}
+              <div class="program-participants">
+                {#if program.maxParticipants}
                   <p>
                     <strong>参加者:</strong>
-                    {event.currentParticipants} / {event.maxParticipants}名
+                    {program.currentParticipants} / {program.maxParticipants}名
                   </p>
                 {:else}
-                  <p><strong>参加者:</strong> {event.currentParticipants}名</p>
+                  <p>
+                    <strong>参加者:</strong>
+                    {program.currentParticipants}名
+                  </p>
                 {/if}
               </div>
             </div>
 
-            <div class="event-actions">
+            <div class="program-actions">
               <Button
                 variant="primary"
-                on:click={() => goToEventDetail(event.id)}
+                on:click={() => goToProgramDetail(program.id)}
               >
                 詳細を見る
               </Button>
 
-              {#if canParticipate(event)}
+              {#if canParticipate(program)}
                 <Button variant="secondary">参加する</Button>
-              {:else if event.status === 'completed'}
+              {:else if program.status === 'completed'}
                 <Button variant="disabled" disabled>終了済み</Button>
-              {:else if event.maxParticipants && event.currentParticipants >= event.maxParticipants}
+              {:else if program.maxParticipants && program.currentParticipants >= program.maxParticipants}
                 <Button variant="disabled" disabled>満員</Button>
               {:else}
                 <Button variant="disabled" disabled>参加不可</Button>
@@ -172,11 +184,11 @@
     </div>
 
     <!-- 検索結果が空の場合 -->
-    {#if events.length === 0}
+    {#if programs.length === 0}
       <div class="empty-state">
-        <p>🔍 条件に合うイベントが見つかりませんでした</p>
-        <Button variant="primary" on:click={() => eventStore.loadEventList()}>
-          すべてのイベントを表示
+        <p>🔍 条件に合うプログラムが見つかりませんでした</p>
+        <Button variant="primary" on:click={() => programStore.loadPrograms()}>
+          すべてのプログラムを表示
         </Button>
       </div>
     {/if}
@@ -186,7 +198,7 @@
       <div class="pagination">
         <Button
           variant="outline"
-          disabled={!pagination.hasPrevPage || loading}
+          disabled={pagination.currentPage <= 1 || loading}
           on:click={goToPrevPage}
         >
           ← 前のページ
@@ -198,7 +210,7 @@
 
         <Button
           variant="outline"
-          disabled={!pagination.hasNextPage || loading}
+          disabled={pagination.currentPage >= pagination.totalPages || loading}
           on:click={goToNextPage}
         >
           次のページ →
@@ -244,14 +256,14 @@
     font-size: 1rem;
   }
 
-  .events-grid {
+  .programs-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 30px;
     margin-bottom: 40px;
   }
 
-  .event-card {
+  .program-card {
     border: 1px solid #ddd;
     border-radius: 8px;
     overflow: hidden;
@@ -262,34 +274,34 @@
       box-shadow 0.2s;
   }
 
-  .event-card:hover {
+  .program-card:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
   }
 
-  .event-image {
+  .program-image {
     height: 200px;
     overflow: hidden;
   }
 
-  .event-image img {
+  .program-image img {
     width: 100%;
     height: 100%;
     object-fit: cover;
   }
 
-  .event-info {
+  .program-info {
     padding: 20px;
   }
 
-  .event-header {
+  .program-header {
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
     margin-bottom: 15px;
   }
 
-  .event-header h2 {
+  .program-header h2 {
     font-size: 1.4rem;
     color: #333;
     margin: 0;
@@ -322,23 +334,23 @@
     color: #383d41;
   }
 
-  .event-description {
+  .program-description {
     color: #666;
     line-height: 1.5;
     margin-bottom: 15px;
   }
 
-  .event-meta {
+  .program-meta {
     margin-bottom: 20px;
     font-size: 0.9rem;
   }
 
-  .event-meta p {
+  .program-meta p {
     margin: 5px 0;
     color: #555;
   }
 
-  .event-actions {
+  .program-actions {
     display: flex;
     gap: 10px;
   }
