@@ -52,7 +52,11 @@
         自分（ i ）を愛でる（＝）ように<br />360°見つめ直し（！）
       </p>
       <div class="logo-container">
-        <img src="/assets/images/logo.svg" alt="ロゴ" class="service-logo" />
+        <img
+          src="/images/common/logo.svg"
+          alt="EQUAL=i ロゴ"
+          class="service-logo"
+        />
       </div>
       <div class="brand-name">EQUAL=i</div>
     </div>

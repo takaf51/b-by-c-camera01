@@ -10,7 +10,14 @@
   <div class="header-container">
     <!-- Back Button (if needed) -->
     {#if showBackButton}
-      <a href={backUrl} use:link class="back-button"> ← 戻る </a>
+      <a
+        href={backUrl}
+        use:link
+        class="back-button"
+        aria-label="前のページに戻る"
+      >
+        <span class="arrow-back"></span>
+      </a>
     {/if}
 
     <!-- Logo -->
@@ -48,18 +55,30 @@
 
   .back-button {
     position: absolute;
-    left: 1rem;
-    color: #fff;
+    left: 16px;
+    top: 50%;
+    transform: translateY(-50%);
     text-decoration: none;
-    font-weight: 500;
-    padding: 0.5rem 1rem;
-    background: rgba(255, 255, 255, 0.1);
-    border-radius: 20px;
-    transition: background 0.2s;
+    padding: 0.5rem;
   }
 
-  .back-button:hover {
-    background: rgba(255, 255, 255, 0.2);
+  .arrow-back {
+    position: relative;
+    display: block;
+    width: 0.8em;
+    height: 0.8em;
+  }
+
+  .arrow-back::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    transform: translateY(-50%) rotate(45deg);
+    width: 0.8em;
+    height: 0.8em;
+    border-left: 2.5px solid #fff;
+    border-bottom: 2.5px solid #fff;
   }
 
   .header-brand .brand-link {

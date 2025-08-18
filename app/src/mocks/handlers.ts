@@ -99,10 +99,14 @@ export const authHandlers = [
 ];
 
 // プログラム関連のAPIハンドラ
+// 画像管理方針: 
+// - 開発環境: 外部プレースホルダー画像（Picsum Photos）を使用
+// - 本番環境: CDN経由でAPI応答に含まれる画像URLを使用
+// - 静的アセット（ロゴ等）: public/images/ に配置
 export const programHandlers = [
   // プログラム一覧取得
   http.get('/api/plan/list', ({ request }) => {
-    const url = new URL(request.url);
+          const url = new globalThis.URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '20');
     const status = url.searchParams.get('status');
@@ -120,7 +124,7 @@ export const programHandlers = [
         endDate: '2024-01-15T18:00:00Z',
         maxParticipants: 20,
         currentParticipants: 12,
-        imageUrl: '/images/programs/program1.jpg',
+        imageUrl: 'https://picsum.photos/400/300?random=1',
         programCode: 'BEAUTY001'
       },
       {
@@ -132,7 +136,7 @@ export const programHandlers = [
         endDate: '2024-01-20T17:00:00Z',
         maxParticipants: 15,
         currentParticipants: 3,
-        imageUrl: '/images/programs/program2.jpg',
+        imageUrl: 'https://picsum.photos/400/300?random=2',
         programCode: 'FACIAL002'
       },
       {
@@ -144,7 +148,7 @@ export const programHandlers = [
         endDate: '2024-01-10T16:00:00Z',
         maxParticipants: 30,
         currentParticipants: 25,
-        imageUrl: '/images/programs/program3.jpg',
+        imageUrl: 'https://picsum.photos/400/300?random=3',
         programCode: 'SKIN003'
       },
       {
@@ -155,7 +159,7 @@ export const programHandlers = [
         startDate: '2024-02-01T10:00:00Z',
         endDate: '2024-02-01T18:00:00Z',
         currentParticipants: 0,
-        imageUrl: '/images/programs/program4.jpg',
+        imageUrl: 'https://picsum.photos/400/300?random=4',
         programCode: 'FAIR004'
       }
     ];
@@ -187,7 +191,7 @@ export const programHandlers = [
     console.log('MSW: Program detail request for ID:', id);
 
     // モックプログラム詳細データベース
-    const programDetailData: Record<number, any> = {
+    const programDetailData: Record<number, unknown> = {
       1: {
         id: 1,
         title: 'ビューティ体験プログラム Vol.1',
@@ -202,7 +206,7 @@ export const programHandlers = [
         endDate: '2024-01-15T18:00:00Z',
         maxParticipants: 20,
         currentParticipants: 12,
-        imageUrl: '/images/programs/program1.jpg',
+        imageUrl: 'https://picsum.photos/400/300?random=1',
         programCode: 'BEAUTY001',
         location: '東京都渋谷区渋谷1-1-1 ビューティセンター3F',
         requirements: [
@@ -263,9 +267,9 @@ export const programHandlers = [
           }
         ],
         images: [
-          '/images/programs/program1-main.jpg',
-          '/images/programs/program1-demo.jpg',
-          '/images/programs/program1-venue.jpg'
+          'https://picsum.photos/800/600?random=11',
+          'https://picsum.photos/800/600?random=12',
+          'https://picsum.photos/800/600?random=13'
         ]
       },
       2: {
@@ -282,7 +286,7 @@ export const programHandlers = [
         endDate: '2024-01-20T17:00:00Z',
         maxParticipants: 15,
         currentParticipants: 3,
-        imageUrl: '/images/programs/program2.jpg',
+        imageUrl: 'https://picsum.photos/400/300?random=2',
         programCode: 'FACIAL002',
         location: '東京都新宿区新宿2-2-2 スキンケアサロン',
         requirements: [
@@ -321,8 +325,8 @@ export const programHandlers = [
           }
         ],
         images: [
-          '/images/programs/program2-main.jpg',
-          '/images/programs/program2-ai.jpg'
+          'https://picsum.photos/800/600?random=21',
+          'https://picsum.photos/800/600?random=22'
         ]
       }
     };
@@ -338,7 +342,7 @@ export const programHandlers = [
       endDate: '2024-01-15T18:00:00Z',
       maxParticipants: 20,
       currentParticipants: 10,
-      imageUrl: `/images/programs/program${id}.jpg`,
+      imageUrl: `https://picsum.photos/600/400?random=${id}`,
       programCode: `EVENT${id.toString().padStart(3, '0')}`,
       location: `東京都渋谷区 プログラム会場${id}`,
       requirements: ['18歳以上の方'],
@@ -359,7 +363,7 @@ export const programHandlers = [
           description: 'プログラムの主要プログラム'
         }
       ],
-      images: [`/images/programs/program${id}.jpg`]
+      images: [`https://picsum.photos/800/600?random=${id + 10}`]
     };
 
     return HttpResponse.json(programDetail);
