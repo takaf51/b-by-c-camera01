@@ -17,6 +17,9 @@ export const routes = {
   '/plan/list': ProgramList,
   '/plan/detail/:id': ProgramDetail,
 
+  // カメラ機能
+  '/camera/:programId': () => import('./routes/Camera.svelte'),
+
   // 404
   '*': NotFound,
 };

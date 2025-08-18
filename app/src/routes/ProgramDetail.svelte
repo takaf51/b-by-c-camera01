@@ -49,8 +49,8 @@
 
   // カメラ起動
   function handleStartCamera() {
-    // TODO: カメラページの実装後に追加
-    push(`/plan/${programId}/camera`);
+    showStartModal = false;
+    push(`/camera/${programId}`);
   }
 
   // ファイル選択

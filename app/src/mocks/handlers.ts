@@ -375,4 +375,41 @@ export const planHandlers = [
 ];
 
 // 全ハンドラをエクスポート
-export const handlers = [...authHandlers, ...programHandlers, ...planHandlers];
+// カメラ関連のAPIハンドラ
+export const cameraHandlers = [
+  // 画像アップロード
+  http.post('/api/plan/report/send', async ({ request }) => {
+    const formData = await request.formData();
+    const image = formData.get('image');
+    const kind = formData.get('kind'); // 'before' or 'after'
+    
+    console.log('MSW: Image upload request', { kind, hasImage: !!image });
+    
+    // モック応答
+    return HttpResponse.json({
+      success: true,
+      reportId: Math.floor(Math.random() * 1000) + 1,
+      message: `${kind}画像のアップロードが完了しました`
+    });
+  }),
+
+  // 画像処理ステータス取得
+  http.get('/api/plan/report/getImageProcessingStatus', ({ request }) => {
+    const url = new globalThis.URL(request.url);
+    const reportId = url.searchParams.get('report_id');
+    
+    console.log('MSW: Image processing status request', { reportId });
+    
+    return HttpResponse.json({
+      status: 'completed',
+      progress: 100,
+      result: {
+        before_images: 5,
+        after_images: 5,
+        analysis_completed: true
+      }
+    });
+  }),
+];
+
+export const handlers = [...authHandlers, ...programHandlers, ...planHandlers, ...cameraHandlers];
