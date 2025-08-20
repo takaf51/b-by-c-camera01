@@ -179,17 +179,116 @@
 
     if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
       const landmarks = results.multiFaceLandmarks[0];
+      console.log(
+        'onResults: Face detected, landmarks count:',
+        landmarks.length
+      );
 
       // 姿勢を計算
       const pose = calculatePose(landmarks);
+      console.log('onResults: Pose calculated:', pose);
       updateStability(pose);
 
       if (showMesh) {
-        // Face meshを描画（PHP側と同じスタイル）
-        drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, {
-          color: '#C0C0C070',
-          lineWidth: 1,
-        });
+        console.log(
+          'onResults: Drawing face mesh, canvasCtx available:',
+          !!canvasCtx
+        );
+        console.log(
+          'onResults: Canvas size:',
+          canvasElement.width,
+          'x',
+          canvasElement.height
+        );
+        console.log(
+          'onResults: FACEMESH_TESSELATION available:',
+          !!FACEMESH_TESSELATION
+        );
+
+        try {
+          // drawConnectors関数の検証
+          console.log('onResults: drawConnectors type:', typeof drawConnectors);
+          console.log(
+            'onResults: FACEMESH_TESSELATION type:',
+            typeof FACEMESH_TESSELATION
+          );
+
+          if (typeof drawConnectors === 'function') {
+            drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, {
+              color: '#FF0000', // 赤色で目立たせる
+              lineWidth: 3, // 太くして見やすく
+            });
+            console.log('onResults: drawConnectors executed');
+          } else {
+            console.error('onResults: drawConnectors is not a function');
+          }
+
+          // 手動で顔の輪郭を描画
+          canvasCtx.strokeStyle = '#00FFFF';
+          canvasCtx.lineWidth = 2;
+          canvasCtx.beginPath();
+
+          // 顔の輪郭のランドマーク（MediaPipeの標準的な顔輪郭ポイント）
+          const faceOvalIndices = [
+            10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365,
+            379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93,
+            234, 127, 162, 21, 54, 103, 67, 109, 10,
+          ];
+
+          for (let i = 0; i < faceOvalIndices.length; i++) {
+            const idx = faceOvalIndices[i];
+            if (landmarks[idx]) {
+              const x = landmarks[idx].x * canvasElement.width;
+              const y = landmarks[idx].y * canvasElement.height;
+
+              if (i === 0) {
+                canvasCtx.moveTo(x, y);
+              } else {
+                canvasCtx.lineTo(x, y);
+              }
+            }
+          }
+          canvasCtx.closePath();
+          canvasCtx.stroke();
+
+          // 目を描画
+          const drawEye = (eyeIndices: number[], color: string) => {
+            canvasCtx.strokeStyle = color;
+            canvasCtx.beginPath();
+            for (let i = 0; i < eyeIndices.length; i++) {
+              const idx = eyeIndices[i];
+              if (landmarks[idx]) {
+                const x = landmarks[idx].x * canvasElement.width;
+                const y = landmarks[idx].y * canvasElement.height;
+                if (i === 0) {
+                  canvasCtx.moveTo(x, y);
+                } else {
+                  canvasCtx.lineTo(x, y);
+                }
+              }
+            }
+            canvasCtx.closePath();
+            canvasCtx.stroke();
+          };
+
+          // 右目と左目
+          const rightEye = [
+            33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160,
+            161, 246,
+          ];
+          const leftEye = [
+            362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386,
+            385, 384, 398,
+          ];
+
+          drawEye(rightEye, '#FF3030');
+          drawEye(leftEye, '#30FF30');
+
+          console.log('onResults: Manual face mesh drawn');
+        } catch (error) {
+          console.error('onResults: Error in MediaPipe drawing:', error);
+        }
+
         drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {
           color: '#FF3030',
         });
@@ -460,30 +559,35 @@
   .status-panel {
     width: 100%;
     max-width: 640px;
-    background: rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.8); /* より濃い背景で視認性向上 */
     padding: 1rem;
     border-radius: 8px;
     text-align: center;
+    border: 2px solid rgba(255, 255, 255, 0.3); /* 境界線を追加 */
   }
 
   .status-message {
     color: #fff;
     font-size: 1.1rem;
     margin-bottom: 0.5rem;
+    font-weight: bold; /* 文字を太く */
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8); /* 影を追加 */
   }
 
   .progress-bar {
     width: 100%;
-    height: 8px;
-    background-color: rgba(255, 255, 255, 0.3);
-    border-radius: 4px;
+    height: 12px; /* バーを太く */
+    background-color: rgba(255, 255, 255, 0.8); /* より濃い背景 */
+    border-radius: 6px;
     overflow: hidden;
+    border: 1px solid rgba(255, 255, 255, 0.5); /* 境界線を追加 */
   }
 
   .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, #4caf50, #45a049);
+    background: linear-gradient(90deg, #ff6b6b, #4ecdc4); /* より目立つ色 */
     transition: width 0.1s ease;
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.5); /* 光る効果 */
   }
 
   .controls {
