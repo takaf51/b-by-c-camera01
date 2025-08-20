@@ -43,6 +43,11 @@
   let capturedImages: string[] = [];
   let showMesh = true;
 
+  // 姿勢ガイダンス
+  let poseGuidanceMessage = '';
+  let poseGuidanceType = ''; // 'success', 'warning', 'error', ''
+  let showPoseGuidance = false;
+
   // 姿勢検知パラメータ
   let stablePosition = false;
   let stableStartTime: number | null = null;
@@ -179,116 +184,17 @@
 
     if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
       const landmarks = results.multiFaceLandmarks[0];
-      console.log(
-        'onResults: Face detected, landmarks count:',
-        landmarks.length
-      );
 
       // 姿勢を計算
       const pose = calculatePose(landmarks);
-      console.log('onResults: Pose calculated:', pose);
       updateStability(pose);
 
       if (showMesh) {
-        console.log(
-          'onResults: Drawing face mesh, canvasCtx available:',
-          !!canvasCtx
-        );
-        console.log(
-          'onResults: Canvas size:',
-          canvasElement.width,
-          'x',
-          canvasElement.height
-        );
-        console.log(
-          'onResults: FACEMESH_TESSELATION available:',
-          !!FACEMESH_TESSELATION
-        );
-
-        try {
-          // drawConnectors関数の検証
-          console.log('onResults: drawConnectors type:', typeof drawConnectors);
-          console.log(
-            'onResults: FACEMESH_TESSELATION type:',
-            typeof FACEMESH_TESSELATION
-          );
-
-          if (typeof drawConnectors === 'function') {
-            drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, {
-              color: '#FF0000', // 赤色で目立たせる
-              lineWidth: 3, // 太くして見やすく
-            });
-            console.log('onResults: drawConnectors executed');
-          } else {
-            console.error('onResults: drawConnectors is not a function');
-          }
-
-          // 手動で顔の輪郭を描画
-          canvasCtx.strokeStyle = '#00FFFF';
-          canvasCtx.lineWidth = 2;
-          canvasCtx.beginPath();
-
-          // 顔の輪郭のランドマーク（MediaPipeの標準的な顔輪郭ポイント）
-          const faceOvalIndices = [
-            10, 338, 297, 332, 284, 251, 389, 356, 454, 323, 361, 288, 397, 365,
-            379, 378, 400, 377, 152, 148, 176, 149, 150, 136, 172, 58, 132, 93,
-            234, 127, 162, 21, 54, 103, 67, 109, 10,
-          ];
-
-          for (let i = 0; i < faceOvalIndices.length; i++) {
-            const idx = faceOvalIndices[i];
-            if (landmarks[idx]) {
-              const x = landmarks[idx].x * canvasElement.width;
-              const y = landmarks[idx].y * canvasElement.height;
-
-              if (i === 0) {
-                canvasCtx.moveTo(x, y);
-              } else {
-                canvasCtx.lineTo(x, y);
-              }
-            }
-          }
-          canvasCtx.closePath();
-          canvasCtx.stroke();
-
-          // 目を描画
-          const drawEye = (eyeIndices: number[], color: string) => {
-            canvasCtx.strokeStyle = color;
-            canvasCtx.beginPath();
-            for (let i = 0; i < eyeIndices.length; i++) {
-              const idx = eyeIndices[i];
-              if (landmarks[idx]) {
-                const x = landmarks[idx].x * canvasElement.width;
-                const y = landmarks[idx].y * canvasElement.height;
-                if (i === 0) {
-                  canvasCtx.moveTo(x, y);
-                } else {
-                  canvasCtx.lineTo(x, y);
-                }
-              }
-            }
-            canvasCtx.closePath();
-            canvasCtx.stroke();
-          };
-
-          // 右目と左目
-          const rightEye = [
-            33, 7, 163, 144, 145, 153, 154, 155, 133, 173, 157, 158, 159, 160,
-            161, 246,
-          ];
-          const leftEye = [
-            362, 382, 381, 380, 374, 373, 390, 249, 263, 466, 388, 387, 386,
-            385, 384, 398,
-          ];
-
-          drawEye(rightEye, '#FF3030');
-          drawEye(leftEye, '#30FF30');
-
-          console.log('onResults: Manual face mesh drawn');
-        } catch (error) {
-          console.error('onResults: Error in MediaPipe drawing:', error);
-        }
-
+        // Face meshを描画（PHP側と同じスタイル）
+        drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, {
+          color: '#C0C0C070',
+          lineWidth: 1,
+        });
         drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {
           color: '#FF3030',
         });
@@ -316,9 +222,79 @@
       stableStartTime = null;
       progress = 0;
       statusMessage = '顔が検出されません';
+      showPoseGuidance = false;
     }
 
+    // UI要素を描画（顔が検出されているかに関わらず表示）
+    drawUIOverlays();
+
     canvasCtx.restore();
+  }
+
+  function drawUIOverlays() {
+    // 顔フレームガイドを描画
+    drawFaceGuideFrame();
+
+    // グリッドラインを描画（三分割法）
+    drawGridLines();
+  }
+
+  function drawFaceGuideFrame() {
+    const centerX = canvasElement.width / 2;
+    const centerY = canvasElement.height / 2;
+
+    // 顔を収める楕円形フレーム
+    const frameWidth =
+      Math.min(canvasElement.width, canvasElement.height) * 0.5;
+    const frameHeight = frameWidth * 1.2; // 楕円形（縦長）
+
+    canvasCtx.strokeStyle = 'rgba(255, 105, 180, 0.8)'; // ピンク色
+    canvasCtx.lineWidth = 3;
+    canvasCtx.setLineDash([10, 5]); // 破線
+
+    canvasCtx.beginPath();
+    canvasCtx.ellipse(
+      centerX,
+      centerY,
+      frameWidth / 2,
+      frameHeight / 2,
+      0,
+      0,
+      2 * Math.PI
+    );
+    canvasCtx.stroke();
+
+    canvasCtx.setLineDash([]); // 破線をリセット
+  }
+
+  function drawGridLines() {
+    const width = canvasElement.width;
+    const height = canvasElement.height;
+
+    canvasCtx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+    canvasCtx.lineWidth = 1;
+
+    // 縦線（三分割）
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(width / 3, 0);
+    canvasCtx.lineTo(width / 3, height);
+    canvasCtx.stroke();
+
+    canvasCtx.beginPath();
+    canvasCtx.moveTo((width * 2) / 3, 0);
+    canvasCtx.lineTo((width * 2) / 3, height);
+    canvasCtx.stroke();
+
+    // 横線（三分割）
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(0, height / 3);
+    canvasCtx.lineTo(width, height / 3);
+    canvasCtx.stroke();
+
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(0, (height * 2) / 3);
+    canvasCtx.lineTo(width, (height * 2) / 3);
+    canvasCtx.stroke();
   }
 
   function calculatePose(landmarks: any) {
@@ -348,6 +324,9 @@
       pose.pitch < THRESHOLDS.pitch &&
       pose.yaw < THRESHOLDS.yaw;
 
+    // 姿勢ガイダンスメッセージの生成
+    updatePoseGuidance(pose, isStable);
+
     if (isStable) {
       if (!stablePosition) {
         stablePosition = true;
@@ -368,6 +347,51 @@
       stableStartTime = null;
       progress = 0;
       statusMessage = '顔の位置を調整してください';
+    }
+  }
+
+  function updatePoseGuidance(pose: any, isStable: boolean) {
+    if (isStable) {
+      poseGuidanceMessage = '完璧な姿勢です！';
+      poseGuidanceType = 'success';
+      showPoseGuidance = true;
+
+      // 成功メッセージは3秒後に非表示
+      setTimeout(() => {
+        showPoseGuidance = false;
+      }, 3000);
+    } else {
+      const issues = [];
+
+      // Roll（左右の傾き）をチェック - 絶対値を使用
+      if (Math.abs(pose.roll) >= THRESHOLDS.roll) {
+        issues.push('顔が傾いています。まっすぐに調整してください');
+      }
+
+      // Pitch（上下の向き）をチェック - 絶対値を使用
+      if (Math.abs(pose.pitch) >= THRESHOLDS.pitch) {
+        if (pose.pitch > 0) {
+          issues.push('少し上を向いてください');
+        } else {
+          issues.push('少し下を向いてください');
+        }
+      }
+
+      // Yaw（左右の向き）をチェック - 絶対値を使用
+      if (Math.abs(pose.yaw) >= THRESHOLDS.yaw) {
+        issues.push('正面を向いてください');
+      }
+
+      if (issues.length > 1) {
+        poseGuidanceMessage = '顔の位置をガイドに合わせて調整してください';
+      } else if (issues.length === 1) {
+        poseGuidanceMessage = issues[0];
+      } else {
+        poseGuidanceMessage = '顔の位置を調整してください';
+      }
+
+      poseGuidanceType = 'warning';
+      showPoseGuidance = true;
     }
   }
 
@@ -435,6 +459,15 @@
 
 <Layout title="カメラ撮影">
   <div class="camera-container">
+    <!-- 姿勢ガイダンスメッセージ -->
+    {#if showPoseGuidance}
+      <div class="pose-guidance">
+        <div class="guidance-message {poseGuidanceType}">
+          {poseGuidanceMessage}
+        </div>
+      </div>
+    {/if}
+
     <!-- ヘッダー -->
     <div class="camera-header">
       <Button variant="outline" on:click={goBack}>
@@ -463,9 +496,6 @@
     <!-- ステータスパネル -->
     <div class="status-panel">
       <div class="status-message">{statusMessage}</div>
-      <div class="progress-bar">
-        <div class="progress-fill" style="width: {progress}%"></div>
-      </div>
     </div>
 
     <!-- コントロール -->
@@ -518,6 +548,72 @@
     flex-direction: column;
     align-items: center;
     gap: 1rem;
+    position: relative;
+  }
+
+  /* 姿勢ガイダンス */
+  .pose-guidance {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 2000;
+    width: 100%;
+    max-width: 600px;
+    padding: 0 1rem;
+  }
+
+  .guidance-message {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 152, 0, 0.95),
+      rgba(255, 111, 0, 0.95)
+    );
+    color: white;
+    padding: 12px 20px;
+    border-radius: 25px;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+    animation: messageSlideIn 0.3s ease-out;
+  }
+
+  .guidance-message.success {
+    background: linear-gradient(
+      135deg,
+      rgba(76, 175, 80, 0.95),
+      rgba(46, 125, 50, 0.95)
+    ) !important;
+  }
+
+  .guidance-message.warning {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 152, 0, 0.95),
+      rgba(255, 111, 0, 0.95)
+    ) !important;
+  }
+
+  .guidance-message.error {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 107, 107, 0.95),
+      rgba(255, 69, 58, 0.95)
+    ) !important;
+  }
+
+  @keyframes messageSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .camera-header {
@@ -559,35 +655,16 @@
   .status-panel {
     width: 100%;
     max-width: 640px;
-    background: rgba(0, 0, 0, 0.8); /* より濃い背景で視認性向上 */
+    background: rgba(255, 255, 255, 0.1);
     padding: 1rem;
     border-radius: 8px;
     text-align: center;
-    border: 2px solid rgba(255, 255, 255, 0.3); /* 境界線を追加 */
   }
 
   .status-message {
     color: #fff;
     font-size: 1.1rem;
     margin-bottom: 0.5rem;
-    font-weight: bold; /* 文字を太く */
-    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8); /* 影を追加 */
-  }
-
-  .progress-bar {
-    width: 100%;
-    height: 12px; /* バーを太く */
-    background-color: rgba(255, 255, 255, 0.8); /* より濃い背景 */
-    border-radius: 6px;
-    overflow: hidden;
-    border: 1px solid rgba(255, 255, 255, 0.5); /* 境界線を追加 */
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #ff6b6b, #4ecdc4); /* より目立つ色 */
-    transition: width 0.1s ease;
-    box-shadow: 0 0 10px rgba(255, 107, 107, 0.5); /* 光る効果 */
   }
 
   .controls {
