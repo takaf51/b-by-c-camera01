@@ -12,7 +12,17 @@ export async function startMocking() {
   }
 
   await worker.start({
-    onUnhandledRequest: 'warn',
+    onUnhandledRequest: (req) => {
+      // MediaPipeのCDNリクエストは無視
+      const url = req.url;
+      if (url.includes('cdn.jsdelivr.net/npm/@mediapipe/') || 
+          url.includes('face_mesh') || 
+          url.includes('.wasm') || 
+          url.includes('.data')) {
+        return;
+      }
+      console.warn('[MSW] Unhandled request:', url);
+    },
     serviceWorker: {
       url: '/mockServiceWorker.js',
     },

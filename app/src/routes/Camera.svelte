@@ -121,7 +121,6 @@
 
       camera = new MediaPipeCamera(videoElement, {
         onFrame: async () => {
-          console.log('startCamera: onFrame called');
           if (faceMesh) {
             try {
               await faceMesh.send({ image: videoElement });
@@ -155,8 +154,6 @@
   }
 
   function onResults(results: any) {
-    console.log('onResults: Called with results:', results);
-
     if (!canvasCtx) {
       console.log('onResults: Initializing canvas context...');
       if (!canvasElement) {
