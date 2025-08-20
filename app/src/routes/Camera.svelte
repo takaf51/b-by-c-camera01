@@ -3,9 +3,16 @@
   import { push, params } from 'svelte-spa-router';
   import Layout from '../components/Layout.svelte';
   import Button from '../components/Button.svelte';
-  import '@mediapipe/face_mesh';
-  import '@mediapipe/camera_utils';
-  import '@mediapipe/drawing_utils';
+  import { FaceMesh } from '@mediapipe/face_mesh/face_mesh';
+  import { Camera as MediaPipeCamera } from '@mediapipe/camera_utils/camera_utils';
+  import {
+    drawConnectors,
+    FACEMESH_TESSELATION,
+    FACEMESH_RIGHT_EYE,
+    FACEMESH_LEFT_EYE,
+    FACEMESH_FACE_OVAL,
+    FACEMESH_LIPS,
+  } from '@mediapipe/drawing_utils/drawing_utils';
 
   // ルートパラメータ
   export let programId: string = '';
@@ -75,22 +82,13 @@
   async function initializeMediaPipe() {
     console.log('initializeMediaPipe: Creating FaceMesh...');
     try {
-      // npm packageがグローバル変数として公開されるまで待機
-      let attempts = 0;
-      while (!(window as any).FaceMesh && attempts < 50) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        attempts++;
-      }
+      console.log('initializeMediaPipe: Using imported FaceMesh class...');
 
-      if (!(window as any).FaceMesh) {
-        throw new Error('FaceMesh not available after loading npm package');
-      }
-
-      faceMesh = new (window as any).FaceMesh({
+      faceMesh = new FaceMesh({
         locateFile: (file: string) => {
           console.log('initializeMediaPipe: locateFile called for:', file);
-          // npm packageの場合、Viteが自動的に適切なパスを解決
-          return file;
+          // 元のコードと同じCDN設定
+          return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
         },
       });
 
@@ -120,11 +118,8 @@
       }
 
       console.log('startCamera: Creating Camera instance...');
-      if (!(window as any).Camera) {
-        throw new Error('Camera class not available after loading npm package');
-      }
 
-      camera = new (window as any).Camera(videoElement, {
+      camera = new MediaPipeCamera(videoElement, {
         onFrame: async () => {
           console.log('startCamera: onFrame called');
           if (faceMesh) {
@@ -192,49 +187,24 @@
       const pose = calculatePose(landmarks);
       updateStability(pose);
 
-      if (showMesh && (window as any).drawConnectors) {
+      if (showMesh) {
         // Face meshを描画（PHP側と同じスタイル）
-        (window as any).drawConnectors(
-          canvasCtx,
-          landmarks,
-          (window as any).FACEMESH_TESSELATION,
-          {
-            color: '#C0C0C070',
-            lineWidth: 1,
-          }
-        );
-        (window as any).drawConnectors(
-          canvasCtx,
-          landmarks,
-          (window as any).FACEMESH_RIGHT_EYE,
-          {
-            color: '#FF3030',
-          }
-        );
-        (window as any).drawConnectors(
-          canvasCtx,
-          landmarks,
-          (window as any).FACEMESH_LEFT_EYE,
-          {
-            color: '#30FF30',
-          }
-        );
-        (window as any).drawConnectors(
-          canvasCtx,
-          landmarks,
-          (window as any).FACEMESH_FACE_OVAL,
-          {
-            color: '#E0E0E0',
-          }
-        );
-        (window as any).drawConnectors(
-          canvasCtx,
-          landmarks,
-          (window as any).FACEMESH_LIPS,
-          {
-            color: '#E0E0E0',
-          }
-        );
+        drawConnectors(canvasCtx, landmarks, FACEMESH_TESSELATION, {
+          color: '#C0C0C070',
+          lineWidth: 1,
+        });
+        drawConnectors(canvasCtx, landmarks, FACEMESH_RIGHT_EYE, {
+          color: '#FF3030',
+        });
+        drawConnectors(canvasCtx, landmarks, FACEMESH_LEFT_EYE, {
+          color: '#30FF30',
+        });
+        drawConnectors(canvasCtx, landmarks, FACEMESH_FACE_OVAL, {
+          color: '#E0E0E0',
+        });
+        drawConnectors(canvasCtx, landmarks, FACEMESH_LIPS, {
+          color: '#E0E0E0',
+        });
       }
 
       // 自動撮影チェック

@@ -50,6 +50,7 @@
   // カメラ起動
   function handleStartCamera() {
     showStartModal = false;
+    console.log('handleStartCamera: programId', programId);
     push(`/camera/${programId}`);
   }
 

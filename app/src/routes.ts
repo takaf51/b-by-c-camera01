@@ -4,6 +4,7 @@ import LoginDigit from './routes/LoginDigit.svelte';
 import Register from './routes/Register.svelte';
 import ProgramList from './routes/ProgramList.svelte';
 import ProgramDetail from './routes/ProgramDetail.svelte';
+import Camera from './routes/Camera.svelte';
 import NotFound from './routes/NotFound.svelte';
 
 export const routes = {
@@ -18,7 +19,7 @@ export const routes = {
   '/plan/detail/:id': ProgramDetail,
 
   // カメラ機能
-  '/camera/:programId': () => import('./routes/Camera.svelte'),
+  '/camera/:programId': Camera,
 
   // 404
   '*': NotFound,
