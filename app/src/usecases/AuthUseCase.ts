@@ -169,6 +169,13 @@ export class AuthUseCase {
       return { success: false, errors: [error.message] };
     }
 
+    if (error instanceof NetworkError) {
+      return {
+        success: false,
+        errors: ['ネットワークエラーが発生しました。接続を確認してください。'],
+      };
+    }
+
     if (error instanceof AuthError) {
       // API仕様に応じてエラーメッセージを分類
       switch (error.code) {
@@ -188,13 +195,6 @@ export class AuthUseCase {
         default:
           return { success: false, errors: [error.message] };
       }
-    }
-
-    if (error instanceof NetworkError) {
-      return {
-        success: false,
-        errors: ['ネットワークエラーが発生しました。接続を確認してください。'],
-      };
     }
 
     // 予期しないエラー
