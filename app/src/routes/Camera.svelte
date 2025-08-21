@@ -42,25 +42,49 @@
   let statusMessage = 'カメラを起動してください';
   let capturedImages: string[] = [];
   let showMesh = true;
+  let mirrorMode = true; // ミラー表示（デフォルト有効）
+
+  // API設定 - MSW（ローカル開発用）
+  const API_CONFIG = {
+    endpoint: '/api/plan/report/send', // MSWでモックされたエンドポイント
+    bearerToken: 'mock-token-12345', // MSW用のモックトークン
+    planCode: 'MOCK_PLAN_CODE', // MSW用のモックプランコード
+  };
+
+  // レポート管理
+  let reportId: number | null = null;
+  let faceLandmarks: any = null; // 最後に検出された顔の座標
+  let isUploading = false;
 
   // 姿勢ガイダンス
   let poseGuidanceMessage = '';
   let poseGuidanceType = ''; // 'success', 'warning', 'error', ''
   let showPoseGuidance = false;
+  let lastGuidanceUpdate = 0; // 最後にガイダンスを更新した時間
+  let lastGuidanceMessage = ''; // 最後に表示したメッセージ
+  const GUIDANCE_UPDATE_INTERVAL = 500; // ガイダンス更新間隔（ミリ秒）
+  const GUIDANCE_DISPLAY_DURATION = 3000; // ガイダンス表示時間（ミリ秒）
 
   // 姿勢検知パラメータ
   let stablePosition = false;
   let stableStartTime: number | null = null;
   let progress = 0;
   const STABILITY_TIME = 0.5; // 安定時間（秒）
-  const CAPTURE_COUNT = 5; // 撮影枚数
+  const CAPTURE_COUNT = 1; // 撮影枚数：1枚のみ
 
-  // 角度閾値（PHP側と同じ値）
+  // 角度閾値（より緩い設定で顔検出しやすく）
   const THRESHOLDS = {
-    roll: 3.0,
-    pitch: 8.0,
-    yaw: 3.0,
+    roll: 15.0, // 左右の傾き（緩和）
+    pitch: 20.0, // 上下の向き（緩和）
+    yaw: 15.0, // 左右の向き（緩和）
   };
+
+  // 自動撮影設定
+  let faceDetected = false;
+  let faceDetectionStartTime: number | null = null;
+  const FACE_DETECTION_DELAY = 2.0; // 顔検出後の撮影待機時間（秒）
+  let faceDetectionCount = 0; // 連続で顔が検出された回数
+  const FACE_DETECTION_THRESHOLD = 3; // 安定して顔検出するのに必要なフレーム数
 
   onMount(async () => {
     console.log('Camera.svelte: onMount started');
@@ -185,6 +209,9 @@
     if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
       const landmarks = results.multiFaceLandmarks[0];
 
+      // 顔の座標情報を保存（API送信用）
+      faceLandmarks = landmarks;
+
       // 姿勢を計算
       const pose = calculatePose(landmarks);
       updateStability(pose);
@@ -209,20 +236,51 @@
         });
       }
 
+      // 顔検出の安定性を確保
+      faceDetectionCount++;
+
+      // 十分な回数検出された場合のみ顔検出とみなす
+      if (!faceDetected && faceDetectionCount >= FACE_DETECTION_THRESHOLD) {
+        faceDetected = true;
+
+        // 撮影モードの場合のみカウントダウン開始
+        if (currentMode !== CaptureMode.IDLE) {
+          faceDetectionStartTime = performance.now();
+          statusMessage = '顔を検出しました。撮影準備中...';
+        } else {
+          // IDLEモードでは顔検出のみ（カウントダウンなし）
+        }
+      }
+
       // 自動撮影チェック
       if (
         currentMode !== CaptureMode.IDLE &&
-        stablePosition &&
         capturedImages.length < CAPTURE_COUNT
       ) {
         checkAutoCapture();
       }
     } else {
+      // 顔が検出されない場合
+      faceDetectionCount = 0; // カウンターリセット
+
+      if (faceDetected) {
+        faceDetected = false;
+        faceDetectionStartTime = null;
+      }
+
       stablePosition = false;
       stableStartTime = null;
       progress = 0;
-      statusMessage = '顔が検出されません';
+
+      // IDLEモードとそれ以外で状態メッセージを分ける
+      if (currentMode === CaptureMode.IDLE) {
+        statusMessage = 'カメラに正面を向けてください';
+      } else {
+        statusMessage = 'カメラに顔を向けてください';
+      }
+
       showPoseGuidance = false;
+      lastGuidanceMessage = ''; // ガイダンスメッセージをリセット
     }
 
     // UI要素を描画（顔が検出されているかに関わらず表示）
@@ -347,25 +405,53 @@
       stableStartTime = null;
       progress = 0;
       statusMessage = '顔の位置を調整してください';
+
+      // 顔検出の進行状況を表示
+      if (
+        faceDetected &&
+        faceDetectionStartTime &&
+        currentMode !== CaptureMode.IDLE
+      ) {
+        const elapsed = (performance.now() - faceDetectionStartTime) / 1000;
+        const faceProgress = Math.min(elapsed / FACE_DETECTION_DELAY, 1) * 100;
+        progress = faceProgress;
+
+        if (elapsed >= FACE_DETECTION_DELAY) {
+          statusMessage = '撮影準備完了';
+        } else {
+          const remaining = Math.ceil(FACE_DETECTION_DELAY - elapsed);
+          statusMessage = `撮影まで ${remaining} 秒`;
+        }
+      }
     }
   }
 
   function updatePoseGuidance(pose: any, isStable: boolean) {
-    if (isStable) {
-      poseGuidanceMessage = '完璧な姿勢です！';
-      poseGuidanceType = 'success';
-      showPoseGuidance = true;
+    const now = performance.now();
 
-      // 成功メッセージは3秒後に非表示
-      setTimeout(() => {
-        showPoseGuidance = false;
-      }, 3000);
+    // 撮影モードでない場合は姿勢ガイダンスを表示しない
+    if (currentMode === CaptureMode.IDLE) {
+      showPoseGuidance = false;
+      return;
+    }
+
+    // ガイダンス更新頻度を制限
+    if (now - lastGuidanceUpdate < GUIDANCE_UPDATE_INTERVAL) {
+      return;
+    }
+
+    let newMessage = '';
+    let newType = '';
+
+    if (isStable) {
+      newMessage = '完璧な姿勢です！';
+      newType = 'success';
     } else {
       const issues = [];
 
       // Roll（左右の傾き）をチェック - 絶対値を使用
       if (Math.abs(pose.roll) >= THRESHOLDS.roll) {
-        issues.push('顔が傾いています。まっすぐに調整してください');
+        issues.push('顔をまっすぐに調整してください');
       }
 
       // Pitch（上下の向き）をチェック - 絶対値を使用
@@ -382,39 +468,103 @@
         issues.push('正面を向いてください');
       }
 
-      if (issues.length > 1) {
-        poseGuidanceMessage = '顔の位置をガイドに合わせて調整してください';
-      } else if (issues.length === 1) {
-        poseGuidanceMessage = issues[0];
+      // 最も重要な問題を1つだけ表示
+      if (issues.length > 0) {
+        newMessage = issues[0];
+        newType = 'warning';
       } else {
-        poseGuidanceMessage = '顔の位置を調整してください';
+        newMessage = '良いポジションです！';
+        newType = 'success';
       }
+    }
 
-      poseGuidanceType = 'warning';
+    // メッセージが変わった場合のみ更新
+    if (newMessage !== lastGuidanceMessage) {
+      lastGuidanceUpdate = now;
+      lastGuidanceMessage = newMessage;
+      poseGuidanceMessage = newMessage;
+      poseGuidanceType = newType;
       showPoseGuidance = true;
+
+      // 一定時間後に非表示（成功メッセージの場合のみ）
+      if (newType === 'success') {
+        setTimeout(() => {
+          if (
+            poseGuidanceMessage === newMessage &&
+            poseGuidanceType === 'success'
+          ) {
+            showPoseGuidance = false;
+          }
+        }, GUIDANCE_DISPLAY_DURATION);
+      }
     }
   }
 
   function checkAutoCapture() {
+    const now = performance.now();
+
+    // 顔検出ベースの自動撮影
     if (
-      stableStartTime &&
-      (performance.now() - stableStartTime) / 1000 >= STABILITY_TIME
+      faceDetected &&
+      faceDetectionStartTime &&
+      (now - faceDetectionStartTime) / 1000 >= FACE_DETECTION_DELAY
     ) {
       capturePhoto();
-      stableStartTime = performance.now(); // 次の撮影のためにリセット
+      // 次の撮影のために遅延を設ける
+      faceDetectionStartTime = now + 2000; // 2秒後に次の撮影可能
+      return;
+    }
+
+    // 安定位置ベースの自動撮影（バックアップ）
+    if (
+      stablePosition &&
+      stableStartTime &&
+      (now - stableStartTime) / 1000 >= STABILITY_TIME
+    ) {
+      capturePhoto();
+      stableStartTime = now; // 次の撮影のためにリセット
     }
   }
 
-  function capturePhoto() {
-    // キャンバスから画像データを取得
-    const imageData = canvasElement.toDataURL('image/jpeg', 0.8);
+  async function capturePhoto() {
+    // 撮影時は元の向き（ミラーなし）でキャプチャ
+    let imageData;
+
+    if (mirrorMode) {
+      // ミラーモードの場合、一時的にキャンバスを反転して撮影
+      const tempCanvas = document.createElement('canvas');
+      tempCanvas.width = canvasElement.width;
+      tempCanvas.height = canvasElement.height;
+      const tempCtx = tempCanvas.getContext('2d')!;
+
+      // 水平反転してキャンバスをコピー
+      tempCtx.scale(-1, 1);
+      tempCtx.drawImage(canvasElement, -tempCanvas.width, 0);
+
+      imageData = tempCanvas.toDataURL('image/jpeg', 0.8);
+    } else {
+      // 通常モードの場合はそのまま
+      imageData = canvasElement.toDataURL('image/jpeg', 0.8);
+    }
+
     capturedImages = [...capturedImages, imageData];
 
-    statusMessage = `撮影完了 (${capturedImages.length}/${CAPTURE_COUNT})`;
+    statusMessage = '撮影完了 - API送信中...';
 
-    if (capturedImages.length >= CAPTURE_COUNT) {
-      completeCaptureMode();
+    // APIに画像を送信
+    try {
+      await sendImageToAPI(
+        imageData,
+        currentMode === CaptureMode.BEFORE ? 'before' : 'after'
+      );
+      statusMessage = '撮影・送信完了！';
+    } catch (error) {
+      console.error('API送信エラー:', error);
+      statusMessage = '撮影完了 - API送信失敗';
     }
+
+    // 1枚撮影完了で即座にモード完了
+    completeCaptureMode();
   }
 
   function completeCaptureMode() {
@@ -430,21 +580,136 @@
   function startBeforeCapture() {
     currentMode = CaptureMode.BEFORE;
     capturedImages = [];
-    statusMessage = `ビフォー撮影開始 (${capturedImages.length}/${CAPTURE_COUNT})`;
+    statusMessage = 'ビフォー撮影開始';
+
+    // ガイダンス状態をリセット
+    showPoseGuidance = false;
+    lastGuidanceMessage = '';
   }
 
   function startAfterCapture() {
     currentMode = CaptureMode.AFTER;
     capturedImages = [];
-    statusMessage = `アフター撮影開始 (${capturedImages.length}/${CAPTURE_COUNT})`;
+    statusMessage = 'アフター撮影開始';
+
+    // ガイダンス状態をリセット
+    showPoseGuidance = false;
+    lastGuidanceMessage = '';
   }
 
   function toggleMesh() {
     showMesh = !showMesh;
   }
 
+  function toggleMirror() {
+    mirrorMode = !mirrorMode;
+  }
+
   function goBack() {
     push(`/plan/detail/${programId}`);
+  }
+
+  /**
+   * API仕様に基づいて画像を送信する関数
+   * @param imageDataUrl - キャンバスから取得したbase64画像データ
+   * @param kind - 'before' または 'after'
+   */
+  async function sendImageToAPI(
+    imageDataUrl: string,
+    kind: 'before' | 'after'
+  ) {
+    isUploading = true;
+
+    try {
+      // Base64データをBlobに変換
+      const response = await fetch(imageDataUrl);
+      const blob = await response.blob();
+
+      // FormDataを作成
+      const formData = new FormData();
+      formData.append('kind', kind);
+      formData.append('image', blob, `${kind}_${Date.now()}.jpg`);
+
+      // report_idがある場合は追加（更新の場合）
+      if (reportId !== null) {
+        formData.append('report_id', reportId.toString());
+      }
+
+      // 顔の座標情報を追加（利用可能な場合）
+      let points = null;
+      if (faceLandmarks) {
+        points = extractFacePoints(faceLandmarks);
+        if (points) {
+          formData.append('points', JSON.stringify(points));
+        }
+      }
+
+      // APIリクエスト送信
+
+      const apiResponse = await fetch(API_CONFIG.endpoint, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${API_CONFIG.bearerToken}`,
+          'X-Plan-Code': API_CONFIG.planCode,
+        },
+        body: formData,
+      });
+
+      if (!apiResponse.ok) {
+        throw new Error(
+          `API Error: ${apiResponse.status} ${apiResponse.statusText}`
+        );
+      }
+
+      const result = await apiResponse.json();
+
+      // report_idを保存（初回登録の場合）
+      if (result.report_id && reportId === null) {
+        reportId = result.report_id;
+      }
+
+      statusMessage = `${kind === 'before' ? 'ビフォー' : 'アフター'}画像送信完了`;
+    } catch (error) {
+      console.error('API送信失敗:', error);
+      throw error;
+    } finally {
+      isUploading = false;
+    }
+  }
+
+  /**
+   * MediaPipeの顔座標からAPI用の座標情報を抽出
+   * @param landmarks - MediaPipeの顔座標データ
+   */
+  function extractFacePoints(landmarks: any) {
+    try {
+      // MediaPipeの特定のランドマークポイントを使用
+      const leftEye = landmarks[33]; // 左目
+      const rightEye = landmarks[263]; // 右目
+      const noseTip = landmarks[1]; // 鼻先
+
+      // 画像座標に変換（0-1の正規化座標から実際のピクセル座標へ）
+      const imageWidth = canvasElement.width;
+      const imageHeight = canvasElement.height;
+
+      return {
+        leftEye: {
+          x: Math.round(leftEye.x * imageWidth),
+          y: Math.round(leftEye.y * imageHeight),
+        },
+        rightEye: {
+          x: Math.round(rightEye.x * imageWidth),
+          y: Math.round(rightEye.y * imageHeight),
+        },
+        noseTip: {
+          x: Math.round(noseTip.x * imageWidth),
+          y: Math.round(noseTip.y * imageHeight),
+        },
+      };
+    } catch (error) {
+      console.error('座標抽出エラー:', error);
+      return null;
+    }
   }
 
   function cleanup() {
@@ -480,14 +745,14 @@
     <div class="video-container">
       <video
         bind:this={videoElement}
-        class="input-video"
+        class="input-video {mirrorMode ? 'mirror' : ''}"
         autoplay
         playsinline
         muted
       ></video>
       <canvas
         bind:this={canvasElement}
-        class="output-canvas"
+        class="output-canvas {mirrorMode ? 'mirror' : ''}"
         width="1280"
         height="720"
       ></canvas>
@@ -496,6 +761,27 @@
     <!-- ステータスパネル -->
     <div class="status-panel">
       <div class="status-message">{statusMessage}</div>
+
+      {#if currentMode !== CaptureMode.IDLE && progress > 0}
+        <div class="progress-container">
+          <div class="progress-bar">
+            <div class="progress-fill" style="width: {progress}%"></div>
+          </div>
+          <div class="progress-text">{Math.round(progress)}%</div>
+        </div>
+      {/if}
+
+      {#if isUploading}
+        <div class="upload-indicator">
+          <div class="spinner"></div>
+          <span>API送信中...</span>
+        </div>
+      {/if}
+      {#if reportId}
+        <div class="report-info">
+          レポートID: {reportId}
+        </div>
+      {/if}
     </div>
 
     <!-- コントロール -->
@@ -520,12 +806,16 @@
       <Button variant="outline" on:click={toggleMesh}>
         {showMesh ? 'メッシュ非表示' : 'メッシュ表示'}
       </Button>
+
+      <Button variant="outline" on:click={toggleMirror}>
+        {mirrorMode ? 'ミラー解除' : 'ミラー表示'}
+      </Button>
     </div>
 
     <!-- 撮影結果ギャラリー -->
     {#if capturedImages.length > 0}
       <div class="gallery">
-        <h3>撮影結果 ({capturedImages.length}/{CAPTURE_COUNT})</h3>
+        <h3>撮影結果</h3>
         <div class="captured-images">
           {#each capturedImages as image, index (index)}
             <img
@@ -644,12 +934,20 @@
     display: block;
   }
 
+  .input-video.mirror {
+    transform: scaleX(-1);
+  }
+
   .output-canvas {
     position: absolute;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+  }
+
+  .output-canvas.mirror {
+    transform: scaleX(-1);
   }
 
   .status-panel {
@@ -665,6 +963,68 @@
     color: #fff;
     font-size: 1.1rem;
     margin-bottom: 0.5rem;
+  }
+
+  .upload-indicator {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    color: #ffa500;
+    font-size: 0.9rem;
+    margin-top: 0.5rem;
+  }
+
+  .spinner {
+    width: 16px;
+    height: 16px;
+    border: 2px solid rgba(255, 165, 0, 0.3);
+    border-top: 2px solid #ffa500;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% {
+      transform: rotate(0deg);
+    }
+    100% {
+      transform: rotate(360deg);
+    }
+  }
+
+  .report-info {
+    color: #90ee90;
+    font-size: 0.8rem;
+    margin-top: 0.5rem;
+    text-align: center;
+  }
+
+  .progress-container {
+    margin-top: 1rem;
+    width: 100%;
+  }
+
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background-color: rgba(255, 255, 255, 0.2);
+    border-radius: 4px;
+    overflow: hidden;
+    margin-bottom: 0.5rem;
+  }
+
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #4caf50, #8bc34a);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+
+  .progress-text {
+    color: #fff;
+    font-size: 0.9rem;
+    text-align: center;
   }
 
   .controls {

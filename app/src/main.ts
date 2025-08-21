@@ -7,7 +7,8 @@ import { initializeAuth } from './stores/auth'
 async function initializeMocks() {
   const apiProfile = import.meta.env.VITE_API_PROFILE;
   
-  if (apiProfile === 'mock') {
+  // 開発環境では常にMSWを有効にする
+  if (import.meta.env.DEV || apiProfile === 'mock') {
     const { startMocking } = await import('./mocks/browser');
     await startMocking();
   }

@@ -219,21 +219,23 @@
 
   <!-- プログラム開始モーダル -->
   {#if showStartModal}
-    <div
-      class="modal-overlay"
-      on:click={closeModal}
-      on:keydown={closeModal}
-      role="dialog"
-      aria-modal="true"
-    >
+    <!-- svelte-ignore a11y-click-events-have-key-events -->
+    <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
+    <div class="modal-overlay" on:click={closeModal} role="presentation">
+      <!-- svelte-ignore a11y-click-events-have-key-events -->
+      <!-- svelte-ignore a11y-no-noninteractive-element-interactions -->
       <div
         class="modal-content"
         on:click|stopPropagation
-        on:keydown|stopPropagation
-        role="document"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
+        tabindex="-1"
       >
         <div class="modal-header">
-          <h4>はじめに施術前の写真を<br />アップロードしましょう</h4>
+          <h4 id="modal-title">
+            はじめに施術前の写真を<br />アップロードしましょう
+          </h4>
         </div>
 
         <div class="modal-body">

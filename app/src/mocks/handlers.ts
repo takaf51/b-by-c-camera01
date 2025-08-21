@@ -375,39 +375,166 @@ export const planHandlers = [
 ];
 
 // 全ハンドラをエクスポート
-// カメラ関連のAPIハンドラ
+// カメラ関連のAPIハンドラ（Face Matrix API仕様に準拠）
 export const cameraHandlers = [
-  // 画像アップロード
+  // 画像アップロード - Face Matrix API仕様に準拠
   http.post('/api/plan/report/send', async ({ request }) => {
-    const formData = await request.formData();
-    const image = formData.get('image');
-    const kind = formData.get('kind'); // 'before' or 'after'
+    console.log('MSW: Face Matrix API - Image upload request received');
     
-    console.log('MSW: Image upload request', { kind, hasImage: !!image });
+    // ヘッダーチェック
+    const authorization = request.headers.get('Authorization');
+    const planCode = request.headers.get('X-Plan-Code');
+    const contentType = request.headers.get('Content-Type');
     
-    // モック応答
-    return HttpResponse.json({
-      success: true,
-      reportId: Math.floor(Math.random() * 1000) + 1,
-      message: `${kind}画像のアップロードが完了しました`
+    console.log('MSW: Headers -', {
+      authorization: authorization ? 'Bearer ***' : 'Missing',
+      planCode,
+      contentType: contentType?.includes('multipart/form-data') ? 'multipart/form-data' : contentType
     });
+    
+    // 認証チェック
+    if (!authorization?.startsWith('Bearer ')) {
+      return HttpResponse.json(
+        { error: 'Authorization header is required' },
+        { status: 401 }
+      );
+    }
+    
+    // プランコードチェック
+    if (!planCode) {
+      return HttpResponse.json(
+        { error: 'X-Plan-Code header is required' },
+        { status: 400 }
+      );
+    }
+    
+    try {
+      const formData = await request.formData();
+      const image = formData.get('image') as File;
+      const kind = formData.get('kind') as string; // 'before' or 'after'
+      const reportIdParam = formData.get('report_id') as string;
+      const pointsParam = formData.get('points') as string;
+      
+      console.log('MSW: Form data -', {
+        kind,
+        hasImage: !!image,
+        imageSize: image?.size || 0,
+        reportId: reportIdParam || 'new',
+        hasPoints: !!pointsParam
+      });
+      
+      // バリデーション
+      if (!kind || !['before', 'after'].includes(kind)) {
+        return HttpResponse.json(
+          { error: 'kind parameter must be "before" or "after"' },
+          { status: 400 }
+        );
+      }
+      
+      if (!image) {
+        return HttpResponse.json(
+          { error: 'image file is required' },
+          { status: 400 }
+        );
+      }
+      
+      // 座標情報をパース（送信されている場合）
+      let points = null;
+      if (pointsParam) {
+        try {
+          points = JSON.parse(pointsParam);
+          console.log('MSW: Parsed points -', points);
+        } catch (error) {
+          console.warn('MSW: Failed to parse points -', error);
+        }
+      }
+      
+      // report_idを決定（新規作成 or 更新）
+      const reportId = reportIdParam ? parseInt(reportIdParam) : Math.floor(Math.random() * 1000) + 100;
+      const isNewReport = !reportIdParam;
+      
+      // 開発用：さまざまなシナリオをシミュレート
+      const scenarios = {
+        success: 0.85,      // 85%の確率で成功
+        serverError: 0.05,  // 5%の確率でサーバーエラー
+        timeout: 0.05,      // 5%の確率でタイムアウト
+        validationError: 0.05 // 5%の確率でバリデーションエラー
+      };
+      
+      const random = Math.random();
+      
+      // エラーシナリオのシミュレート
+      if (random > scenarios.success) {
+        await new Promise(resolve => setTimeout(resolve, 1000)); // 遅延
+        
+        if (random > scenarios.success + scenarios.validationError) {
+          if (random > scenarios.success + scenarios.validationError + scenarios.timeout) {
+            // サーバーエラー
+            console.log('MSW: Simulating server error');
+            return HttpResponse.json(
+              { error: 'Internal server error occurred' },
+              { status: 500 }
+            );
+          } else {
+            // タイムアウト
+            console.log('MSW: Simulating timeout');
+            await new Promise(resolve => setTimeout(resolve, 10000)); // 長い遅延
+          }
+        } else {
+          // バリデーションエラー
+          console.log('MSW: Simulating validation error');
+          return HttpResponse.json(
+            { error: 'Invalid image format or size' },
+            { status: 422 }
+          );
+        }
+      }
+      
+      // API仕様に準拠したレスポンス
+      const response = {
+        report_id: reportId,
+        image_status: {
+          before: kind === 'before' ? true : (reportIdParam ? Math.random() > 0.3 : false),
+          after: kind === 'after' ? true : (reportIdParam ? Math.random() > 0.3 : false)
+        }
+      };
+      
+      console.log('MSW: API response (SUCCESS) -', response);
+      
+      // リアルなAPI感のための遅延
+      await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 700));
+      
+      return HttpResponse.json(response, {
+        status: 200,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+    } catch (error) {
+      console.error('MSW: Error processing request -', error);
+      return HttpResponse.json(
+        { error: 'Internal server error' },
+        { status: 500 }
+      );
+    }
   }),
 
-  // 画像処理ステータス取得
-  http.get('/api/plan/report/getImageProcessingStatus', ({ request }) => {
-    const url = new globalThis.URL(request.url);
-    const reportId = url.searchParams.get('report_id');
+  // 画像処理ステータス取得（追加機能）
+  http.get('/api/plan/report/status/:reportId', ({ params }) => {
+    const reportId = params.reportId;
     
-    console.log('MSW: Image processing status request', { reportId });
+    console.log('MSW: Report status request for ID:', reportId);
     
     return HttpResponse.json({
+      report_id: parseInt(reportId as string),
       status: 'completed',
-      progress: 100,
-      result: {
-        before_images: 5,
-        after_images: 5,
-        analysis_completed: true
-      }
+      image_status: {
+        before: true,
+        after: true
+      },
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString()
     });
   }),
 ];

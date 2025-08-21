@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { HTMLButtonAttributes } from 'svelte/elements';
 
-  interface $$Props extends HTMLButtonAttributes {
+  interface $$Props extends Omit<HTMLButtonAttributes, 'class'> {
     /** ボタンのバリエーション */
     variant?: 'primary' | 'secondary' | 'outline' | 'disabled' | 'danger';
     /** ボタンのサイズ */
@@ -10,6 +10,8 @@
     loading?: boolean;
     /** フル幅 */
     fullWidth?: boolean;
+    /** CSSクラス */
+    class?: string;
   }
 
   export let variant: $$Props['variant'] = 'primary';
@@ -18,7 +20,6 @@
   export let fullWidth: $$Props['fullWidth'] = false;
   export let disabled: $$Props['disabled'] = false;
 
-  // その他のHTMLButton属性を受け取る
   let className: string = '';
   export { className as class };
 
