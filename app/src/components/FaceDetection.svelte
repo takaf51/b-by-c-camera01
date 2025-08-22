@@ -37,11 +37,11 @@
   // Constants
   const FACE_DETECTION_THRESHOLD = 3;
   const FACE_DETECTION_DELAY = 2.0;
-  const STABILITY_TIME = 0.5;
+  const STABILITY_TIME = 0.15;
   const THRESHOLDS = {
-    roll: 15.0,
-    pitch: 20.0,
-    yaw: 15.0,
+    roll: 1.0,
+    pitch: 0.8,
+    yaw: 0.8,
   };
 
   // Pose and stability tracking
