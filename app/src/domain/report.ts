@@ -39,7 +39,10 @@ export interface ReportError extends Error {
 // Validation
 // =============================================================================
 
-export function validateReportImage(image: ReportImage): { isValid: boolean; errors: string[] } {
+export function validateReportImage(image: ReportImage): {
+  isValid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   if (!image.imageData) {
@@ -61,11 +64,14 @@ export function validateReportImage(image: ReportImage): { isValid: boolean; err
   };
 }
 
-export function validateFacePoints(points: FacePoints): { isValid: boolean; errors: string[] } {
+export function validateFacePoints(points: FacePoints): {
+  isValid: boolean;
+  errors: string[];
+} {
   const errors: string[] = [];
 
   const requiredPoints = ['leftEye', 'rightEye', 'noseTip'];
-  
+
   for (const pointName of requiredPoints) {
     const point = points[pointName as keyof FacePoints];
     if (!point || typeof point.x !== 'number' || typeof point.y !== 'number') {

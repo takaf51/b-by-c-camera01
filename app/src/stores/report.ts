@@ -74,11 +74,13 @@ function createReportStore() {
         const domainImage: ReportImage = {
           kind: image.kind,
           imageData: image.imageData,
-          points: image.points ? {
-            leftEye: image.points.leftEye,
-            rightEye: image.points.rightEye,
-            noseTip: image.points.noseTip,
-          } : undefined,
+          points: image.points
+            ? {
+                leftEye: image.points.leftEye,
+                rightEye: image.points.rightEye,
+                noseTip: image.points.noseTip,
+              }
+            : undefined,
         };
 
         const result = await reportUseCase.submitReport(
@@ -94,7 +96,8 @@ function createReportStore() {
           error: null,
         }));
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : 'レポート送信に失敗しました';
+        const errorMessage =
+          error instanceof Error ? error.message : 'レポート送信に失敗しました';
         update(state => ({
           ...state,
           isUploading: false,

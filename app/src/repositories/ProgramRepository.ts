@@ -3,7 +3,13 @@
  * プログラム関連のAPI通信を抽象化
  */
 
-import type { Program, ProgramDetail, ProgramListRequest, ProgramListResponse, ProgramError } from '../domain/program';
+import type {
+  Program,
+  ProgramDetail,
+  ProgramListRequest,
+  ProgramListResponse,
+  ProgramError,
+} from '../domain/program';
 import { createHttpClient } from '../lib/http';
 
 // =============================================================================
@@ -15,7 +21,7 @@ export interface ProgramRepository {
    * プログラム一覧を取得
    */
   getProgramList(request?: ProgramListRequest): Promise<ProgramListResponse>;
-  
+
   /**
    * プログラム詳細を取得
    */
@@ -29,17 +35,19 @@ export interface ProgramRepository {
 export class HttpProgramRepository implements ProgramRepository {
   private httpClient = createHttpClient();
 
-  async getProgramList(request: ProgramListRequest = {}): Promise<ProgramListResponse> {
+  async getProgramList(
+    request: ProgramListRequest = {}
+  ): Promise<ProgramListResponse> {
     try {
       const params = new URLSearchParams();
-      
+
       if (request.page) params.append('page', request.page.toString());
       if (request.limit) params.append('limit', request.limit.toString());
       if (request.status) params.append('status', request.status);
-      
+
       const queryString = params.toString();
       const url = `/api/plan/list${queryString ? `?${queryString}` : ''}`;
-      
+
       const response = await this.httpClient.get(url);
 
       return this.transformProgramListResponse(response);
@@ -64,7 +72,10 @@ export class HttpProgramRepository implements ProgramRepository {
 
   private transformProgramListResponse(response: any): ProgramListResponse {
     return {
-      programs: response.programs?.map((program: any) => this.transformProgramResponse(program)) || [],
+      programs:
+        response.programs?.map((program: any) =>
+          this.transformProgramResponse(program)
+        ) || [],
       totalCount: response.totalCount || 0,
       currentPage: response.currentPage || 1,
       totalPages: response.totalPages || 1,
@@ -80,7 +91,8 @@ export class HttpProgramRepository implements ProgramRepository {
       startDate: program.startDate || program.start_date || '',
       endDate: program.endDate || program.end_date || '',
       maxParticipants: program.maxParticipants || program.max_participants,
-      currentParticipants: program.currentParticipants || program.current_participants || 0,
+      currentParticipants:
+        program.currentParticipants || program.current_participants || 0,
       imageUrl: program.imageUrl || program.image_url,
       programCode: program.programCode || program.program_code || '',
     };
@@ -93,15 +105,18 @@ export class HttpProgramRepository implements ProgramRepository {
       location: program.location,
       requirements: program.requirements || [],
       benefits: program.benefits || [],
-      organizer: program.organizer ? {
-        name: program.organizer.name || '',
-        contact: program.organizer.contact,
-      } : undefined,
-      schedule: program.schedule?.map((item: any) => ({
-        time: item.time || '',
-        title: item.title || '',
-        description: item.description,
-      })) || [],
+      organizer: program.organizer
+        ? {
+            name: program.organizer.name || '',
+            contact: program.organizer.contact,
+          }
+        : undefined,
+      schedule:
+        program.schedule?.map((item: any) => ({
+          time: item.time || '',
+          title: item.title || '',
+          description: item.description,
+        })) || [],
       images: program.images || [],
     };
   }
@@ -111,19 +126,19 @@ export class HttpProgramRepository implements ProgramRepository {
       if (error.message.includes('fetch')) {
         return {
           type: 'network',
-          message: 'ネットワークエラーが発生しました'
+          message: 'ネットワークエラーが発生しました',
         };
       }
-      
+
       return {
         type: 'server',
-        message: error.message
+        message: error.message,
       };
     }
 
     return {
       type: 'unknown',
-      message: '予期しないエラーが発生しました'
+      message: '予期しないエラーが発生しました',
     };
   }
 }

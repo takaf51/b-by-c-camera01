@@ -23,7 +23,7 @@ declare module '@mediapipe/drawing_utils/drawing_utils' {
     connections: any,
     style?: any
   ): void;
-  
+
   export const FACEMESH_TESSELATION: any;
   export const FACEMESH_RIGHT_EYE: any;
   export const FACEMESH_LEFT_EYE: any;

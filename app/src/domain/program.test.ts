@@ -43,8 +43,13 @@ const createMockProgram = (overrides: Partial<Program> = {}): Program => ({
 describe('Program Domain Validation', () => {
   describe('isValidProgramStatus', () => {
     it('有効なステータスをtrueとする', () => {
-      const validStatuses: ProgramStatus[] = ['upcoming', 'active', 'completed', 'cancelled'];
-      
+      const validStatuses: ProgramStatus[] = [
+        'upcoming',
+        'active',
+        'completed',
+        'cancelled',
+      ];
+
       validStatuses.forEach(status => {
         expect(isValidProgramStatus(status)).toBe(true);
       });
@@ -52,7 +57,7 @@ describe('Program Domain Validation', () => {
 
     it('無効なステータスをfalseとする', () => {
       const invalidStatuses = ['invalid', 'pending', 'draft', '', 'ACTIVE'];
-      
+
       invalidStatuses.forEach(status => {
         expect(isValidProgramStatus(status)).toBe(false);
       });
@@ -76,11 +81,7 @@ describe('Program Domain Validation', () => {
 
     describe('pageバリデーション', () => {
       it('pageが0以下の場合エラーを返す', () => {
-        const requests = [
-          { page: 0 },
-          { page: -1 },
-          { page: -100 },
-        ];
+        const requests = [{ page: 0 }, { page: -1 }, { page: -100 }];
 
         requests.forEach(request => {
           const error = validateProgramListRequest(request);
@@ -92,11 +93,7 @@ describe('Program Domain Validation', () => {
       });
 
       it('pageが1以上の場合は有効', () => {
-        const requests = [
-          { page: 1 },
-          { page: 10 },
-          { page: 1000 },
-        ];
+        const requests = [{ page: 1 }, { page: 10 }, { page: 1000 }];
 
         requests.forEach(request => {
           expect(validateProgramListRequest(request)).toBeNull();
@@ -123,11 +120,7 @@ describe('Program Domain Validation', () => {
       });
 
       it('limitが1-100の範囲の場合は有効', () => {
-        const requests = [
-          { limit: 1 },
-          { limit: 50 },
-          { limit: 100 },
-        ];
+        const requests = [{ limit: 1 }, { limit: 50 }, { limit: 100 }];
 
         requests.forEach(request => {
           expect(validateProgramListRequest(request)).toBeNull();
@@ -171,7 +164,7 @@ describe('Program Business Logic', () => {
   describe('isProgramActive', () => {
     it('activeステータスで期間内の場合trueを返す', () => {
       vi.setSystemTime(new Date('2024-01-01T12:00:00Z')); // プログラム期間内
-      
+
       const program = createMockProgram({
         status: 'active',
         startDate: '2024-01-01T10:00:00Z',
@@ -183,7 +176,7 @@ describe('Program Business Logic', () => {
 
     it('activeステータスでも期間外の場合falseを返す', () => {
       vi.setSystemTime(new Date('2024-01-02T12:00:00Z')); // プログラム終了後
-      
+
       const program = createMockProgram({
         status: 'active',
         startDate: '2024-01-01T10:00:00Z',
@@ -195,9 +188,9 @@ describe('Program Business Logic', () => {
 
     it('期間内でもactiveステータス以外の場合falseを返す', () => {
       vi.setSystemTime(new Date('2024-01-01T12:00:00Z'));
-      
+
       const statuses: ProgramStatus[] = ['upcoming', 'completed', 'cancelled'];
-      
+
       statuses.forEach(status => {
         const program = createMockProgram({ status });
         expect(isProgramActive(program)).toBe(false);
@@ -206,7 +199,7 @@ describe('Program Business Logic', () => {
 
     it('開始時刻ちょうどの場合trueを返す', () => {
       vi.setSystemTime(new Date('2024-01-01T10:00:00Z'));
-      
+
       const program = createMockProgram({
         status: 'active',
         startDate: '2024-01-01T10:00:00Z',
@@ -218,7 +211,7 @@ describe('Program Business Logic', () => {
 
     it('終了時刻ちょうどの場合trueを返す', () => {
       vi.setSystemTime(new Date('2024-01-01T18:00:00Z'));
-      
+
       const program = createMockProgram({
         status: 'active',
         startDate: '2024-01-01T10:00:00Z',
@@ -232,7 +225,7 @@ describe('Program Business Logic', () => {
   describe('isProgramUpcoming', () => {
     it('upcomingステータスで開始前の場合trueを返す', () => {
       vi.setSystemTime(new Date('2023-12-31T12:00:00Z')); // プログラム開始前
-      
+
       const program = createMockProgram({
         status: 'upcoming',
         startDate: '2024-01-01T10:00:00Z',
@@ -243,7 +236,7 @@ describe('Program Business Logic', () => {
 
     it('upcomingステータスでも開始後の場合falseを返す', () => {
       vi.setSystemTime(new Date('2024-01-01T12:00:00Z')); // プログラム開始後
-      
+
       const program = createMockProgram({
         status: 'upcoming',
         startDate: '2024-01-01T10:00:00Z',
@@ -254,9 +247,9 @@ describe('Program Business Logic', () => {
 
     it('開始前でもupcomingステータス以外の場合falseを返す', () => {
       vi.setSystemTime(new Date('2023-12-31T12:00:00Z'));
-      
+
       const statuses: ProgramStatus[] = ['active', 'completed', 'cancelled'];
-      
+
       statuses.forEach(status => {
         const program = createMockProgram({ status });
         expect(isProgramUpcoming(program)).toBe(false);
@@ -281,7 +274,7 @@ describe('Program Business Logic', () => {
 
     it('upcomingなプログラムで定員に空きがある場合trueを返す', () => {
       vi.setSystemTime(new Date('2023-12-31T12:00:00Z')); // 開始前
-      
+
       const program = createMockProgram({
         status: 'upcoming',
         maxParticipants: 20,
@@ -410,10 +403,15 @@ describe('Program Utility Functions', () => {
         { maxParticipants: 10, currentParticipants: 10, expected: 100 },
       ];
 
-      testCases.forEach(({ maxParticipants, currentParticipants, expected }) => {
-        const program = createMockProgram({ maxParticipants, currentParticipants });
-        expect(getParticipationRate(program)).toBe(expected);
-      });
+      testCases.forEach(
+        ({ maxParticipants, currentParticipants, expected }) => {
+          const program = createMockProgram({
+            maxParticipants,
+            currentParticipants,
+          });
+          expect(getParticipationRate(program)).toBe(expected);
+        }
+      );
     });
 
     it('定員未設定の場合0を返す', () => {
@@ -444,10 +442,15 @@ describe('Program Utility Functions', () => {
         { maxParticipants: 10, currentParticipants: 10, expected: 0 },
       ];
 
-      testCases.forEach(({ maxParticipants, currentParticipants, expected }) => {
-        const program = createMockProgram({ maxParticipants, currentParticipants });
-        expect(getRemainingSlots(program)).toBe(expected);
-      });
+      testCases.forEach(
+        ({ maxParticipants, currentParticipants, expected }) => {
+          const program = createMockProgram({
+            maxParticipants,
+            currentParticipants,
+          });
+          expect(getRemainingSlots(program)).toBe(expected);
+        }
+      );
     });
 
     it('定員未設定の場合nullを返す', () => {

@@ -3,12 +3,12 @@
  * レポート関連のビジネスロジック
  */
 
-import type { 
-  ReportCreateRequest, 
-  ReportCreateResponse, 
+import type {
+  ReportCreateRequest,
+  ReportCreateResponse,
   ReportImage,
   FacePoints,
-  ReportError 
+  ReportError,
 } from '../domain/report';
 import { validateReportImage, validateFacePoints } from '../domain/report';
 import type { ReportRepository } from '../repositories/ReportRepository';
@@ -43,7 +43,9 @@ export class ReportUseCaseImpl implements ReportUseCase {
     // 入力バリデーション
     const imageValidation = validateReportImage(image);
     if (!imageValidation.isValid) {
-      const error: ReportError = new Error(imageValidation.errors[0]) as ReportError;
+      const error: ReportError = new Error(
+        imageValidation.errors[0]
+      ) as ReportError;
       error.code = 'VALIDATION_ERROR';
       throw error;
     }
@@ -52,7 +54,9 @@ export class ReportUseCaseImpl implements ReportUseCase {
     if (image.points) {
       const pointsValidation = validateFacePoints(image.points);
       if (!pointsValidation.isValid) {
-        const error: ReportError = new Error(pointsValidation.errors[0]) as ReportError;
+        const error: ReportError = new Error(
+          pointsValidation.errors[0]
+        ) as ReportError;
         error.code = 'VALIDATION_ERROR';
         throw error;
       }
@@ -60,7 +64,9 @@ export class ReportUseCaseImpl implements ReportUseCase {
 
     // プログラムIDのバリデーション
     if (!programId || programId.trim() === '') {
-      const error: ReportError = new Error('プログラムIDが必要です') as ReportError;
+      const error: ReportError = new Error(
+        'プログラムIDが必要です'
+      ) as ReportError;
       error.code = 'VALIDATION_ERROR';
       throw error;
     }
@@ -73,7 +79,7 @@ export class ReportUseCaseImpl implements ReportUseCase {
       };
 
       const result = await this.reportRepository.createReport(request);
-      
+
       return result;
     } catch (error) {
       // ビジネスロジックレベルでのエラーハンドリング
@@ -94,6 +100,8 @@ export class ReportUseCaseImpl implements ReportUseCase {
 // Factory Function
 // =============================================================================
 
-export function createReportUseCase(reportRepository: ReportRepository): ReportUseCase {
+export function createReportUseCase(
+  reportRepository: ReportRepository
+): ReportUseCase {
   return new ReportUseCaseImpl(reportRepository);
 }

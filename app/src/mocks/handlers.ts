@@ -99,33 +99,41 @@ export const authHandlers = [
 ];
 
 // プログラム関連のAPIハンドラ
-// 画像管理方針: 
+// 画像管理方針:
 // - 開発環境: 外部プレースホルダー画像（Picsum Photos）を使用
 // - 本番環境: CDN経由でAPI応答に含まれる画像URLを使用
 // - 静的アセット（ロゴ等）: public/images/ に配置
 export const programHandlers = [
   // プログラム一覧取得
   http.get('/api/plan/list', ({ request }) => {
-          const url = new globalThis.URL(request.url);
+    const url = new globalThis.URL(request.url);
     const page = parseInt(url.searchParams.get('page') || '1');
     const limit = parseInt(url.searchParams.get('limit') || '20');
     const status = url.searchParams.get('status');
 
-    console.log('MSW: Program list request - page:', page, 'limit:', limit, 'status:', status);
+    console.log(
+      'MSW: Program list request - page:',
+      page,
+      'limit:',
+      limit,
+      'status:',
+      status
+    );
 
     // モックプログラムデータ
     const allPrograms = [
       {
         id: 1,
         title: 'ビューティ体験プログラム Vol.1',
-        description: '最新の美容機器を体験できるプログラムです。プロのスタッフがサポートします。',
+        description:
+          '最新の美容機器を体験できるプログラムです。プロのスタッフがサポートします。',
         status: 'active',
         startDate: '2024-01-15T10:00:00Z',
         endDate: '2024-01-15T18:00:00Z',
         maxParticipants: 20,
         currentParticipants: 12,
         imageUrl: 'https://picsum.photos/400/300?random=1',
-        programCode: 'BEAUTY001'
+        programCode: 'BEAUTY001',
       },
       {
         id: 2,
@@ -137,7 +145,7 @@ export const programHandlers = [
         maxParticipants: 15,
         currentParticipants: 3,
         imageUrl: 'https://picsum.photos/400/300?random=2',
-        programCode: 'FACIAL002'
+        programCode: 'FACIAL002',
       },
       {
         id: 3,
@@ -149,7 +157,7 @@ export const programHandlers = [
         maxParticipants: 30,
         currentParticipants: 25,
         imageUrl: 'https://picsum.photos/400/300?random=3',
-        programCode: 'SKIN003'
+        programCode: 'SKIN003',
       },
       {
         id: 4,
@@ -160,12 +168,12 @@ export const programHandlers = [
         endDate: '2024-02-01T18:00:00Z',
         currentParticipants: 0,
         imageUrl: 'https://picsum.photos/400/300?random=4',
-        programCode: 'FAIR004'
-      }
+        programCode: 'FAIR004',
+      },
     ];
 
     // ステータスでフィルタ
-    let filteredEvents = status 
+    let filteredEvents = status
       ? allPrograms.filter(program => program.status === status)
       : allPrograms;
 
@@ -180,14 +188,14 @@ export const programHandlers = [
       programs: paginatedEvents,
       totalCount,
       currentPage: page,
-      totalPages
+      totalPages,
     });
   }),
 
   // プログラム詳細取得
   http.get('/api/plan/detail/:id', ({ params }) => {
     const id = parseInt(params.id as string);
-    
+
     console.log('MSW: Program detail request for ID:', id);
 
     // モックプログラム詳細データベース
@@ -195,7 +203,8 @@ export const programHandlers = [
       1: {
         id: 1,
         title: 'ビューティ体験プログラム Vol.1',
-        description: '最新の美容機器を体験できるプログラムです。プロのスタッフがサポートします。',
+        description:
+          '最新の美容機器を体験できるプログラムです。プロのスタッフがサポートします。',
         longDescription: `最新の美容機器を実際に体験できる特別なプログラムです。
 
 このプログラムでは、最先端のスキンケア機器やフェイシャルケア機器を実際に使用して、その効果を体感いただけます。経験豊富なプロのスタッフが一人ひとりに合わせてサポートし、機器の使用方法から効果的なケア方法まで丁寧にご案内いたします。
@@ -212,65 +221,65 @@ export const programHandlers = [
         requirements: [
           '18歳以上の方',
           '事前の健康チェックシート記入',
-          '肌にアレルギーがない方'
+          '肌にアレルギーがない方',
         ],
         benefits: [
           '最新美容機器の無料体験',
           'プロによる肌診断',
           '参加者限定の特別割引',
-          'オリジナルサンプルセットのプレゼント'
+          'オリジナルサンプルセットのプレゼント',
         ],
         organizer: {
           name: 'ビューティテック株式会社',
-          contact: 'program@beauty-tech.co.jp'
+          contact: 'program@beauty-tech.co.jp',
         },
         schedule: [
           {
             time: '10:00',
             title: '受付開始・ウェルカムドリンク',
-            description: '参加者確認とプログラム概要の説明'
+            description: '参加者確認とプログラム概要の説明',
           },
           {
             time: '10:30',
             title: '美容機器紹介セミナー',
-            description: '最新機器の特徴と効果について専門家が解説'
+            description: '最新機器の特徴と効果について専門家が解説',
           },
           {
             time: '11:30',
             title: '個別体験セッション（第1グループ）',
-            description: 'スキンケア機器の実際の体験'
+            description: 'スキンケア機器の実際の体験',
           },
           {
             time: '13:00',
             title: 'ランチタイム',
-            description: '軽食を取りながら参加者同士の交流'
+            description: '軽食を取りながら参加者同士の交流',
           },
           {
             time: '14:00',
             title: '個別体験セッション（第2グループ）',
-            description: 'フェイシャルケア機器の実際の体験'
+            description: 'フェイシャルケア機器の実際の体験',
           },
           {
             time: '15:30',
             title: 'Q&Aセッション',
-            description: '専門家への質問タイム'
+            description: '専門家への質問タイム',
           },
           {
             time: '16:30',
             title: '特別販売会',
-            description: '参加者限定価格での製品販売'
+            description: '参加者限定価格での製品販売',
           },
           {
             time: '17:30',
             title: 'クロージング',
-            description: 'サンプルプレゼント・アンケート記入'
-          }
+            description: 'サンプルプレゼント・アンケート記入',
+          },
         ],
         images: [
           'https://picsum.photos/800/600?random=11',
           'https://picsum.photos/800/600?random=12',
-          'https://picsum.photos/800/600?random=13'
-        ]
+          'https://picsum.photos/800/600?random=13',
+        ],
       },
       2: {
         id: 2,
@@ -289,46 +298,43 @@ export const programHandlers = [
         imageUrl: 'https://picsum.photos/400/300?random=2',
         programCode: 'FACIAL002',
         location: '東京都新宿区新宿2-2-2 スキンケアサロン',
-        requirements: [
-          '20歳以上の方',
-          '化粧を落としてご参加いただける方'
-        ],
+        requirements: ['20歳以上の方', '化粧を落としてご参加いただける方'],
         benefits: [
           'AI肌診断（通常3,000円）が無料',
           '個別スキンケアアドバイス',
-          'おすすめ製品のサンプル'
+          'おすすめ製品のサンプル',
         ],
         organizer: {
           name: 'スキンケア研究所',
-          contact: 'info@skincare-lab.jp'
+          contact: 'info@skincare-lab.jp',
         },
         schedule: [
           {
             time: '14:00',
             title: '受付・説明',
-            description: 'AI診断システムの説明と注意事項'
+            description: 'AI診断システムの説明と注意事項',
           },
           {
             time: '14:20',
             title: 'AI肌診断',
-            description: '約15分間の詳細肌分析'
+            description: '約15分間の詳細肌分析',
           },
           {
             time: '15:30',
             title: '結果説明・アドバイス',
-            description: '専門家による診断結果の解説'
+            description: '専門家による診断結果の解説',
           },
           {
             time: '16:30',
             title: 'サンプル配布',
-            description: '診断結果に基づくサンプル製品の提供'
-          }
+            description: '診断結果に基づくサンプル製品の提供',
+          },
         ],
         images: [
           'https://picsum.photos/800/600?random=21',
-          'https://picsum.photos/800/600?random=22'
-        ]
-      }
+          'https://picsum.photos/800/600?random=22',
+        ],
+      },
     };
 
     // 存在しないIDの場合はデフォルトデータを返す
@@ -349,21 +355,21 @@ export const programHandlers = [
       benefits: ['特別体験', 'サンプルプレゼント'],
       organizer: {
         name: `プログラム運営${id}`,
-        contact: `program${id}@example.com`
+        contact: `program${id}@example.com`,
       },
       schedule: [
         {
           time: '10:00',
           title: '受付開始',
-          description: 'プログラム受付'
+          description: 'プログラム受付',
         },
         {
           time: '11:00',
           title: 'メインプログラム',
-          description: 'プログラムの主要プログラム'
-        }
+          description: 'プログラムの主要プログラム',
+        },
       ],
-      images: [`https://picsum.photos/800/600?random=${id + 10}`]
+      images: [`https://picsum.photos/800/600?random=${id + 10}`],
     };
 
     return HttpResponse.json(programDetail);
@@ -380,18 +386,20 @@ export const cameraHandlers = [
   // 画像アップロード - Face Matrix API仕様に準拠
   http.post('/api/plan/report/send', async ({ request }) => {
     console.log('MSW: Face Matrix API - Image upload request received');
-    
+
     // ヘッダーチェック
     const authorization = request.headers.get('Authorization');
     const planCode = request.headers.get('X-Plan-Code');
     const contentType = request.headers.get('Content-Type');
-    
+
     console.log('MSW: Headers -', {
       authorization: authorization ? 'Bearer ***' : 'Missing',
       planCode,
-      contentType: contentType?.includes('multipart/form-data') ? 'multipart/form-data' : contentType
+      contentType: contentType?.includes('multipart/form-data')
+        ? 'multipart/form-data'
+        : contentType,
     });
-    
+
     // 認証チェック
     if (!authorization?.startsWith('Bearer ')) {
       return HttpResponse.json(
@@ -399,7 +407,7 @@ export const cameraHandlers = [
         { status: 401 }
       );
     }
-    
+
     // プランコードチェック
     if (!planCode) {
       return HttpResponse.json(
@@ -407,22 +415,22 @@ export const cameraHandlers = [
         { status: 400 }
       );
     }
-    
+
     try {
       const formData = await request.formData();
       const image = formData.get('image') as File;
       const kind = formData.get('kind') as string; // 'before' or 'after'
       const reportIdParam = formData.get('report_id') as string;
       const pointsParam = formData.get('points') as string;
-      
+
       console.log('MSW: Form data -', {
         kind,
         hasImage: !!image,
         imageSize: image?.size || 0,
         reportId: reportIdParam || 'new',
-        hasPoints: !!pointsParam
+        hasPoints: !!pointsParam,
       });
-      
+
       // バリデーション
       if (!kind || !['before', 'after'].includes(kind)) {
         return HttpResponse.json(
@@ -430,14 +438,14 @@ export const cameraHandlers = [
           { status: 400 }
         );
       }
-      
+
       if (!image) {
         return HttpResponse.json(
           { error: 'image file is required' },
           { status: 400 }
         );
       }
-      
+
       // 座標情報をパース（送信されている場合）
       let points = null;
       if (pointsParam) {
@@ -448,27 +456,32 @@ export const cameraHandlers = [
           console.warn('MSW: Failed to parse points -', error);
         }
       }
-      
+
       // report_idを決定（新規作成 or 更新）
-      const reportId = reportIdParam ? parseInt(reportIdParam) : Math.floor(Math.random() * 1000) + 100;
+      const reportId = reportIdParam
+        ? parseInt(reportIdParam)
+        : Math.floor(Math.random() * 1000) + 100;
       const isNewReport = !reportIdParam;
-      
+
       // 開発用：さまざまなシナリオをシミュレート
       const scenarios = {
-        success: 0.85,      // 85%の確率で成功
-        serverError: 0.05,  // 5%の確率でサーバーエラー
-        timeout: 0.05,      // 5%の確率でタイムアウト
-        validationError: 0.05 // 5%の確率でバリデーションエラー
+        success: 0.85, // 85%の確率で成功
+        serverError: 0.05, // 5%の確率でサーバーエラー
+        timeout: 0.05, // 5%の確率でタイムアウト
+        validationError: 0.05, // 5%の確率でバリデーションエラー
       };
-      
+
       const random = Math.random();
-      
+
       // エラーシナリオのシミュレート
       if (random > scenarios.success) {
         await new Promise(resolve => setTimeout(resolve, 1000)); // 遅延
-        
+
         if (random > scenarios.success + scenarios.validationError) {
-          if (random > scenarios.success + scenarios.validationError + scenarios.timeout) {
+          if (
+            random >
+            scenarios.success + scenarios.validationError + scenarios.timeout
+          ) {
             // サーバーエラー
             console.log('MSW: Simulating server error');
             return HttpResponse.json(
@@ -489,28 +502,39 @@ export const cameraHandlers = [
           );
         }
       }
-      
+
       // API仕様に準拠したレスポンス
       const response = {
         report_id: reportId,
         image_status: {
-          before: kind === 'before' ? true : (reportIdParam ? Math.random() > 0.3 : false),
-          after: kind === 'after' ? true : (reportIdParam ? Math.random() > 0.3 : false)
-        }
+          before:
+            kind === 'before'
+              ? true
+              : reportIdParam
+                ? Math.random() > 0.3
+                : false,
+          after:
+            kind === 'after'
+              ? true
+              : reportIdParam
+                ? Math.random() > 0.3
+                : false,
+        },
       };
-      
+
       console.log('MSW: API response (SUCCESS) -', response);
-      
+
       // リアルなAPI感のための遅延
-      await new Promise(resolve => setTimeout(resolve, 300 + Math.random() * 700));
-      
+      await new Promise(resolve =>
+        setTimeout(resolve, 300 + Math.random() * 700)
+      );
+
       return HttpResponse.json(response, {
         status: 200,
         headers: {
-          'Content-Type': 'application/json'
-        }
+          'Content-Type': 'application/json',
+        },
       });
-      
     } catch (error) {
       console.error('MSW: Error processing request -', error);
       return HttpResponse.json(
@@ -523,20 +547,25 @@ export const cameraHandlers = [
   // 画像処理ステータス取得（追加機能）
   http.get('/api/plan/report/status/:reportId', ({ params }) => {
     const reportId = params.reportId;
-    
+
     console.log('MSW: Report status request for ID:', reportId);
-    
+
     return HttpResponse.json({
       report_id: parseInt(reportId as string),
       status: 'completed',
       image_status: {
         before: true,
-        after: true
+        after: true,
       },
       created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     });
   }),
 ];
 
-export const handlers = [...authHandlers, ...programHandlers, ...planHandlers, ...cameraHandlers];
+export const handlers = [
+  ...authHandlers,
+  ...programHandlers,
+  ...planHandlers,
+  ...cameraHandlers,
+];

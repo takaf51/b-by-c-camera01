@@ -4,7 +4,12 @@
  */
 
 import { describe, it, expect, beforeEach, vi, afterEach } from 'vitest';
-import { HttpAuthRepository, LocalStorageTokenStorage, MemoryTokenStorage, CookieTokenStorage } from './AuthRepository';
+import {
+  HttpAuthRepository,
+  LocalStorageTokenStorage,
+  MemoryTokenStorage,
+  CookieTokenStorage,
+} from './AuthRepository';
 import { HttpClient } from '../lib/http';
 
 // =============================================================================
@@ -23,27 +28,27 @@ const createMockHttpClient = () => ({
 // =============================================================================
 
 const mockLoginRequest = {
-  email: 'test@example.com'
+  email: 'test@example.com',
 };
 
 const mockRegisterRequest = {
   email: 'test@example.com',
-  name: 'Test User'
+  name: 'Test User',
 };
 
 const mockDigitRequest = {
   email: 'test@example.com',
-  digit: '1234'
+  digit: '1234',
 };
 
 const mockLoginResponse = {
   token: 'mock-token-12345',
   name: 'Test User',
-  role: 'user'
+  role: 'user',
 };
 
 const mockMessageResponse = {
-  message: 'メール送信完了'
+  message: 'メール送信完了',
 };
 
 // =============================================================================
@@ -65,7 +70,10 @@ describe('HttpAuthRepository', () => {
 
       const result = await repository.sendLoginMail(mockLoginRequest);
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('/login/mail', mockLoginRequest);
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        '/login/mail',
+        mockLoginRequest
+      );
       expect(result).toEqual(mockMessageResponse);
     });
 
@@ -73,7 +81,9 @@ describe('HttpAuthRepository', () => {
       const error = new Error('Network error');
       vi.mocked(mockHttpClient.post).mockRejectedValue(error);
 
-      await expect(repository.sendLoginMail(mockLoginRequest)).rejects.toThrow('Network error');
+      await expect(repository.sendLoginMail(mockLoginRequest)).rejects.toThrow(
+        'Network error'
+      );
     });
   });
 
@@ -83,7 +93,10 @@ describe('HttpAuthRepository', () => {
 
       const result = await repository.sendRegisterMail(mockRegisterRequest);
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('/register/mail', mockRegisterRequest);
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        '/register/mail',
+        mockRegisterRequest
+      );
       expect(result).toEqual(mockMessageResponse);
     });
 
@@ -91,7 +104,9 @@ describe('HttpAuthRepository', () => {
       const error = new Error('Server error');
       vi.mocked(mockHttpClient.post).mockRejectedValue(error);
 
-      await expect(repository.sendRegisterMail(mockRegisterRequest)).rejects.toThrow('Server error');
+      await expect(
+        repository.sendRegisterMail(mockRegisterRequest)
+      ).rejects.toThrow('Server error');
     });
   });
 
@@ -101,9 +116,13 @@ describe('HttpAuthRepository', () => {
 
       const result = await repository.verifyDigit(mockDigitRequest);
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('/login/digit', mockDigitRequest, {
-        headers: { Accept: 'application/json' }
-      });
+      expect(mockHttpClient.post).toHaveBeenCalledWith(
+        '/login/digit',
+        mockDigitRequest,
+        {
+          headers: { Accept: 'application/json' },
+        }
+      );
       expect(result).toEqual(mockLoginResponse);
     });
 
@@ -111,7 +130,9 @@ describe('HttpAuthRepository', () => {
       const error = new Error('Invalid digit');
       vi.mocked(mockHttpClient.post).mockRejectedValue(error);
 
-      await expect(repository.verifyDigit(mockDigitRequest)).rejects.toThrow('Invalid digit');
+      await expect(repository.verifyDigit(mockDigitRequest)).rejects.toThrow(
+        'Invalid digit'
+      );
     });
   });
 
@@ -183,7 +204,10 @@ describe('LocalStorageTokenStorage', () => {
     it('トークンをローカルストレージに保存する', async () => {
       await storage.save(mockToken);
 
-      expect(localStorage.setItem).toHaveBeenCalledWith('auth_token', mockToken);
+      expect(localStorage.setItem).toHaveBeenCalledWith(
+        'auth_token',
+        mockToken
+      );
     });
   });
 

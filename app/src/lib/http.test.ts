@@ -38,7 +38,11 @@ const createMockResponse = (
       }),
     },
     json: vi.fn().mockResolvedValue(data),
-    text: vi.fn().mockResolvedValue(typeof data === 'string' ? data : JSON.stringify(data)),
+    text: vi
+      .fn()
+      .mockResolvedValue(
+        typeof data === 'string' ? data : JSON.stringify(data)
+      ),
   } as any;
 
   return response;
@@ -93,7 +97,9 @@ describe('HttpClient', () => {
 
     it('テキストレスポンスを正しく処理する', async () => {
       const mockText = 'Plain text response';
-      mockFetch.mockResolvedValue(createMockResponse(mockText, 200, 'text/plain'));
+      mockFetch.mockResolvedValue(
+        createMockResponse(mockText, 200, 'text/plain')
+      );
 
       const result = await httpClient.request('/test');
 
@@ -104,20 +110,24 @@ describe('HttpClient', () => {
       const errorResponse = { message: 'Bad Request Error' };
       mockFetch.mockResolvedValue(createMockResponse(errorResponse, 400));
 
-      await expect(httpClient.request('/test')).rejects.toBeInstanceOf(AuthError);
+      await expect(httpClient.request('/test')).rejects.toBeInstanceOf(
+        AuthError
+      );
     });
 
     it('ネットワークエラーでNetworkErrorをスローする', async () => {
       mockFetch.mockRejectedValue(new Error('Network failed'));
 
-      await expect(httpClient.request('/test')).rejects.toBeInstanceOf(NetworkError);
+      await expect(httpClient.request('/test')).rejects.toBeInstanceOf(
+        NetworkError
+      );
     });
 
     it('カスタムヘッダーを適用する', async () => {
       mockFetch.mockResolvedValue(createMockResponse({ success: true }));
 
       await httpClient.request('/test', {
-        headers: { 'Custom-Header': 'custom-value' }
+        headers: { 'Custom-Header': 'custom-value' },
       });
 
       expect(mockFetch).toHaveBeenCalledWith(
@@ -361,7 +371,9 @@ describe('HttpClient', () => {
     it('その他のHTTPエラーをNetworkErrorとして処理する', async () => {
       mockFetch.mockResolvedValue(createMockResponse({}, 503));
 
-      await expect(httpClient.get('/test')).rejects.toBeInstanceOf(NetworkError);
+      await expect(httpClient.get('/test')).rejects.toBeInstanceOf(
+        NetworkError
+      );
     });
 
     it('JSONパースエラーの場合デフォルトメッセージを使用する', async () => {
@@ -392,7 +404,7 @@ describe('createHttpClient', () => {
 
     // プライベートプロパティのテストは難しいため、実際のリクエストで確認
     mockFetch.mockResolvedValue(createMockResponse({ success: true }));
-    
+
     client.get('/test');
 
     expect(mockFetch).toHaveBeenCalledWith(

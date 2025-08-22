@@ -5,7 +5,10 @@
 
 import { describe, it, expect, beforeEach, vi } from 'vitest';
 import { AuthUseCase } from './AuthUseCase';
-import type { AuthRepository, TokenStorage } from '../repositories/AuthRepository';
+import type {
+  AuthRepository,
+  TokenStorage,
+} from '../repositories/AuthRepository';
 import { ValidationError, AuthError, NetworkError } from '../domain/auth';
 
 // =============================================================================
@@ -67,13 +70,17 @@ describe('AuthUseCase', () => {
 
   describe('sendLoginMail', () => {
     it('有効なメールアドレスでログインメールを送信する', async () => {
-      vi.mocked(mockAuthRepository.sendLoginMail).mockResolvedValue({ message: 'メール送信成功' });
+      vi.mocked(mockAuthRepository.sendLoginMail).mockResolvedValue({
+        message: 'メール送信成功',
+      });
 
       const result = await useCase.sendLoginMail(validEmail);
 
       expect(result.success).toBe(true);
       expect(result.errors).toBeUndefined();
-      expect(mockAuthRepository.sendLoginMail).toHaveBeenCalledWith({ email: validEmail });
+      expect(mockAuthRepository.sendLoginMail).toHaveBeenCalledWith({
+        email: validEmail,
+      });
     });
 
     it('無効なメールアドレスでバリデーションエラーを返す', async () => {
@@ -94,7 +101,9 @@ describe('AuthUseCase', () => {
     });
 
     it('ネットワークエラーを適切に処理する', async () => {
-      vi.mocked(mockAuthRepository.sendLoginMail).mockRejectedValue(new NetworkError('Network failed'));
+      vi.mocked(mockAuthRepository.sendLoginMail).mockRejectedValue(
+        new NetworkError('Network failed')
+      );
 
       const result = await useCase.sendLoginMail(validEmail);
 
@@ -105,7 +114,9 @@ describe('AuthUseCase', () => {
 
   describe('sendRegisterMail', () => {
     it('有効なメールアドレスと名前で登録メールを送信する', async () => {
-      vi.mocked(mockAuthRepository.sendRegisterMail).mockResolvedValue({ message: 'メール送信成功' });
+      vi.mocked(mockAuthRepository.sendRegisterMail).mockResolvedValue({
+        message: 'メール送信成功',
+      });
 
       const result = await useCase.sendRegisterMail(validEmail, validName);
 
@@ -143,7 +154,9 @@ describe('AuthUseCase', () => {
 
   describe('verifyDigit', () => {
     it('有効なメールアドレスと認証コードで認証する', async () => {
-      vi.mocked(mockAuthRepository.verifyDigit).mockResolvedValue(mockVerifyResponse);
+      vi.mocked(mockAuthRepository.verifyDigit).mockResolvedValue(
+        mockVerifyResponse
+      );
       vi.mocked(mockTokenStorage.save).mockResolvedValue(undefined);
 
       const result = await useCase.verifyDigit(validEmail, validDigit);
@@ -212,7 +225,9 @@ describe('AuthUseCase', () => {
 
     it('無効なトークンの場合は削除して失敗を返す', async () => {
       vi.mocked(mockTokenStorage.get).mockResolvedValue(mockToken);
-      vi.mocked(mockAuthRepository.checkAuth).mockResolvedValue({ auth: false });
+      vi.mocked(mockAuthRepository.checkAuth).mockResolvedValue({
+        auth: false,
+      });
       vi.mocked(mockTokenStorage.remove).mockResolvedValue(undefined);
 
       const result = await useCase.restoreSession();
@@ -224,7 +239,9 @@ describe('AuthUseCase', () => {
 
     it('認証チェック中のエラーでトークンを削除する', async () => {
       vi.mocked(mockTokenStorage.get).mockResolvedValue(mockToken);
-      vi.mocked(mockAuthRepository.checkAuth).mockRejectedValue(new Error('Network error'));
+      vi.mocked(mockAuthRepository.checkAuth).mockRejectedValue(
+        new Error('Network error')
+      );
       vi.mocked(mockTokenStorage.remove).mockResolvedValue(undefined);
 
       const result = await useCase.restoreSession();
@@ -247,7 +264,9 @@ describe('AuthUseCase', () => {
     });
 
     it('ログアウトAPIが失敗してもトークンを削除する', async () => {
-      vi.mocked(mockAuthRepository.logout).mockRejectedValue(new Error('Logout API failed'));
+      vi.mocked(mockAuthRepository.logout).mockRejectedValue(
+        new Error('Logout API failed')
+      );
       vi.mocked(mockTokenStorage.remove).mockResolvedValue(undefined);
 
       const result = await useCase.logout();

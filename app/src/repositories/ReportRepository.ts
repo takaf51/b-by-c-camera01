@@ -4,10 +4,10 @@
  */
 
 import type { HttpClient } from '../lib/http';
-import type { 
-  ReportCreateRequest, 
-  ReportCreateResponse, 
-  ReportError 
+import type {
+  ReportCreateRequest,
+  ReportCreateResponse,
+  ReportError,
 } from '../domain/report';
 
 // =============================================================================
@@ -28,7 +28,9 @@ export interface ReportRepository {
 export class HttpReportRepository implements ReportRepository {
   constructor(private httpClient: HttpClient) {}
 
-  async createReport(request: ReportCreateRequest): Promise<ReportCreateResponse> {
+  async createReport(
+    request: ReportCreateRequest
+  ): Promise<ReportCreateResponse> {
     try {
       // Base64データをBlobに変換
       const response = await fetch(request.image.imageData);
@@ -66,7 +68,10 @@ export class HttpReportRepository implements ReportRepository {
         error instanceof Error ? error.message : 'レポート送信に失敗しました'
       ) as ReportError;
       reportError.code = 'REPORT_SEND_FAILED';
-      reportError.status = error instanceof Error && 'status' in error ? (error as any).status : undefined;
+      reportError.status =
+        error instanceof Error && 'status' in error
+          ? (error as any).status
+          : undefined;
       throw reportError;
     }
   }
@@ -76,6 +81,8 @@ export class HttpReportRepository implements ReportRepository {
 // Factory Function
 // =============================================================================
 
-export function createReportRepository(httpClient: HttpClient): ReportRepository {
+export function createReportRepository(
+  httpClient: HttpClient
+): ReportRepository {
   return new HttpReportRepository(httpClient);
 }

@@ -4,7 +4,12 @@
  */
 
 import { writable, derived } from 'svelte/store';
-import type { Program, ProgramDetail, ProgramListRequest, ProgramError } from '../domain/program';
+import type {
+  Program,
+  ProgramDetail,
+  ProgramListRequest,
+  ProgramError,
+} from '../domain/program';
 import { createProgramUseCase } from '../usecases/ProgramUseCase';
 import { createProgramRepository } from '../repositories/ProgramRepository';
 
@@ -99,7 +104,9 @@ function convertToStoreProgram(domainProgram: Program): StoreProgram {
   };
 }
 
-function convertToStoreProgramDetail(domainProgramDetail: ProgramDetail): StoreProgramDetail {
+function convertToStoreProgramDetail(
+  domainProgramDetail: ProgramDetail
+): StoreProgramDetail {
   return {
     ...convertToStoreProgram(domainProgramDetail),
     longDescription: domainProgramDetail.longDescription,
@@ -125,16 +132,16 @@ function createProgramStore() {
 
   return {
     subscribe,
-    
+
     /**
      * プログラム一覧を取得
      */
     async loadPrograms(request?: ProgramListRequest) {
       update(state => ({ ...state, isLoading: true, error: null }));
-      
+
       try {
         const response = await useCase.getProgramList(request);
-        
+
         update(state => ({
           ...state,
           programs: response.programs.map(convertToStoreProgram),
@@ -170,7 +177,8 @@ function createProgramStore() {
 }
 
 function createProgramDetailStore() {
-  const { subscribe, set, update } = writable<ProgramDetailState>(initialDetailState);
+  const { subscribe, set, update } =
+    writable<ProgramDetailState>(initialDetailState);
 
   // UseCase インスタンス
   const repository = createProgramRepository();
@@ -178,16 +186,16 @@ function createProgramDetailStore() {
 
   return {
     subscribe,
-    
+
     /**
      * プログラム詳細を取得
      */
     async loadProgramDetail(id: number) {
       update(state => ({ ...state, isLoading: true, error: null }));
-      
+
       try {
         const programDetail = await useCase.getProgramDetail(id);
-        
+
         update(state => ({
           ...state,
           programDetail: convertToStoreProgramDetail(programDetail),
@@ -231,7 +239,10 @@ export const programDetailStore = createProgramDetailStore();
 // =============================================================================
 
 export const programs = derived(programStore, $store => $store.programs);
-export const isProgramLoading = derived(programStore, $store => $store.isLoading);
+export const isProgramLoading = derived(
+  programStore,
+  $store => $store.isLoading
+);
 export const programError = derived(programStore, $store => $store.error);
 export const programPagination = derived(programStore, $store => ({
   currentPage: $store.currentPage,
@@ -239,9 +250,18 @@ export const programPagination = derived(programStore, $store => ({
   totalCount: $store.totalCount,
 }));
 
-export const isProgramDetailLoading = derived(programDetailStore, $store => $store.isLoading);
-export const programDetailError = derived(programDetailStore, $store => $store.error);
-export const currentProgramDetail = derived(programDetailStore, $store => $store.programDetail);
+export const isProgramDetailLoading = derived(
+  programDetailStore,
+  $store => $store.isLoading
+);
+export const programDetailError = derived(
+  programDetailStore,
+  $store => $store.error
+);
+export const currentProgramDetail = derived(
+  programDetailStore,
+  $store => $store.programDetail
+);
 
 // =============================================================================
 // Helper Functions
@@ -261,7 +281,10 @@ export async function initializePrograms() {
 /**
  * 特定のプログラムを検索
  */
-export function findProgramById(programs: Program[], id: number): Program | undefined {
+export function findProgramById(
+  programs: Program[],
+  id: number
+): Program | undefined {
   return programs.find(program => program.id === id);
 }
 
@@ -280,13 +303,14 @@ export function getAvailablePrograms(programs: Program[]): Program[] {
   return programs.filter(program => {
     const startDate = new Date(program.startDate);
     const endDate = new Date(program.endDate);
-    
+
     // 期間内 かつ 定員に空きがある
     return (
       (program.status === 'active' || program.status === 'upcoming') &&
       now >= startDate &&
       now <= endDate &&
-      (!program.maxParticipants || program.currentParticipants < program.maxParticipants)
+      (!program.maxParticipants ||
+        program.currentParticipants < program.maxParticipants)
     );
   });
 }

@@ -3,12 +3,12 @@
  * プログラム関連のビジネスロジックを管理
  */
 
-import type { 
-  Program, 
+import type {
+  Program,
   ProgramDetail,
-  ProgramListRequest, 
-  ProgramListResponse, 
-  ProgramError 
+  ProgramListRequest,
+  ProgramListResponse,
+  ProgramError,
 } from '../domain/program';
 import { validateProgramListRequest } from '../domain/program';
 import type { ProgramRepository } from '../repositories/ProgramRepository';
@@ -22,7 +22,7 @@ export interface ProgramUseCase {
    * プログラム一覧を取得（バリデーション付き）
    */
   getProgramList(request?: ProgramListRequest): Promise<ProgramListResponse>;
-  
+
   /**
    * プログラム詳細を取得
    */
@@ -36,7 +36,9 @@ export interface ProgramUseCase {
 export class ProgramUseCaseImpl implements ProgramUseCase {
   constructor(private programRepository: ProgramRepository) {}
 
-  async getProgramList(request: ProgramListRequest = {}): Promise<ProgramListResponse> {
+  async getProgramList(
+    request: ProgramListRequest = {}
+  ): Promise<ProgramListResponse> {
     // バリデーション
     const validationError = validateProgramListRequest(request);
     if (validationError) {
@@ -51,11 +53,12 @@ export class ProgramUseCaseImpl implements ProgramUseCase {
     };
 
     try {
-      const response = await this.programRepository.getProgramList(normalizedRequest);
-      
+      const response =
+        await this.programRepository.getProgramList(normalizedRequest);
+
       // ビジネスロジック: プログラムの並び順を調整
       const sortedPrograms = this.sortProgramsByPriority(response.programs);
-      
+
       return {
         ...response,
         programs: sortedPrograms,
@@ -70,13 +73,13 @@ export class ProgramUseCaseImpl implements ProgramUseCase {
       throw {
         type: 'validation',
         message: 'Invalid program ID',
-        field: 'id'
+        field: 'id',
       } as ProgramError;
     }
 
     try {
       const programDetail = await this.programRepository.getProgramDetail(id);
-      
+
       // ビジネスロジック: 詳細情報の整理・加工
       return this.enhanceProgramDetail(programDetail);
     } catch (error) {
@@ -93,17 +96,22 @@ export class ProgramUseCaseImpl implements ProgramUseCase {
    * ビジネスルール: active > upcoming > completed > cancelled
    */
   private sortProgramsByPriority(programs: Program[]): Program[] {
-    const priorityOrder = { active: 1, upcoming: 2, completed: 3, cancelled: 4 };
-    
+    const priorityOrder = {
+      active: 1,
+      upcoming: 2,
+      completed: 3,
+      cancelled: 4,
+    };
+
     return programs.sort((a, b) => {
       // ステータス優先度でソート
       const aPriority = priorityOrder[a.status];
       const bPriority = priorityOrder[b.status];
-      
+
       if (aPriority !== bPriority) {
         return aPriority - bPriority;
       }
-      
+
       // 同じステータスの場合は開始日でソート
       return new Date(a.startDate).getTime() - new Date(b.startDate).getTime();
     });
@@ -119,7 +127,7 @@ export class ProgramUseCaseImpl implements ProgramUseCase {
 
     return {
       type: 'unknown',
-      message: '予期しないエラーが発生しました'
+      message: '予期しないエラーが発生しました',
     };
   }
 
@@ -143,8 +151,12 @@ export class ProgramUseCaseImpl implements ProgramUseCase {
         return a.time.localeCompare(b.time);
       }),
       // ビジネスロジック: 空の配列をundefinedに統一
-      requirements: programDetail.requirements?.length ? programDetail.requirements : undefined,
-      benefits: programDetail.benefits?.length ? programDetail.benefits : undefined,
+      requirements: programDetail.requirements?.length
+        ? programDetail.requirements
+        : undefined,
+      benefits: programDetail.benefits?.length
+        ? programDetail.benefits
+        : undefined,
       images: programDetail.images?.length ? programDetail.images : undefined,
     };
   }
@@ -154,6 +166,8 @@ export class ProgramUseCaseImpl implements ProgramUseCase {
 // Factory Function
 // =============================================================================
 
-export function createProgramUseCase(programRepository: ProgramRepository): ProgramUseCase {
+export function createProgramUseCase(
+  programRepository: ProgramRepository
+): ProgramUseCase {
   return new ProgramUseCaseImpl(programRepository);
 }
