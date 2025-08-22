@@ -9,11 +9,45 @@ import { createProgramUseCase } from '../usecases/ProgramUseCase';
 import { createProgramRepository } from '../repositories/ProgramRepository';
 
 // =============================================================================
+// Store Types (コンポーネント層用)
+// =============================================================================
+
+export interface StoreProgram {
+  id: number;
+  title: string;
+  description: string;
+  status: 'upcoming' | 'active' | 'completed' | 'cancelled';
+  startDate: string;
+  endDate: string;
+  maxParticipants?: number;
+  currentParticipants: number;
+  imageUrl?: string;
+  programCode: string;
+}
+
+export interface StoreProgramDetail extends StoreProgram {
+  longDescription?: string;
+  location?: string;
+  requirements?: string[];
+  benefits?: string[];
+  organizer?: {
+    name: string;
+    contact?: string;
+  };
+  schedule?: {
+    time: string;
+    title: string;
+    description?: string;
+  }[];
+  images?: string[];
+}
+
+// =============================================================================
 // State Interface
 // =============================================================================
 
 interface ProgramState {
-  programs: Program[];
+  programs: StoreProgram[];
   isLoading: boolean;
   error: ProgramError | null;
   currentPage: number;
@@ -22,7 +56,7 @@ interface ProgramState {
 }
 
 interface ProgramDetailState {
-  programDetail: ProgramDetail | null;
+  programDetail: StoreProgramDetail | null;
   isLoading: boolean;
   error: ProgramError | null;
 }
@@ -45,6 +79,38 @@ const initialDetailState: ProgramDetailState = {
   isLoading: false,
   error: null,
 };
+
+// =============================================================================
+// Helper Functions
+// =============================================================================
+
+function convertToStoreProgram(domainProgram: Program): StoreProgram {
+  return {
+    id: domainProgram.id,
+    title: domainProgram.title,
+    description: domainProgram.description,
+    status: domainProgram.status,
+    startDate: domainProgram.startDate,
+    endDate: domainProgram.endDate,
+    maxParticipants: domainProgram.maxParticipants,
+    currentParticipants: domainProgram.currentParticipants,
+    imageUrl: domainProgram.imageUrl,
+    programCode: domainProgram.programCode,
+  };
+}
+
+function convertToStoreProgramDetail(domainProgramDetail: ProgramDetail): StoreProgramDetail {
+  return {
+    ...convertToStoreProgram(domainProgramDetail),
+    longDescription: domainProgramDetail.longDescription,
+    location: domainProgramDetail.location,
+    requirements: domainProgramDetail.requirements,
+    benefits: domainProgramDetail.benefits,
+    organizer: domainProgramDetail.organizer,
+    schedule: domainProgramDetail.schedule,
+    images: domainProgramDetail.images,
+  };
+}
 
 // =============================================================================
 // Store Creation
@@ -71,7 +137,7 @@ function createProgramStore() {
         
         update(state => ({
           ...state,
-          programs: response.programs,
+          programs: response.programs.map(convertToStoreProgram),
           currentPage: response.currentPage,
           totalPages: response.totalPages,
           totalCount: response.totalCount,
@@ -124,7 +190,7 @@ function createProgramDetailStore() {
         
         update(state => ({
           ...state,
-          programDetail,
+          programDetail: convertToStoreProgramDetail(programDetail),
           isLoading: false,
           error: null,
         }));

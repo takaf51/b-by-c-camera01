@@ -13,6 +13,14 @@
     FACEMESH_FACE_OVAL,
     FACEMESH_LIPS,
   } from '@mediapipe/drawing_utils/drawing_utils';
+  import {
+    reportStore,
+    isReportUploading,
+    reportError,
+    currentReportId,
+    type CameraReportImage,
+    type CameraFacePoints,
+  } from '../stores/report';
 
   // ルートパラメータ
   export let params: { programId: string } = { programId: '' };
@@ -47,17 +55,13 @@
   let showMesh = true;
   let mirrorMode = true; // ミラー表示（デフォルト有効）
 
-  // API設定 - MSW（ローカル開発用）
-  const API_CONFIG = {
-    endpoint: '/api/plan/report/send', // MSWでモックされたエンドポイント
-    bearerToken: 'mock-token-12345', // MSW用のモックトークン
-    planCode: 'MOCK_PLAN_CODE', // MSW用のモックプランコード
-  };
+  // Store subscriptions
+  $: uploading = $isReportUploading;
+  $: uploadError = $reportError;
+  $: reportId = $currentReportId;
 
   // レポート管理
-  let reportId: number | null = null;
   let faceLandmarks: any = null; // 最後に検出された顔の座標
-  let isUploading = false;
 
   // 姿勢ガイダンス
   let poseGuidanceMessage = '';
@@ -618,7 +622,7 @@
   }
 
   /**
-   * API仕様に基づいて画像を送信する関数
+   * Store経由で画像を送信する関数
    * @param imageDataUrl - キャンバスから取得したbase64画像データ
    * @param kind - 'before' または 'after'
    */
@@ -626,62 +630,29 @@
     imageDataUrl: string,
     kind: 'before' | 'after'
   ) {
-    isUploading = true;
-
     try {
-      // Base64データをBlobに変換
-      const response = await fetch(imageDataUrl);
-      const blob = await response.blob();
-
-      // FormDataを作成
-      const formData = new FormData();
-      formData.append('kind', kind);
-      formData.append('image', blob, `${kind}_${Date.now()}.jpg`);
-
-      // report_idがある場合は追加（更新の場合）
-      if (reportId !== null) {
-        formData.append('report_id', reportId.toString());
-      }
-
-      // 顔の座標情報を追加（利用可能な場合）
-      let points = null;
+      // 顔の座標情報を抽出
+      let points: CameraFacePoints | undefined = undefined;
       if (faceLandmarks) {
-        points = extractFacePoints(faceLandmarks);
-        if (points) {
-          formData.append('points', JSON.stringify(points));
-        }
+        const extractedPoints = extractFacePoints(faceLandmarks);
+        points = extractedPoints || undefined;
       }
 
-      // APIリクエスト送信
+      // レポート画像データを作成
+      const reportImage: CameraReportImage = {
+        kind,
+        imageData: imageDataUrl,
+        points,
+      };
 
-      const apiResponse = await fetch(API_CONFIG.endpoint, {
-        method: 'POST',
-        headers: {
-          Authorization: `Bearer ${API_CONFIG.bearerToken}`,
-          'X-Plan-Code': API_CONFIG.planCode,
-        },
-        body: formData,
-      });
-
-      if (!apiResponse.ok) {
-        throw new Error(
-          `API Error: ${apiResponse.status} ${apiResponse.statusText}`
-        );
-      }
-
-      const result = await apiResponse.json();
-
-      // report_idを保存（初回登録の場合）
-      if (result.report_id && reportId === null) {
-        reportId = result.report_id;
-      }
+      // Store経由でレポート送信
+      await reportStore.submitReport(programId, reportImage);
 
       statusMessage = `${kind === 'before' ? 'ビフォー' : 'アフター'}画像送信完了`;
     } catch (error) {
-      console.error('API送信失敗:', error);
+      console.error('レポート送信失敗:', error);
+      statusMessage = `送信エラー: ${error instanceof Error ? error.message : 'unknown error'}`;
       throw error;
-    } finally {
-      isUploading = false;
     }
   }
 
@@ -689,7 +660,7 @@
    * MediaPipeの顔座標からAPI用の座標情報を抽出
    * @param landmarks - MediaPipeの顔座標データ
    */
-  function extractFacePoints(landmarks: any) {
+  function extractFacePoints(landmarks: any): CameraFacePoints | null {
     try {
       // MediaPipeの特定のランドマークポイントを使用
       const leftEye = landmarks[33]; // 左目
@@ -779,7 +750,7 @@
         </div>
       {/if}
 
-      {#if isUploading}
+      {#if uploading}
         <div class="upload-indicator">
           <div class="spinner"></div>
           <span>API送信中...</span>

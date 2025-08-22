@@ -5,8 +5,8 @@
     programStore,
     isProgramLoading,
     programError,
+    type StoreProgram,
   } from '../stores/program';
-  import type { Program } from '../domain/program';
   import { auth } from '../stores/auth';
   import Header from '../components/Header.svelte';
   import Button from '../components/Button.svelte';
