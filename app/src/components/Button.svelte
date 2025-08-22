@@ -103,44 +103,52 @@
 
   /* Variants */
   .btn-primary {
-    background-color: #3b82f6;
-    color: white;
+    background: #d6df22;
+    color: #000;
+    border-radius: 30px;
+    font-weight: 600;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.25);
   }
 
   .btn-primary:hover:not(:disabled) {
-    background-color: #2563eb;
+    background: #f6ff53;
   }
 
   .btn-primary:active:not(:disabled) {
-    background-color: #1d4ed8;
+    background: #c5ce1f;
   }
 
   .btn-secondary {
-    background-color: #6b7280;
-    color: white;
+    background: #333;
+    color: #fff;
+    border-radius: 10px;
+    font-weight: 600;
   }
 
   .btn-secondary:hover:not(:disabled) {
-    background-color: #4b5563;
+    background: #555;
   }
 
   .btn-secondary:active:not(:disabled) {
-    background-color: #374151;
+    background: #222;
   }
 
   .btn-outline {
     background-color: transparent;
-    color: #3b82f6;
-    border: 1px solid #3b82f6;
+    color: #888;
+    border: 1px solid #888;
+    border-radius: 6px;
+    font-weight: bold;
   }
 
   .btn-outline:hover:not(:disabled) {
-    background-color: #3b82f6;
-    color: white;
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #fff;
+    border-color: #fff;
   }
 
   .btn-outline:active:not(:disabled) {
-    background-color: #2563eb;
+    background-color: rgba(255, 255, 255, 0.2);
   }
 
   .btn-disabled {

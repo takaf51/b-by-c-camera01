@@ -36,20 +36,10 @@
 
 <style>
   .header {
-    background: transparent;
-    padding: 1rem 0;
-    position: sticky;
-    top: 0;
-    z-index: 50;
+    position: relative;
   }
 
   .header-container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 0 1rem;
-    display: flex;
-    align-items: center;
-    justify-content: center;
     position: relative;
   }
 
@@ -59,7 +49,11 @@
     top: 50%;
     transform: translateY(-50%);
     text-decoration: none;
-    padding: 0.5rem;
+    padding-left: 1.5em;
+    color: #888;
+    font-weight: bold;
+    font-family: sans-serif;
+    font-size: 1.1em;
   }
 
   .arrow-back {
@@ -77,8 +71,12 @@
     transform: translateY(-50%) rotate(45deg);
     width: 0.8em;
     height: 0.8em;
-    border-left: 2.5px solid #fff;
-    border-bottom: 2.5px solid #fff;
+    border-left: 2.5px solid #888;
+    border-bottom: 2.5px solid #888;
+  }
+
+  .header-brand {
+    text-align: center;
   }
 
   .header-brand .brand-link {
@@ -87,17 +85,20 @@
   }
 
   .brand-title {
-    font-size: 2rem;
-    font-weight: 400;
-    color: #fff;
+    font-size: 1.8rem;
+    text-align: center;
+    background-color: rgba(0, 0, 0, 0.4);
+    letter-spacing: 2px;
+    padding: 0.3rem 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
     margin: 0;
+    color: #fff;
     font-family: 'PT Serif', serif;
+    font-weight: 400;
   }
 
   .spacer {
-    position: absolute;
-    right: 1rem;
-    width: 80px; /* Balance the back button */
+    display: none;
   }
 
   @media (max-width: 768px) {
@@ -106,8 +107,7 @@
     }
 
     .back-button {
-      padding: 0.4rem 0.8rem;
-      font-size: 0.9rem;
+      font-size: 1rem;
     }
   }
 </style>

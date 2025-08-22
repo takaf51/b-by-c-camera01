@@ -79,7 +79,7 @@
   <!-- ヘッダー（戻るボタン付き） -->
   <Header showBackButton={true} backUrl="/plan/list" />
 
-  <div class="program-detail">
+  <div class="wrapper program-detail">
     <!-- エラー表示 -->
     {#if error}
       <div class="error-container">

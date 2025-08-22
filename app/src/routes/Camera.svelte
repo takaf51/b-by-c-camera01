@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy } from 'svelte';
-  import { push, params } from 'svelte-spa-router';
+  import { push } from 'svelte-spa-router';
   import Layout from '../components/Layout.svelte';
   import Button from '../components/Button.svelte';
   import { FaceMesh } from '@mediapipe/face_mesh/face_mesh';
@@ -15,7 +15,10 @@
   } from '@mediapipe/drawing_utils/drawing_utils';
 
   // ルートパラメータ
-  export let programId: string = '';
+  export let params: { programId: string } = { programId: '' };
+
+  // プログラムIDを取得
+  $: programId = params.programId;
 
   // DOM要素
   let videoElement: HTMLVideoElement;
@@ -606,7 +609,12 @@
   }
 
   function goBack() {
-    push(`/plan/detail/${programId}`);
+    console.log('goBack: programId', programId);
+    if (programId) {
+      push(`/plan/detail/${programId}`);
+    } else {
+      push('/plan/list');
+    }
   }
 
   /**

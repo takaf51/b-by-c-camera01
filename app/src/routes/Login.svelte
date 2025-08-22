@@ -37,73 +37,76 @@
   }
 </script>
 
-<div class="container">
-  <div class="form-card">
-    <h1>ログイン</h1>
-    <p class="subtitle">メールアドレスを入力してください</p>
+<div class="wrapper">
+  <div class="login-center-wrapper">
+    <div class="login-container">
+      <h1>ログイン</h1>
+      <p class="subtitle">メールアドレスを入力してください</p>
 
-    <form on:submit|preventDefault={handleSubmit}>
-      <div class="field">
-        <label for="email">メールアドレス</label>
-        <input
-          id="email"
-          type="email"
-          bind:value={email}
-          placeholder="your.email@example.com"
-          class:error={emailError || $auth.error}
-          autocomplete="email"
-          required
-        />
-        {#if emailError}
-          <span class="error-text">{emailError}</span>
-        {/if}
-      </div>
-
-      {#if $auth.error}
-        <div class="error-banner">
-          <span>{$auth.error}</span>
-          <button type="button" on:click={clearError} class="error-close">
-            ×
-          </button>
+      <form on:submit|preventDefault={handleSubmit}>
+        <div class="field">
+          <label for="email">メールアドレス</label>
+          <input
+            id="email"
+            type="email"
+            bind:value={email}
+            placeholder="your.email@example.com"
+            class:error={emailError || $auth.error}
+            autocomplete="email"
+            required
+          />
+          {#if emailError}
+            <span class="error-text">{emailError}</span>
+          {/if}
         </div>
-      {/if}
 
-      <button
-        type="submit"
-        class="submit-btn"
-        disabled={$auth.isLoading || !email || !!emailError}
-      >
-        {#if $auth.isLoading}
-          送信中...
-        {:else}
-          認証コードを送信
+        {#if $auth.error}
+          <div class="error-banner">
+            <span>{$auth.error}</span>
+            <button type="button" on:click={clearError} class="error-close">
+              ×
+            </button>
+          </div>
         {/if}
-      </button>
-    </form>
 
-    <div class="links">
-      <a href="/register" use:link>アカウントをお持ちでない方はこちら</a>
+        <button
+          type="submit"
+          class="submit-btn"
+          disabled={$auth.isLoading || !email || !!emailError}
+        >
+          {#if $auth.isLoading}
+            送信中...
+          {:else}
+            認証コードを送信
+          {/if}
+        </button>
+      </form>
+
+      <div class="links">
+        <a href="/register" use:link>アカウントをお持ちでない方はこちら</a>
+      </div>
     </div>
   </div>
 </div>
 
 <style>
-  .container {
-    min-height: 100vh;
+  .login-center-wrapper {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1rem;
-    background-color: #f9fafb;
+    min-height: 80vh;
   }
 
-  .form-card {
+  .login-container {
+    background: rgba(255, 255, 255, 0.8);
+    padding: 2.5rem 2rem;
+    border-radius: 12px;
+    box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+    min-width: 320px;
+    max-width: 100%;
     width: 100%;
-    max-width: 400px;
-    background: white;
-    border-radius: 0.75rem;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-    padding: 2rem;
+    box-sizing: border-box;
+    color: #333;
   }
 
   h1 {

@@ -37,7 +37,7 @@
 <!-- ヘッダー: ロゴのみ -->
 <Header />
 
-<div class="container">
+<div class="wrapper">
   <!-- ユーザー名表示 -->
   {#if $auth.user}
     <div class="user-welcome">
@@ -53,12 +53,12 @@
       </p>
       <div class="logo-container">
         <img
-          src="/images/common/logo.svg"
+          src="/assets/images/logo.svg"
           alt="EQUAL=i ロゴ"
           class="service-logo"
         />
       </div>
-      <div class="brand-name">EQUAL=i</div>
+      <div class="brand-name pt-serif-regular">EQUAL=i</div>
     </div>
   </div>
 
@@ -133,12 +133,6 @@
 </div>
 
 <style>
-  .container {
-    min-height: 100vh;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-  }
-
   /* ユーザー名表示 */
   .user-welcome {
     padding: 16px 24px;
@@ -153,6 +147,7 @@
     border-radius: 8px;
     font-weight: bold;
     display: inline-block;
+    text-decoration: none;
   }
 
   /* サービス紹介セクション */
