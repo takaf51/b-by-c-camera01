@@ -61,13 +61,11 @@
   const CAPTURE_COUNT = 1;
 
   onMount(() => {
-    console.log('Camera.svelte: Component mounted');
     statusMessage = 'カメラを初期化中...';
   });
 
   // Navigation
   function goBack() {
-    console.log('goBack: programId', programId);
     if (programId) {
       push(`/plan/detail/${programId}`);
     } else {
@@ -79,16 +77,14 @@
   function startBeforeCapture() {
     currentMode = CaptureMode.BEFORE;
     capturedImages = [];
-    statusMessage = 'ビフォー撮影開始';
+    statusMessage = 'ビフォー撮影準備中 - 顔をガイドに合わせてください';
     showPoseGuidance = false;
-    console.log('🎬 Before capture started, mode:', currentMode);
   }
 
   function startAfterCapture() {
     currentMode = CaptureMode.AFTER;
-    statusMessage = 'アフター撮影開始';
+    statusMessage = 'アフター撮影準備中 - 顔をガイドに合わせてください';
     showPoseGuidance = false;
-    console.log('🎬 After capture started, mode:', currentMode);
   }
 
   // UI controls
@@ -120,7 +116,6 @@
 
     // ガイダンス情報を更新
     if (guidance) {
-      console.log('Guidance update:', guidance);
       showPoseGuidance = guidance.show;
       poseGuidanceMessage = guidance.message;
       poseGuidanceType = guidance.type;
@@ -146,13 +141,11 @@
 
   function handleError(event: CustomEvent) {
     statusMessage = event.detail.message;
-    console.error('Camera error:', event.detail);
   }
 
   // Image capture logic
   async function performCapture(landmarks: any = null) {
     if (!imageCapture) {
-      console.error('ImageCapture component not available');
       return;
     }
 
@@ -181,7 +174,6 @@
       );
 
       // 撮影完了の視覚的フィードバック
-      console.log('✅ 撮影完了:', { kind, imageCount: capturedImages.length });
 
       // Update status based on capture completion
       if (capturedImages.length >= CAPTURE_COUNT) {
@@ -190,22 +182,14 @@
           currentMode = CaptureMode.CHALLENGE;
 
           // 成功音やバイブレーションの代わりに視覚的フィードバック
-          setTimeout(() => {
-            console.log('🎉 ビフォー撮影シーケンス完了');
-          }, 500);
         } else if (currentMode === CaptureMode.AFTER) {
           statusMessage = '🎉 アフター撮影完了！';
           currentMode = CaptureMode.IDLE;
-
-          setTimeout(() => {
-            console.log('🎉 全撮影シーケンス完了');
-          }, 500);
         }
       } else {
         statusMessage = `撮影完了 (${capturedImages.length}/${CAPTURE_COUNT})`;
       }
     } catch (error) {
-      console.error('Capture failed:', error);
       statusMessage = `撮影エラー: ${error instanceof Error ? error.message : 'unknown error'}`;
     }
   }
@@ -222,15 +206,14 @@
 
   function handleUploadError(event: CustomEvent) {
     statusMessage = event.detail.message;
-    console.error('Upload error:', event.detail.error);
   }
 
   function handleImageAdded(event: CustomEvent) {
-    console.log(`Image added. Total count: ${event.detail.totalCount}`);
+    // Image added successfully
   }
 
   function handleImagesCleared() {
-    console.log('Images cleared');
+    // Images cleared
   }
 </script>
 
@@ -272,7 +255,7 @@
       on:imagesCleared={handleImagesCleared}
     />
 
-    <!-- Camera Preview -->
+    <!-- Camera Preview (Full Screen) -->
     <CameraPreview
       bind:videoElement
       bind:canvasElement
@@ -286,57 +269,164 @@
       {CaptureMode}
     />
 
-    <!-- Camera Controls -->
-    <CameraControls
-      {currentMode}
-      {capturedImages}
-      {showMesh}
-      {mirrorMode}
-      isUploading={uploading}
-      {reportId}
-      {CAPTURE_COUNT}
-      {CaptureMode}
-      onStartBeforeCapture={startBeforeCapture}
-      onStartAfterCapture={startAfterCapture}
-      onToggleMesh={toggleMesh}
-      onToggleMirror={toggleMirror}
-    />
+    <!-- Camera Controls (Integrated in status panel) -->
+    <div class="integrated-controls">
+      <div class="control-buttons">
+        <Button
+          variant="primary"
+          disabled={currentMode !== CaptureMode.IDLE}
+          on:click={startBeforeCapture}
+          class="capture-button before-button"
+        >
+          1. ビフォー撮影開始
+        </Button>
+
+        <Button
+          variant="secondary"
+          disabled={currentMode === CaptureMode.IDLE ||
+            capturedImages.length < CAPTURE_COUNT}
+          on:click={startAfterCapture}
+          class="capture-button after-button"
+        >
+          3. アフター撮影開始
+        </Button>
+      </div>
+
+      <div class="utility-buttons">
+        <Button variant="outline" on:click={toggleMesh} class="utility-button">
+          {showMesh ? 'メッシュ非表示' : 'メッシュ表示'}
+        </Button>
+
+        <Button
+          variant="outline"
+          on:click={toggleMirror}
+          class="utility-button"
+        >
+          {mirrorMode ? 'ミラー解除' : 'ミラー表示'}
+        </Button>
+      </div>
+    </div>
   </div>
 </Layout>
 
 <style>
   .camera-container {
-    max-width: 100%;
-    padding: 1rem;
+    width: 100%;
+    height: 100vh;
+    padding: 0;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 1rem;
     position: relative;
+    overflow: hidden;
   }
 
   .camera-header {
-    width: 100%;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 1rem;
+    padding: 1rem;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(10px);
+    z-index: 2000;
   }
 
   .camera-header h2 {
     margin: 0;
     color: #fff;
+    font-size: 1.2rem;
+  }
+
+  .integrated-controls {
+    position: fixed;
+    bottom: 140px;
+    left: 0;
+    right: 0;
+    padding: 1rem;
+    z-index: 1500;
+  }
+
+  .control-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 1rem;
+  }
+
+  .utility-buttons {
+    display: flex;
+    gap: 0.5rem;
+    justify-content: center;
+  }
+
+  :global(.capture-button) {
+    min-width: 160px;
+    padding: 12px 20px;
+    font-size: 16px;
+    font-weight: bold;
+    border-radius: 25px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  :global(.before-button) {
+    background: linear-gradient(135deg, #4ecdc4, #44a08d) !important;
+    border: none !important;
+  }
+
+  :global(.after-button) {
+    background: linear-gradient(135deg, #667eea, #764ba2) !important;
+    border: none !important;
+  }
+
+  :global(.utility-button) {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: white !important;
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 8px 16px;
+    font-size: 14px;
   }
 
   @media (max-width: 768px) {
-    .camera-container {
-      padding: 0.5rem;
+    .camera-header {
+      padding: 1rem;
     }
 
-    .camera-header {
+    .camera-header h2 {
+      font-size: 1.1rem;
+    }
+
+    .integrated-controls {
+      bottom: 120px;
+      padding: 1rem 1.5rem;
+    }
+
+    .control-buttons {
       flex-direction: column;
       gap: 1rem;
-      text-align: center;
+    }
+
+    .utility-buttons {
+      flex-wrap: wrap;
+      gap: 1rem;
+      justify-content: center;
+    }
+
+    :global(.capture-button) {
+      min-width: auto;
+      width: 100%;
+      padding: 16px 24px;
+      font-size: 18px;
+    }
+
+    :global(.utility-button) {
+      padding: 12px 20px;
+      font-size: 16px;
+      min-width: 140px;
     }
   }
 </style>

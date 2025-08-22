@@ -17,17 +17,14 @@
    */
   export function captureImageFromCanvas(): string | null {
     if (!canvasElement) {
-      console.error('Canvas element not available');
       return null;
     }
 
     try {
       // キャンバスの内容をBase64画像データとして取得
       const imageDataUrl = canvasElement.toDataURL('image/jpeg', 0.8);
-      console.log('Image captured from canvas');
       return imageDataUrl;
     } catch (error) {
-      console.error('Failed to capture image from canvas:', error);
       return null;
     }
   }
@@ -66,7 +63,6 @@
       const message = `📸 ${kind === 'before' ? 'ビフォー' : 'アフター'}画像撮影・送信完了`;
       dispatch('uploadSuccess', { kind, message });
     } catch (error) {
-      console.error('レポート送信失敗:', error);
       const message = `送信エラー: ${error instanceof Error ? error.message : 'unknown error'}`;
       dispatch('uploadError', { kind, message, error });
       throw error;
@@ -79,7 +75,6 @@
    */
   function extractFacePoints(landmarks: any): CameraFacePoints | null {
     if (!canvasElement) {
-      console.error('Canvas element not available for coordinate extraction');
       return null;
     }
 
@@ -108,7 +103,6 @@
         },
       };
     } catch (error) {
-      console.error('座標抽出エラー:', error);
       return null;
     }
   }
@@ -123,7 +117,6 @@
     capturedImages: string[]
   ): string[] {
     const newImages = [...capturedImages, imageDataUrl];
-    console.log(`Image added to gallery. Total: ${newImages.length}`);
     dispatch('imageAdded', {
       imageDataUrl,
       totalCount: newImages.length,
@@ -135,7 +128,6 @@
    * 撮影画像配列をクリア
    */
   export function clearCapturedImages(): string[] {
-    console.log('Captured images cleared');
     dispatch('imagesCleared');
     return [];
   }

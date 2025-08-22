@@ -59,14 +59,12 @@
   const GUIDANCE_DISPLAY_DURATION = 3000;
 
   onMount(async () => {
-    console.log('FaceDetection: onMount started');
     try {
       await initializeMediaPipe();
       if (videoElement) {
         await startCamera();
       }
     } catch (error) {
-      console.error('FaceDetection: Error in onMount:', error);
       dispatch('error', {
         message:
           'Face detection initialization failed: ' +
@@ -80,12 +78,10 @@
   });
 
   $: if (videoElement && canvasElement && faceMesh && !camera) {
-    startCamera().catch(console.error);
+    startCamera().catch(() => {});
   }
 
   async function initializeMediaPipe() {
-    console.log('FaceDetection: Creating FaceMesh...');
-
     faceMesh = new FaceMesh({
       locateFile: (file: string) => {
         return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -104,7 +100,6 @@
 
   async function startCamera() {
     if (!videoElement || !faceMesh) {
-      console.warn('FaceDetection: Required elements not ready');
       return;
     }
 
@@ -115,7 +110,7 @@
             try {
               await faceMesh.send({ image: videoElement });
             } catch (error) {
-              console.error('FaceDetection: Error in faceMesh.send:', error);
+              // Handle error silently
             }
           }
         },
@@ -124,11 +119,9 @@
       });
 
       await camera.start();
-      console.log('FaceDetection: Camera started successfully');
 
       dispatch('cameraStarted');
     } catch (error) {
-      console.error('FaceDetection: Camera startup failed:', error);
       dispatch('error', {
         message:
           'Camera startup failed: ' +
@@ -174,11 +167,9 @@
 
       if (!faceDetected && faceDetectionCount >= FACE_DETECTION_THRESHOLD) {
         faceDetected = true;
-        console.log('✅ Face detected! Mode:', currentMode);
 
         if (currentMode !== CaptureMode?.IDLE) {
           faceDetectionStartTime = performance.now();
-          console.log('⏰ Auto capture timer started');
           dispatch('statusChange', {
             message: '顔を検出しました。撮影準備中...',
           });
@@ -314,7 +305,6 @@
         quality: quality,
       };
     } catch (error) {
-      console.error('Pose calculation error:', error);
       return {
         roll: 0,
         pitch: 0,
@@ -347,13 +337,11 @@
         showPoseGuidance = true;
         poseGuidanceMessage = '良い姿勢です！保持してください';
         poseGuidanceType = 'success';
-        console.log('✅ Stable position started');
       }
 
       if (stableStartTime) {
         const elapsed = (now - stableStartTime) / 1000;
         progress = Math.min((elapsed / STABILITY_TIME) * 100, 100);
-        console.log('Progress:', progress.toFixed(1) + '%');
       }
     } else {
       if (stablePosition) {
@@ -375,17 +363,23 @@
     let message = '';
     let type = 'warning';
 
+    // より詳細で親切なガイダンスメッセージ
     if (Math.abs(pose.roll) >= THRESHOLDS.roll) {
       message =
-        pose.roll > 0 ? '頭を右に傾けすぎています' : '頭を左に傾けすぎています';
+        pose.roll > 0
+          ? '頭を左に少し傾けてください'
+          : '頭を右に少し傾けてください';
     } else if (Math.abs(pose.pitch) >= THRESHOLDS.pitch) {
       message =
         pose.pitch > 0
-          ? '顔を上に向けすぎています'
-          : '顔を下に向けすぎています';
+          ? '顔を少し下に向けてください'
+          : '顔を少し上に向けてください';
     } else if (Math.abs(pose.yaw) >= THRESHOLDS.yaw) {
       message =
-        pose.yaw > 0 ? '顔を左に向けすぎています' : '顔を右に向けすぎています';
+        pose.yaw > 0 ? '顔を右に向けてください' : '顔を左に向けてください';
+    } else {
+      message = '完璧な姿勢です！この状態を保持してください';
+      type = 'success';
     }
 
     if (message && message !== lastGuidanceMessage) {
@@ -405,16 +399,7 @@
 
     const elapsed = (performance.now() - faceDetectionStartTime) / 1000;
 
-    console.log('Auto capture check:', {
-      elapsed,
-      required: FACE_DETECTION_DELAY,
-      stablePosition,
-      progress,
-      currentMode,
-    });
-
     if (elapsed >= FACE_DETECTION_DELAY && stablePosition && progress >= 100) {
-      console.log('🚀 Triggering auto capture!');
       dispatch('autoCapture', { landmarks: faceLandmarks });
 
       // Reset detection to prevent multiple captures

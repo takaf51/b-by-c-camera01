@@ -23,6 +23,21 @@
 </script>
 
 <div class="preview-container">
+  <!-- 撮影モード表示 -->
+  {#if currentMode !== CaptureMode?.IDLE}
+    <div class="mode-indicator">
+      <div
+        class="mode-badge {currentMode === CaptureMode?.BEFORE
+          ? 'before'
+          : 'after'}"
+      >
+        {currentMode === CaptureMode?.BEFORE
+          ? 'BEFORE撮影の準備'
+          : 'AFTER撮影の準備'}
+      </div>
+    </div>
+  {/if}
+
   <!-- 姿勢ガイダンスメッセージ -->
   {#if showPoseGuidance}
     <div class="pose-guidance">
@@ -47,6 +62,14 @@
       width="1280"
       height="720"
     ></canvas>
+
+    <!-- 顔位置ガイド -->
+    {#if currentMode !== CaptureMode?.IDLE}
+      <div class="face-guide-overlay">
+        <div class="face-guide-circle"></div>
+        <div class="face-guide-text">顔をこの位置に合わせてください</div>
+      </div>
+    {/if}
   </div>
 
   <!-- ステータスパネル -->
@@ -67,12 +90,42 @@
 <style>
   .preview-container {
     width: 100%;
-    max-width: 640px;
+    height: 100vh;
     display: flex;
     flex-direction: column;
-    align-items: center;
-    gap: 1rem;
     position: relative;
+    overflow: hidden;
+  }
+
+  /* 撮影モード表示 */
+  .mode-indicator {
+    position: fixed;
+    top: 10px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 3000;
+  }
+
+  .mode-badge {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+    color: white;
+    padding: 8px 20px;
+    border-radius: 20px;
+    font-size: 14px;
+    font-weight: bold;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    backdrop-filter: blur(10px);
+  }
+
+  .mode-badge.before {
+    background: linear-gradient(135deg, #4ecdc4, #44a08d);
+  }
+
+  .mode-badge.after {
+    background: linear-gradient(135deg, #ff9a9e, #fecfef);
+    color: #333;
   }
 
   /* 姿勢ガイダンス */
@@ -142,15 +195,17 @@
 
   .video-container {
     position: relative;
-    width: 100%;
+    width: 100vw;
+    height: 100vh;
     background-color: #000;
-    border-radius: 8px;
     overflow: hidden;
+    flex: 1;
   }
 
   .input-video {
     width: 100%;
-    height: auto;
+    height: 100%;
+    object-fit: cover;
     display: block;
   }
 
@@ -170,12 +225,85 @@
     transform: scaleX(-1);
   }
 
-  .status-panel {
+  /* 顔位置ガイド */
+  .face-guide-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
     width: 100%;
+    height: 100%;
+    pointer-events: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+  }
+
+  .face-guide-circle {
+    width: 280px;
+    height: 350px;
+    border: 3px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
     background: rgba(255, 255, 255, 0.1);
-    padding: 1rem;
-    border-radius: 8px;
+    backdrop-filter: blur(2px);
+    box-shadow:
+      0 0 0 2px rgba(255, 255, 255, 0.3),
+      inset 0 0 20px rgba(255, 255, 255, 0.1);
+    animation: pulseGuide 2s ease-in-out infinite;
+    position: relative;
+  }
+
+  .face-guide-circle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 4px;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 50%;
+    box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+  }
+
+  .face-guide-text {
+    margin-top: 20px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 16px;
+    font-weight: bold;
     text-align: center;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+    background: rgba(0, 0, 0, 0.3);
+    padding: 8px 16px;
+    border-radius: 20px;
+    backdrop-filter: blur(5px);
+  }
+
+  @keyframes pulseGuide {
+    0%,
+    100% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.02);
+    }
+  }
+
+  .status-panel {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(20px);
+    padding: 1.5rem;
+    text-align: center;
+    border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
+    z-index: 1000;
   }
 
   .status-message {
@@ -209,5 +337,20 @@
     color: #fff;
     font-size: 0.9rem;
     text-align: center;
+  }
+
+  /* モバイル・タブレット最適化 */
+  @media (max-width: 768px) {
+    .video-container {
+      border-radius: 0;
+    }
+
+    .mode-indicator {
+      top: 20px;
+    }
+
+    .pose-guidance {
+      top: 60px;
+    }
   }
 </style>
