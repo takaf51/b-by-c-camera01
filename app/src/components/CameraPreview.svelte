@@ -8,35 +8,91 @@
   export let showPoseGuidance: boolean = false;
   export let poseGuidanceMessage: string = '';
   export let poseGuidanceType: string = '';
-  export let progress: number = 0;
   export let currentMode: string = 'idle';
-  export let statusMessage: string = '';
 
   // Constants
   export let CaptureMode: any;
+  export let previewImage: string | null = null;
 
   let mounted = false;
 
   onMount(() => {
     mounted = true;
   });
+
+  // Watch for mode changes
+  $: if (mounted && currentMode) {
+    console.log('🖥️ Mode changed:', currentMode);
+
+    // Additional check for video element issues
+    if (videoElement && (currentMode === 'BEFORE' || currentMode === 'AFTER')) {
+      setTimeout(() => {
+        if (videoElement) {
+          if (videoElement.readyState === 0 && videoElement.srcObject) {
+            console.warn(
+              '⚠️ Video element has stream but readyState is 0, forcing reload...'
+            );
+            videoElement.load();
+          } else if (
+            videoElement.readyState >= 2 &&
+            videoElement.videoWidth > 0
+          ) {
+            // Force display update for ready videos
+            videoElement.style.display = 'none';
+            videoElement.offsetHeight; // Trigger reflow
+            videoElement.style.display = '';
+          }
+        }
+      }, 500);
+    }
+  }
+
+  // カメラ起動ボタンのハンドラー
+  function handleCameraStart() {
+    console.log('📷 Camera start requested');
+    // 撮影前確認モーダルを表示するイベントを発火
+    const event = new CustomEvent('cameraStartRequested');
+    window.dispatchEvent(event);
+  }
+
+  // ファイル選択ボタンのハンドラー
+  function handleFileSelect() {
+    console.log('📁 File select requested');
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = e => {
+      const target = e.target as HTMLInputElement;
+      const file = target?.files?.[0];
+      if (file) {
+        console.log('📁 File selected:', file.name);
+        // ファイル選択イベントを発火
+        const event = new CustomEvent('fileSelected', { detail: file });
+        window.dispatchEvent(event);
+      }
+    };
+    input.click();
+  }
+
+  // 中止ボタンのハンドラー
+  function handleCancel() {
+    console.log('❌ Cancel requested');
+    // 前のページに戻るイベントを発火
+    const event = new CustomEvent('cancelRequested');
+    window.dispatchEvent(event);
+  }
+
+  // 撮影開始ボタンのハンドラー（撮影例画面から）
+  function handleStartCapture() {
+    console.log('📷 Start capture from guide screen');
+    // 実際の撮影開始イベントを発火
+    const event = new CustomEvent('startCaptureRequested');
+    window.dispatchEvent(event);
+  }
 </script>
 
 <div class="preview-container">
-  <!-- 撮影モード表示 -->
-  {#if currentMode !== CaptureMode?.IDLE}
-    <div class="mode-indicator">
-      <div
-        class="mode-badge {currentMode === CaptureMode?.BEFORE
-          ? 'before'
-          : 'after'}"
-      >
-        {currentMode === CaptureMode?.BEFORE
-          ? 'BEFORE撮影の準備'
-          : 'AFTER撮影の準備'}
-      </div>
-    </div>
-  {/if}
+  <!-- Mode indicator - デザインにないため削除 -->
 
   <!-- 姿勢ガイダンスメッセージ -->
   {#if showPoseGuidance}
@@ -49,42 +105,135 @@
 
   <!-- ビデオエリア -->
   <div class="video-container">
-    <video
-      bind:this={videoElement}
-      class="input-video {mirrorMode ? 'mirror' : ''}"
-      autoplay
-      playsinline
-      muted
-    ></video>
-    <canvas
-      bind:this={canvasElement}
-      class="output-canvas {mirrorMode ? 'mirror' : ''}"
-      width="1280"
-      height="720"
-    ></canvas>
-
-    <!-- 顔位置ガイド -->
-    {#if currentMode !== CaptureMode?.IDLE}
-      <div class="face-guide-overlay">
-        <div class="face-guide-circle"></div>
-        <div class="face-guide-text">顔をこの位置に合わせてください</div>
-      </div>
-    {/if}
-  </div>
-
-  <!-- ステータスパネル -->
-  <div class="status-panel">
-    <div class="status-message">{statusMessage}</div>
-
-    {#if currentMode !== CaptureMode?.IDLE && progress > 0}
-      <div class="progress-container">
-        <div class="progress-bar">
-          <div class="progress-fill" style="width: {progress}%"></div>
+    {#if (currentMode === CaptureMode?.PREVIEW_BEFORE || currentMode === CaptureMode?.PREVIEW_AFTER) && previewImage}
+      <!-- プレビュー画像表示 -->
+      <img
+        src={previewImage}
+        alt="撮影プレビュー"
+        class="preview-image {mirrorMode ? 'mirror' : ''}"
+      />
+    {:else if currentMode === CaptureMode?.PRE_CAPTURE_GUIDE}
+      <!-- 撮影例ガイド画面 - デザイン完全再現 -->
+      <div class="pre-capture-guide-container">
+        <!-- ヘッダー -->
+        <div class="guide-header">
+          <div class="header-icon">☀️</div>
+          <div class="header-title">BEFORE写真の撮影</div>
         </div>
-        <div class="progress-text">{Math.round(progress)}%</div>
+
+        <!-- 赤いバー -->
+        <div class="guide-bar">準備ができたら撮影に進んでください</div>
+
+        <!-- 白いテキストエリア -->
+        <div class="guide-instructions">
+          <div class="instruction-title">正確な顔のデータ取得のため、</div>
+          <div class="instruction-subtitle">
+            撮影は顔を引いて真顔でおこなってください
+          </div>
+        </div>
+
+        <!-- 撮影例画像 -->
+        <div class="guide-image-section">
+          <img
+            src="/assets/images/example-of-shooting.png"
+            alt="撮影例"
+            class="guide-example-image"
+          />
+          <div class="image-label">撮影例（イラスト予定）</div>
+        </div>
+
+        <!-- ボタンエリア -->
+        <div class="guide-buttons">
+          <button class="cancel-btn" on:click={handleCancel}>
+            キャンセル
+          </button>
+          <button class="start-btn" on:click={handleStartCapture}>
+            撮影を始める
+          </button>
+        </div>
+      </div>
+    {:else if currentMode === CaptureMode?.CAMERA_STARTUP}
+      <!-- カメラ起動画面 - デザイン通り -->
+      <div class="camera-startup-container">
+        <div class="startup-content">
+          <h2 class="startup-title">
+            はじめに施術前の写真を<br />アップロードしましょう
+          </h2>
+
+          <div class="startup-card">
+            <div class="upload-icon">
+              <div class="plus-icon">+</div>
+            </div>
+
+            <div class="startup-buttons">
+              <button
+                class="startup-button camera-button"
+                on:click={handleCameraStart}
+              >
+                カメラを起動する
+              </button>
+              <button
+                class="startup-button file-button"
+                on:click={handleFileSelect}
+              >
+                ファイルを選択
+              </button>
+            </div>
+          </div>
+
+          <p class="startup-note">
+            写真の精度によっては、正確に測定できない可能性が<br />
+            あります。予めご了承ください。
+          </p>
+
+          <button class="skip-button" on:click={handleCancel}>
+            中止する
+          </button>
+        </div>
+      </div>
+    {:else if (currentMode === CaptureMode?.BEFORE || currentMode === CaptureMode?.AFTER) && !previewImage}
+      <!-- 撮影中のカメラビュー -->
+      <video
+        bind:this={videoElement}
+        class="input-video {mirrorMode ? 'mirror' : ''}"
+        autoplay
+        playsinline
+        muted
+      ></video>
+      <canvas
+        bind:this={canvasElement}
+        class="output-canvas {mirrorMode ? 'mirror' : ''}"
+        width="640"
+        height="480"
+      ></canvas>
+
+      <!-- 顔位置ガイド -->
+      <div class="face-guide-overlay">
+        <!-- グリッドライン -->
+        <div class="grid-lines">
+          <div class="grid-line horizontal" style="top: 33.33%"></div>
+          <div class="grid-line horizontal" style="top: 66.66%"></div>
+          <div class="grid-line vertical" style="left: 33.33%"></div>
+          <div class="grid-line vertical" style="left: 66.66%"></div>
+        </div>
+
+        <!-- 顔位置フレーム -->
+        <div class="face-frame">
+          <div class="frame-corner top-left"></div>
+          <div class="frame-corner top-right"></div>
+          <div class="frame-corner bottom-left"></div>
+          <div class="frame-corner bottom-right"></div>
+
+          <!-- 顔の中心点 -->
+          <div class="face-center-dot"></div>
+        </div>
+
+        <div class="face-guide-text">顔を右にむけてください</div>
       </div>
     {/if}
   </div>
+
+  <!-- Status panel - デザインにないため削除 -->
 </div>
 
 <style>
@@ -200,29 +349,49 @@
     background-color: #000;
     overflow: hidden;
     flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
   .input-video {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
+    max-width: 100vw;
+    max-height: 100vh;
   }
 
   .input-video.mirror {
     transform: scaleX(-1);
   }
 
-  .output-canvas {
-    position: absolute;
-    top: 0;
-    left: 0;
+  .preview-image {
     width: 100%;
     height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+
+  .preview-image.mirror {
+    transform: scaleX(-1);
+  }
+
+  .output-canvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100%;
+    height: 100%;
+    max-width: 100vw;
+    max-height: 100vh;
+    object-fit: contain;
   }
 
   .output-canvas.mirror {
-    transform: scaleX(-1);
+    transform: translate(-50%, -50%) scaleX(-1);
   }
 
   /* 顔位置ガイド */
@@ -233,124 +402,503 @@
     width: 100%;
     height: 100%;
     pointer-events: none;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
     z-index: 10;
   }
 
-  .face-guide-circle {
-    width: 280px;
-    height: 350px;
-    border: 3px solid rgba(255, 255, 255, 0.8);
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(2px);
-    box-shadow:
-      0 0 0 2px rgba(255, 255, 255, 0.3),
-      inset 0 0 20px rgba(255, 255, 255, 0.1);
-    animation: pulseGuide 2s ease-in-out infinite;
-    position: relative;
+  /* グリッドライン */
+  .grid-lines {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
   }
 
-  .face-guide-circle::before {
-    content: '';
+  .grid-line {
+    position: absolute;
+    background: rgba(255, 255, 255, 0.3);
+  }
+
+  .grid-line.horizontal {
+    width: 100%;
+    height: 1px;
+  }
+
+  .grid-line.vertical {
+    width: 1px;
+    height: 100%;
+  }
+
+  /* 顔位置フレーム */
+  .face-frame {
     position: absolute;
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 4px;
-    height: 4px;
-    background: rgba(255, 255, 255, 0.9);
+    width: 300px;
+    height: 400px;
+    border: 3px solid #007bff;
+    border-radius: 15px;
+    background: rgba(0, 123, 255, 0.1);
+  }
+
+  .frame-corner {
+    position: absolute;
+    width: 30px;
+    height: 30px;
+    border: 4px solid #007bff;
+  }
+
+  .frame-corner.top-left {
+    top: -4px;
+    left: -4px;
+    border-right: none;
+    border-bottom: none;
+    border-radius: 15px 0 0 0;
+  }
+
+  .frame-corner.top-right {
+    top: -4px;
+    right: -4px;
+    border-left: none;
+    border-bottom: none;
+    border-radius: 0 15px 0 0;
+  }
+
+  .frame-corner.bottom-left {
+    bottom: -4px;
+    left: -4px;
+    border-right: none;
+    border-top: none;
+    border-radius: 0 0 0 15px;
+  }
+
+  .frame-corner.bottom-right {
+    bottom: -4px;
+    right: -4px;
+    border-left: none;
+    border-top: none;
+    border-radius: 0 0 15px 0;
+  }
+
+  .face-center-dot {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 8px;
+    height: 8px;
+    background: #ff6b6b;
     border-radius: 50%;
-    box-shadow: 0 0 10px rgba(255, 255, 255, 0.8);
+    box-shadow: 0 0 10px rgba(255, 107, 107, 0.8);
   }
 
   .face-guide-text {
-    margin-top: 20px;
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
     color: rgba(255, 255, 255, 0.9);
     font-size: 16px;
     font-weight: bold;
     text-align: center;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    background: rgba(0, 0, 0, 0.3);
+    background: rgba(0, 0, 0, 0.6);
     padding: 8px 16px;
     border-radius: 20px;
     backdrop-filter: blur(5px);
   }
 
-  @keyframes pulseGuide {
-    0%,
-    100% {
-      opacity: 0.7;
-      transform: scale(1);
-    }
-    50% {
-      opacity: 1;
-      transform: scale(1.02);
-    }
+  /* Idle guide styles */
+  .pre-capture-guide-container {
+    width: 100%;
+    height: 100%;
+    background: #2c3e50;
+    color: white;
+    display: flex;
+    flex-direction: column;
+    position: relative;
   }
 
-  .status-panel {
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: rgba(0, 0, 0, 0.8);
-    backdrop-filter: blur(20px);
+  .camera-startup-container {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+    color: white;
+    padding: 2rem 1rem;
+  }
+
+  .startup-content {
+    text-align: center;
+    max-width: 400px;
+    width: 100%;
+  }
+
+  .startup-title {
+    font-size: 1.3rem;
+    font-weight: 600;
+    margin: 0 0 2rem 0;
+    line-height: 1.5;
+  }
+
+  .startup-card {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 16px;
+    padding: 2rem 1.5rem;
+    margin-bottom: 2rem;
+    backdrop-filter: blur(10px);
+  }
+
+  .upload-icon {
+    margin-bottom: 2rem;
+  }
+
+  .plus-icon {
+    width: 60px;
+    height: 60px;
+    border: 3px solid rgba(255, 255, 255, 0.7);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2rem;
+    font-weight: 300;
+    margin: 0 auto;
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .startup-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .startup-button {
+    padding: 12px 24px;
+    border-radius: 25px;
+    border: none;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .camera-button {
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+  }
+
+  .camera-button:hover {
+    background: white;
+    transform: translateY(-1px);
+  }
+
+  .file-button {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+  }
+
+  .file-button:hover {
+    background: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+  }
+
+  .startup-note {
+    font-size: 0.85rem;
+    color: rgba(255, 255, 255, 0.7);
+    line-height: 1.5;
+    margin: 0 0 2rem 0;
+  }
+
+  .skip-button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: rgba(255, 255, 255, 0.8);
+    padding: 10px 30px;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .skip-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  /* 撮影例画面のヘッダー */
+  .guide-header {
+    background: #2c3e50;
+    padding: 1rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 1.2rem;
+    font-weight: 600;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .header-icon {
+    font-size: 1.5rem;
+  }
+
+  .header-title {
+    color: white;
+  }
+
+  /* 赤いバー */
+  .guide-bar {
+    background: #c83e3e;
+    color: white;
+    padding: 1rem;
+    text-align: center;
+    font-size: 1rem;
+    font-weight: 500;
+  }
+
+  /* 白いテキストエリア */
+  .guide-instructions {
+    background: white;
+    color: #333;
     padding: 1.5rem;
     text-align: center;
-    border-top-left-radius: 20px;
-    border-top-right-radius: 20px;
-    z-index: 1000;
   }
 
-  .status-message {
-    color: #fff;
-    font-size: 1.1rem;
-    margin-bottom: 0.5rem;
+  .instruction-title {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #333;
   }
 
-  .progress-container {
-    margin-top: 1rem;
-    width: 100%;
+  .instruction-subtitle {
+    font-size: 1rem;
+    color: #c83e3e;
+    font-weight: 500;
   }
 
-  .progress-bar {
-    width: 100%;
-    height: 8px;
-    background-color: rgba(255, 255, 255, 0.2);
+  /* 撮影例画像セクション */
+  .guide-image-section {
+    background: #f0f0f0;
+    padding: 2rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1;
+    justify-content: center;
+  }
+
+  .guide-example-image {
+    width: 300px;
+    height: auto;
+    max-width: 90%;
+    border-radius: 8px;
+    margin-bottom: 1rem;
+  }
+
+  .image-label {
+    background: white;
+    color: #333;
+    padding: 0.5rem 1rem;
     border-radius: 4px;
-    overflow: hidden;
-    margin-bottom: 0.5rem;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #4caf50, #8bc34a);
-    border-radius: 4px;
-    transition: width 0.3s ease;
-  }
-
-  .progress-text {
-    color: #fff;
     font-size: 0.9rem;
-    text-align: center;
+    border: 1px solid #ddd;
+  }
+
+  /* ボタンエリア */
+  .guide-buttons {
+    background: #2c3e50;
+    padding: 1.5rem;
+    display: flex;
+    gap: 1rem;
+  }
+
+  .cancel-btn {
+    flex: 1;
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    color: white;
+    padding: 1rem;
+    border-radius: 25px;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .cancel-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+  }
+
+  .start-btn {
+    flex: 1;
+    background: #c4d736;
+    border: none;
+    color: #333;
+    padding: 1rem;
+    border-radius: 25px;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .start-btn:hover {
+    background: #b8c62f;
+    transform: translateY(-1px);
+  }
+
+  .guide-subtitle {
+    font-size: 1rem;
+    margin-bottom: 2rem;
+    color: rgba(255, 255, 255, 0.9);
+  }
+
+  .illustration-container {
+    background: white;
+    border-radius: 15px;
+    padding: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .face-illustration-guide {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .face-outline {
+    position: relative;
+    width: 150px;
+    height: 180px;
+    margin-bottom: 1rem;
+  }
+
+  .face-features {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .face-contour {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 3px solid #333;
+    border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+    background: transparent;
+  }
+
+  .eye {
+    position: absolute;
+    width: 12px;
+    height: 12px;
+    background: #333;
+    border-radius: 50%;
+    top: 50px;
+  }
+
+  .left-eye {
+    left: 40px;
+  }
+
+  .right-eye {
+    right: 40px;
+  }
+
+  .nose {
+    position: absolute;
+    top: 80px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 3px;
+    height: 20px;
+    background: #333;
+    border-radius: 2px;
+  }
+
+  .mouth {
+    position: absolute;
+    bottom: 60px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 3px;
+    background: #333;
+    border-radius: 2px;
+  }
+
+  .shooting-example-image {
+    width: 200px;
+    height: auto;
+    max-width: 100%;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+  }
+
+  .illustration-label {
+    color: #666;
+    font-size: 0.9rem;
+    margin: 0;
   }
 
   /* モバイル・タブレット最適化 */
   @media (max-width: 768px) {
+    .guide-header {
+      padding: 0.8rem;
+      font-size: 1rem;
+    }
+
+    .guide-bar {
+      padding: 0.8rem;
+      font-size: 0.9rem;
+    }
+
+    .guide-instructions {
+      padding: 1rem;
+    }
+
+    .instruction-title,
+    .instruction-subtitle {
+      font-size: 0.9rem;
+    }
+
+    .guide-image-section {
+      padding: 1.5rem;
+    }
+
+    .guide-example-image {
+      width: 250px;
+    }
+
+    .guide-buttons {
+      padding: 1rem;
+      gap: 0.8rem;
+    }
+
+    .cancel-btn,
+    .start-btn {
+      padding: 0.8rem;
+      font-size: 0.9rem;
+    }
+
     .video-container {
       border-radius: 0;
     }
 
     .mode-indicator {
-      top: 20px;
+      top: 80px;
     }
 
     .pose-guidance {
-      top: 60px;
+      top: 120px;
     }
   }
 </style>

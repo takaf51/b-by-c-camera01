@@ -4,7 +4,6 @@
   import Layout from '../components/Layout.svelte';
   import Button from '../components/Button.svelte';
   import CameraPreview from '../components/CameraPreview.svelte';
-  import CameraControls from '../components/CameraControls.svelte';
   import FaceDetection from '../components/FaceDetection.svelte';
   import ImageCapture from '../components/ImageCapture.svelte';
   import {
@@ -29,25 +28,41 @@
 
   // 撮影モード定義
   const CaptureMode = {
-    IDLE: 'IDLE',
+    CAMERA_STARTUP: 'CAMERA_STARTUP', // カメラ起動画面（最初の状態）
+    PRE_CAPTURE_GUIDE: 'PRE_CAPTURE_GUIDE', // 撮影例画面
     BEFORE: 'BEFORE',
+    PREVIEW_BEFORE: 'PREVIEW_BEFORE',
     CHALLENGE: 'CHALLENGE',
     AFTER: 'AFTER',
+    PREVIEW_AFTER: 'PREVIEW_AFTER',
   } as const;
 
   type CaptureModeType = (typeof CaptureMode)[keyof typeof CaptureMode];
 
   // 状態管理
-  let currentMode: CaptureModeType = CaptureMode.IDLE;
-  let statusMessage = 'カメラを起動してください';
+  let currentMode: CaptureModeType = CaptureMode.CAMERA_STARTUP;
+  let statusMessage = ''; // デザインにないため空文字
   let capturedImages: string[] = [];
   let showMesh = true;
   let mirrorMode = true;
+  let currentPreviewImage: string | null = null;
+  let showPreCaptureModal = false;
+  let showCompletionModal = false;
+  let pendingCaptureMode: 'before' | 'after' | null = null;
 
   // Store subscriptions
   $: uploading = $isReportUploading;
   $: uploadError = $reportError;
   $: reportId = $currentReportId;
+
+  // Debug modal state
+  $: {
+    console.log('🔍 Modal state debug:', {
+      showCompletionModal,
+      currentMode,
+      hasPreviewImage: !!currentPreviewImage,
+    });
+  }
 
   // Face detection state
   let faceDetected = false;
@@ -61,7 +76,33 @@
   const CAPTURE_COUNT = 1;
 
   onMount(() => {
-    statusMessage = 'カメラを初期化中...';
+    // Initial status will be set by camera startup
+    console.log('📱 Camera component mounted');
+
+    // カメラ起動イベントリスナー
+    window.addEventListener('cameraStartRequested', () => {
+      console.log('📷 Handling camera start request');
+      startBeforeCapture();
+    });
+
+    // ファイル選択イベントリスナー
+    window.addEventListener('fileSelected', (event: Event) => {
+      const customEvent = event as CustomEvent;
+      console.log('📁 Handling file selection:', customEvent.detail);
+      // ファイル処理ロジックをここに追加
+    });
+
+    // キャンセルイベントリスナー
+    window.addEventListener('cancelRequested', () => {
+      console.log('❌ Handling cancel request');
+      goBack();
+    });
+
+    // 撮影開始イベントリスナー（撮影例画面から）
+    window.addEventListener('startCaptureRequested', () => {
+      console.log('📷 Handling start capture request');
+      startActualCapture();
+    });
   });
 
   // Navigation
@@ -75,19 +116,60 @@
 
   // Capture mode management
   function startBeforeCapture() {
-    currentMode = CaptureMode.BEFORE;
-    capturedImages = [];
-    statusMessage = 'ビフォー撮影準備中 - 顔をガイドに合わせてください';
-    showPoseGuidance = false;
+    pendingCaptureMode = 'before';
+    showPreCaptureModal = true;
   }
 
   function startAfterCapture() {
-    currentMode = CaptureMode.AFTER;
-    statusMessage = 'アフター撮影準備中 - 顔をガイドに合わせてください';
+    pendingCaptureMode = 'after';
+    showPreCaptureModal = true;
+  }
+
+  function confirmStartCapture() {
+    // 2. 確認後、撮影例画面に遷移
+    showPreCaptureModal = false;
+    currentMode = CaptureMode.PRE_CAPTURE_GUIDE;
+  }
+
+  function startActualCapture() {
+    // 3. 撮影例画面から実際の撮影開始
+    if (pendingCaptureMode === 'before') {
+      currentMode = CaptureMode.BEFORE;
+      capturedImages = [];
+    } else if (pendingCaptureMode === 'after') {
+      currentMode = CaptureMode.AFTER;
+    }
+    pendingCaptureMode = null;
     showPoseGuidance = false;
   }
 
-  // UI controls
+  function goBackToStartup() {
+    // 撮影例画面からカメラ起動画面に戻る
+    currentMode = CaptureMode.CAMERA_STARTUP;
+    pendingCaptureMode = null;
+  }
+
+  function cancelPreCapture() {
+    showPreCaptureModal = false;
+    pendingCaptureMode = null;
+  }
+
+  // 撮影完了モーダルのハンドラー
+  function handleWatchLater() {
+    console.log('📺 Watch later selected - navigating to program list');
+    showCompletionModal = false;
+    // プログラム一覧画面に遷移
+    push('/');
+  }
+
+  function handleWatchNow() {
+    console.log('📺 Watch now selected - navigating to program list');
+    showCompletionModal = false;
+    // プログラム一覧画面に遷移（動画視聴機能は将来実装予定）
+    push('/');
+  }
+
+  // UI controls (kept for future use but not exposed in UI)
   function toggleMesh() {
     showMesh = !showMesh;
   }
@@ -98,7 +180,8 @@
 
   // Face detection event handlers
   function handleCameraStarted() {
-    statusMessage = 'カメラに正面を向けてください';
+    // デザインにないためメッセージ表示しない
+    statusMessage = '';
   }
 
   function handleFaceDetected(event: CustomEvent) {
@@ -126,21 +209,27 @@
     const { landmarks } = event.detail;
 
     if (
-      currentMode !== CaptureMode.IDLE &&
+      currentMode !== CaptureMode.CAMERA_STARTUP &&
       capturedImages.length < CAPTURE_COUNT
     ) {
-      // 自動撮影の通知
-      statusMessage = '撮影中...';
+      // 自動撮影実行（メッセージ表示なし）
       performCapture(landmarks);
     }
   }
 
   function handleStatusChange(event: CustomEvent) {
-    statusMessage = event.detail.message;
+    // デザインにないためステータスメッセージは表示しない
+    // statusMessage = event.detail.message;
   }
 
   function handleError(event: CustomEvent) {
-    statusMessage = event.detail.message;
+    console.warn('⚠️ Face detection error:', event.detail.message);
+    // Don't show error messages to user unless critical
+    if (event.detail.message.includes('Camera startup failed')) {
+      statusMessage =
+        'カメラの起動に失敗しました。ページを再読み込みしてください。';
+    }
+    // Other errors are handled silently
   }
 
   // Image capture logic
@@ -157,37 +246,20 @@
         return;
       }
 
-      // Add to captured images
-      capturedImages = imageCapture.addCapturedImage(
-        imageDataUrl,
-        capturedImages
-      );
+      // Store the captured image for preview
+      currentPreviewImage = imageDataUrl;
+      console.log('📸 Image captured, transitioning to preview mode:', {
+        currentMode,
+        hasPreviewImage: !!currentPreviewImage,
+      });
 
-      // Determine capture kind based on current mode
-      const kind = currentMode === CaptureMode.BEFORE ? 'before' : 'after';
-
-      // Send image to API
-      await imageCapture.sendImageToAPI(
-        imageDataUrl,
-        kind,
-        landmarks || currentFaceLandmarks
-      );
-
-      // 撮影完了の視覚的フィードバック
-
-      // Update status based on capture completion
-      if (capturedImages.length >= CAPTURE_COUNT) {
-        if (currentMode === CaptureMode.BEFORE) {
-          statusMessage = '✅ ビフォー撮影完了！アフター撮影を開始してください';
-          currentMode = CaptureMode.CHALLENGE;
-
-          // 成功音やバイブレーションの代わりに視覚的フィードバック
-        } else if (currentMode === CaptureMode.AFTER) {
-          statusMessage = '🎉 アフター撮影完了！';
-          currentMode = CaptureMode.IDLE;
-        }
-      } else {
-        statusMessage = `撮影完了 (${capturedImages.length}/${CAPTURE_COUNT})`;
+      // Transition to preview mode instead of sending to API immediately
+      if (currentMode === CaptureMode.BEFORE) {
+        currentMode = CaptureMode.PREVIEW_BEFORE;
+        console.log('📸 Switched to PREVIEW_BEFORE mode');
+      } else if (currentMode === CaptureMode.AFTER) {
+        currentMode = CaptureMode.PREVIEW_AFTER;
+        console.log('📸 Switched to PREVIEW_AFTER mode');
       }
     } catch (error) {
       statusMessage = `撮影エラー: ${error instanceof Error ? error.message : 'unknown error'}`;
@@ -215,16 +287,85 @@
   function handleImagesCleared() {
     // Images cleared
   }
+
+  // Preview mode functions
+  async function confirmSendImage() {
+    console.log('📤 confirmSendImage called:', {
+      hasPreviewImage: !!currentPreviewImage,
+      currentMode,
+      hasImageCapture: !!imageCapture,
+    });
+
+    if (!currentPreviewImage || !imageCapture) {
+      console.log('❌ Missing preview image or imageCapture component');
+      return;
+    }
+
+    try {
+      // Determine capture kind based on current mode
+      const kind =
+        currentMode === CaptureMode.PREVIEW_BEFORE ? 'before' : 'after';
+
+      // Add to captured images
+      capturedImages = imageCapture.addCapturedImage(
+        currentPreviewImage,
+        capturedImages
+      );
+
+      // Send image to API
+      await imageCapture.sendImageToAPI(
+        currentPreviewImage,
+        kind,
+        currentFaceLandmarks
+      );
+
+      // Clear preview image
+      currentPreviewImage = null;
+
+      // Update mode after capture completion
+      if (currentMode === CaptureMode.PREVIEW_BEFORE) {
+        // BEFORE撮影完了後もモーダルを表示
+        console.log('🎉 Showing completion modal for BEFORE capture');
+        showCompletionModal = true;
+      } else if (currentMode === CaptureMode.PREVIEW_AFTER) {
+        // AFTER撮影完了後はモーダルを表示
+        console.log('🎉 Showing completion modal for AFTER capture');
+        showCompletionModal = true;
+      }
+    } catch (error) {
+      console.error('❌ Error in confirmSendImage:', error);
+      statusMessage = `送信エラー: ${error instanceof Error ? error.message : 'unknown error'}`;
+      // エラーが発生してもモーダルを表示
+      console.log('🎉 Showing completion modal despite error');
+      showCompletionModal = true;
+    }
+  }
+
+  function cancelCapture() {
+    // Clear any preview image
+    currentPreviewImage = null;
+
+    // Reset face detection state
+    if (faceDetection) {
+      faceDetection.resetDetectionState();
+    }
+
+    // Return to appropriate state
+    if (currentMode === CaptureMode.BEFORE) {
+      currentMode = CaptureMode.CAMERA_STARTUP;
+    } else if (currentMode === CaptureMode.AFTER) {
+      currentMode = CaptureMode.CHALLENGE;
+    }
+  }
 </script>
 
 <Layout title="カメラ撮影">
   <div class="camera-container">
-    <!-- Header -->
+    <!-- Header - デザイン通り -->
     <div class="camera-header">
-      <Button variant="outline" on:click={goBack}>
-        ← プログラム詳細に戻る
-      </Button>
-      <h2>プログラム撮影</h2>
+      <button class="back-button" on:click={goBack}> ← </button>
+      <div class="header-logo">EQUAL=i</div>
+      <div class="header-user-icon">👤</div>
     </div>
 
     <!-- Face Detection Component (invisible, logic only) -->
@@ -263,49 +404,155 @@
       {showPoseGuidance}
       {poseGuidanceMessage}
       {poseGuidanceType}
-      {progress}
       {currentMode}
-      {statusMessage}
       {CaptureMode}
+      previewImage={currentPreviewImage}
     />
 
     <!-- Camera Controls (Integrated in status panel) -->
     <div class="integrated-controls">
-      <div class="control-buttons">
-        <Button
-          variant="primary"
-          disabled={currentMode !== CaptureMode.IDLE}
-          on:click={startBeforeCapture}
-          class="capture-button before-button"
-        >
-          1. ビフォー撮影開始
-        </Button>
-
-        <Button
-          variant="secondary"
-          disabled={currentMode === CaptureMode.IDLE ||
-            capturedImages.length < CAPTURE_COUNT}
-          on:click={startAfterCapture}
-          class="capture-button after-button"
-        >
-          3. アフター撮影開始
-        </Button>
-      </div>
-
-      <div class="utility-buttons">
-        <Button variant="outline" on:click={toggleMesh} class="utility-button">
-          {showMesh ? 'メッシュ非表示' : 'メッシュ表示'}
-        </Button>
-
-        <Button
-          variant="outline"
-          on:click={toggleMirror}
-          class="utility-button"
-        >
-          {mirrorMode ? 'ミラー解除' : 'ミラー表示'}
-        </Button>
-      </div>
+      {#if currentMode === CaptureMode.PREVIEW_BEFORE || currentMode === CaptureMode.PREVIEW_AFTER}
+        <!-- Preview mode controls -->
+        <div class="preview-controls">
+          <Button
+            variant="primary"
+            on:click={confirmSendImage}
+            class="capture-button send-button"
+          >
+            📤 送信する
+          </Button>
+        </div>
+      {:else if currentMode === CaptureMode.BEFORE || currentMode === CaptureMode.AFTER}
+        <!-- Capture mode - only cancel button -->
+        <div class="capture-mode-controls">
+          <Button
+            variant="outline"
+            on:click={cancelCapture}
+            class="capture-button cancel-button"
+          >
+            ❌ キャンセル
+          </Button>
+        </div>
+      {/if}
     </div>
+
+    <!-- Pre-capture confirmation modal -->
+    {#if showPreCaptureModal}
+      <div
+        class="modal-overlay"
+        on:click={cancelPreCapture}
+        on:keydown={e => e.key === 'Escape' && cancelPreCapture()}
+        role="dialog"
+        tabindex="-1"
+      >
+        <div
+          class="pre-capture-modal"
+          on:click|stopPropagation
+          on:keydown|stopPropagation
+          role="dialog"
+          tabindex="0"
+        >
+          <div class="modal-content">
+            <h2 class="modal-title">撮影の前にご確認ください</h2>
+
+            <div class="warning-section">
+              <div class="warning-icon">⚠️</div>
+              <div class="warning-text">
+                <p><strong>前後の比較はデータ分析されます。</strong></p>
+                <p>正確な結果を得るため、以下の通りご撮影ください。</p>
+              </div>
+            </div>
+
+            <div class="guidelines-container">
+              <div class="guidelines-grid">
+                <div class="guideline-item good">
+                  <div class="guideline-frame">
+                    <img
+                      src="/assets/images/checklist-good.png"
+                      alt="正しい撮影例"
+                      class="guideline-image"
+                    />
+                  </div>
+                  <p class="guideline-text">
+                    顔の輪郭が明確、<br />明るく無地の背景
+                  </p>
+                </div>
+
+                <div class="guideline-item bad">
+                  <div class="guideline-frame">
+                    <img
+                      src="/assets/images/checklist-bad-hair.png"
+                      alt="髪で耳が隠れている例"
+                      class="guideline-image"
+                    />
+                  </div>
+                  <p class="guideline-text">
+                    顔に髪がかかって<br />耳が隠れている
+                  </p>
+                </div>
+
+                <div class="guideline-item bad">
+                  <div class="guideline-frame">
+                    <img
+                      src="/assets/images/checklist-bad-shadow.png"
+                      alt="強い陰影がある例"
+                      class="guideline-image"
+                    />
+                  </div>
+                  <p class="guideline-text">顔に強い陰影が<br />ついている</p>
+                </div>
+
+                <div class="guideline-item bad">
+                  <div class="guideline-frame">
+                    <img
+                      src="/assets/images/checklist-bad-background.png"
+                      alt="背景が無地以外の例"
+                      class="guideline-image"
+                    />
+                  </div>
+                  <p class="guideline-text">背景が<br />無地以外</p>
+                </div>
+              </div>
+            </div>
+
+            <button class="confirm-button" on:click={confirmStartCapture}>
+              <span class="confirm-icon">✓</span>
+              確認しました
+            </button>
+          </div>
+        </div>
+      </div>
+    {/if}
+
+    <!-- 撮影完了モーダル -->
+    {#if showCompletionModal}
+      <!-- Debug: Modal is being rendered -->
+      <div class="modal-overlay" role="dialog" tabindex="-1">
+        <div
+          class="completion-modal"
+          role="dialog"
+          tabindex="0"
+          on:click|stopPropagation
+          on:keydown|stopPropagation
+        >
+          <div class="completion-content">
+            <h2 class="completion-title">送信が完了しました</h2>
+            <p class="completion-subtitle">
+              続けて施術動画を見て施術してみましょう？
+            </p>
+
+            <div class="completion-buttons">
+              <button class="later-button" on:click={handleWatchLater}>
+                後で見る
+              </button>
+              <button class="watch-button" on:click={handleWatchNow}>
+                視聴する
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    {/if}
   </div>
 </Layout>
 
@@ -329,37 +576,67 @@
     justify-content: space-between;
     align-items: center;
     padding: 1rem;
-    background: rgba(0, 0, 0, 0.5);
-    backdrop-filter: blur(10px);
+    background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
     z-index: 2000;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
   }
 
-  .camera-header h2 {
-    margin: 0;
-    color: #fff;
+  .back-button {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .back-button:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.5);
+  }
+
+  .header-logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    color: white;
+  }
+
+  .header-user-icon {
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-size: 1.2rem;
   }
 
   .integrated-controls {
     position: fixed;
-    bottom: 140px;
+    bottom: 20px;
     left: 0;
     right: 0;
     padding: 1rem;
     z-index: 1500;
+    /* 黒枠を削除 */
+    background: transparent;
+    backdrop-filter: none;
+    border-radius: 0;
   }
 
-  .control-buttons {
+  .preview-controls,
+  .capture-mode-controls {
     display: flex;
     gap: 1rem;
     justify-content: center;
     margin-bottom: 1rem;
-  }
-
-  .utility-buttons {
-    display: flex;
-    gap: 0.5rem;
-    justify-content: center;
+    background: transparent;
+    border: none;
+    padding: 0;
   }
 
   :global(.capture-button) {
@@ -369,6 +646,14 @@
     font-weight: bold;
     border-radius: 25px;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+  }
+
+  :global(.start-capture-button) {
+    background: linear-gradient(135deg, #a8e6cf, #7fcdcd) !important;
+    border: none !important;
+    color: #333 !important;
+    font-weight: bold !important;
+    font-size: 1.1rem !important;
   }
 
   :global(.before-button) {
@@ -381,39 +666,298 @@
     border: none !important;
   }
 
-  :global(.utility-button) {
-    background: rgba(255, 255, 255, 0.1) !important;
-    border: 1px solid rgba(255, 255, 255, 0.3) !important;
-    color: white !important;
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 8px 16px;
-    font-size: 14px;
+  :global(.send-button) {
+    background: linear-gradient(135deg, #56ab2f, #a8e6cf) !important;
+    border: none !important;
   }
 
+  :global(.cancel-button) {
+    background: linear-gradient(135deg, #ff6b6b, #ee5a24) !important;
+    border: none !important;
+    color: white !important;
+  }
+
+  /* Pre-capture modal styles */
+  .modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+
+  .pre-capture-modal {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .modal-content {
+    padding: 30px 25px;
+  }
+
+  .modal-title {
+    text-align: center;
+    margin: 0 0 25px 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .warning-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 25px;
+    padding: 15px;
+    background: #fff3cd;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+  }
+
+  .warning-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .warning-text {
+    flex: 1;
+  }
+
+  .warning-text p {
+    margin: 0 0 8px 0;
+    color: #856404;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .warning-text p:last-child {
+    margin-bottom: 0;
+  }
+
+  .warning-text strong {
+    font-weight: 600;
+  }
+
+  .guidelines-container {
+    margin-bottom: 30px;
+  }
+
+  .guidelines-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+
+  .guideline-item {
+    text-align: center;
+  }
+
+  .guideline-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .guideline-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  .guideline-text {
+    font-size: 12px;
+    color: #333;
+    line-height: 1.4;
+    margin: 0;
+    font-weight: 500;
+  }
+
+  .confirm-button {
+    width: 100%;
+    background: linear-gradient(135deg, #e91e63, #ad1457);
+    border: none;
+    color: white;
+    padding: 15px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 25px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .confirm-button:hover {
+    background: linear-gradient(135deg, #ad1457, #880e4f);
+    transform: translateY(-1px);
+  }
+
+  .confirm-icon {
+    font-size: 18px;
+  }
+
+  /* 撮影完了モーダル */
+  .completion-modal {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+  }
+
+  .completion-content {
+    padding: 30px 25px;
+    text-align: center;
+  }
+
+  .completion-title {
+    font-size: 18px;
+    font-weight: 600;
+    margin: 0 0 15px 0;
+    color: #333;
+  }
+
+  .completion-subtitle {
+    font-size: 14px;
+    color: #666;
+    margin: 0 0 30px 0;
+    line-height: 1.5;
+  }
+
+  .completion-buttons {
+    display: flex;
+    gap: 15px;
+  }
+
+  .later-button {
+    flex: 1;
+    background: #c4d736;
+    border: none;
+    color: #333;
+    padding: 15px 20px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .later-button:hover {
+    background: #b8c62f;
+    transform: translateY(-1px);
+  }
+
+  .watch-button {
+    flex: 1;
+    background: #c4d736;
+    border: none;
+    color: #333;
+    padding: 15px 20px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .watch-button:hover {
+    background: #b8c62f;
+    transform: translateY(-1px);
+  }
+
+  /* レスポンシブ対応 */
   @media (max-width: 768px) {
+    .modal-overlay {
+      padding: 15px;
+    }
+
+    .modal-content {
+      padding: 25px 20px;
+    }
+
+    .modal-title {
+      font-size: 16px;
+    }
+
+    .warning-text p {
+      font-size: 13px;
+    }
+
+    .guidelines-grid {
+      gap: 12px;
+    }
+
+    .guideline-text {
+      font-size: 11px;
+    }
+
+    .confirm-button {
+      padding: 12px 16px;
+      font-size: 15px;
+    }
+
+    .completion-content {
+      padding: 25px 20px;
+    }
+
+    .completion-title {
+      font-size: 16px;
+    }
+
+    .completion-subtitle {
+      font-size: 13px;
+    }
+
+    .completion-buttons {
+      gap: 12px;
+    }
+
+    .later-button,
+    .watch-button {
+      padding: 12px 16px;
+      font-size: 15px;
+    }
+
     .camera-header {
       padding: 1rem;
     }
 
-    .camera-header h2 {
-      font-size: 1.1rem;
-    }
-
     .integrated-controls {
-      bottom: 120px;
-      padding: 1rem 1.5rem;
+      bottom: 10px;
+      padding: 0.8rem 1rem;
+      margin: 0;
+      background: transparent;
     }
 
-    .control-buttons {
+    .preview-controls,
+    .capture-mode-controls {
       flex-direction: column;
       gap: 1rem;
-    }
-
-    .utility-buttons {
-      flex-wrap: wrap;
-      gap: 1rem;
-      justify-content: center;
+      background: transparent;
+      border: none;
+      padding: 0;
     }
 
     :global(.capture-button) {
@@ -421,12 +965,6 @@
       width: 100%;
       padding: 16px 24px;
       font-size: 18px;
-    }
-
-    :global(.utility-button) {
-      padding: 12px 20px;
-      font-size: 16px;
-      min-width: 140px;
     }
   }
 </style>
