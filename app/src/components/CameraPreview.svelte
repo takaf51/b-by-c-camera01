@@ -8,6 +8,8 @@
   export let showPoseGuidance: boolean = false;
   export let poseGuidanceMessage: string = '';
   export let poseGuidanceType: string = '';
+  export let guidanceDirection: string | null = null;
+  export let nosePosition: { x: number; y: number } | null = null;
   export let currentMode: string = 'idle';
 
   // Constants
@@ -236,6 +238,33 @@
           <!-- 顔の中心点 -->
           <div class="face-center-dot"></div>
         </div>
+
+        <!-- 鼻の位置に青い点を表示 -->
+        {#if nosePosition}
+          <div
+            class="nose-dot"
+            style="left: {nosePosition.x}px; top: {nosePosition.y}px;"
+          ></div>
+        {/if}
+
+        <!-- ガイダンス矢印 -->
+        {#if guidanceDirection && showPoseGuidance}
+          <div class="guidance-arrow {guidanceDirection}">
+            {#if guidanceDirection === 'turn-left'}
+              ←
+            {:else if guidanceDirection === 'turn-right'}
+              →
+            {:else if guidanceDirection === 'look-up'}
+              ↑
+            {:else if guidanceDirection === 'look-down'}
+              ↓
+            {:else if guidanceDirection === 'tilt-left'}
+              ↺
+            {:else if guidanceDirection === 'tilt-right'}
+              ↻
+            {/if}
+          </div>
+        {/if}
 
         <div class="face-guide-text">顔を右にむけてください</div>
       </div>
@@ -500,6 +529,78 @@
     background: #ff6b6b;
     border-radius: 50%;
     box-shadow: 0 0 10px rgba(255, 107, 107, 0.8);
+  }
+
+  /* 鼻の位置に表示する青い点 */
+  .nose-dot {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: #007bff;
+    border: 2px solid white;
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
+    box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+  }
+
+  /* ガイダンス矢印 */
+  .guidance-arrow {
+    position: absolute;
+    font-size: 48px;
+    color: #ff4444;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    z-index: 10;
+    animation: pulse 1.5s ease-in-out infinite;
+  }
+
+  .guidance-arrow.turn-left {
+    top: 50%;
+    left: 20%;
+    transform: translateY(-50%);
+  }
+
+  .guidance-arrow.turn-right {
+    top: 50%;
+    right: 20%;
+    transform: translateY(-50%);
+  }
+
+  .guidance-arrow.look-up {
+    top: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .guidance-arrow.look-down {
+    bottom: 20%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+
+  .guidance-arrow.tilt-left {
+    top: 30%;
+    left: 30%;
+    transform: rotate(-15deg);
+  }
+
+  .guidance-arrow.tilt-right {
+    top: 30%;
+    right: 30%;
+    transform: rotate(15deg);
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1.1);
+    }
   }
 
   .face-guide-text {

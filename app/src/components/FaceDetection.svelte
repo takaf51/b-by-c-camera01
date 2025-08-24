@@ -52,6 +52,7 @@
   // Pose and stability tracking
   let stablePosition = false;
   let stableStartTime: number | null = null;
+  let stableFrameCount = 0;
   let progress = 0;
 
   // Guidance
@@ -82,6 +83,21 @@
       });
     }
   });
+
+  // Public method to reset detection state
+  export function resetDetectionState() {
+    console.log('🔄 Resetting face detection state');
+
+    // Reset all detection-related variables
+    stablePosition = false;
+    stableFrameCount = 0;
+    lastGuidanceUpdate = 0;
+    showPoseGuidance = false;
+    poseGuidanceMessage = '';
+    poseGuidanceType = '';
+
+    console.log('✅ Face detection state reset completed');
+  }
 
   onDestroy(() => {
     cleanup();
@@ -328,6 +344,8 @@
         show: showPoseGuidance,
         message: poseGuidanceMessage,
         type: poseGuidanceType,
+        direction: getGuidanceDirection(pose),
+        nosePosition: getNosePosition(results.multiFaceLandmarks?.[0]),
       };
 
       dispatch('faceDetected', {
@@ -558,6 +576,33 @@
         lastGuidanceUpdate = now;
       }
     }
+  }
+
+  function getGuidanceDirection(pose: any) {
+    if (!pose) return null;
+
+    // 姿勢に基づいて矢印の方向を決定
+    if (Math.abs(pose.roll) >= THRESHOLDS.roll) {
+      return pose.roll > 0 ? 'tilt-left' : 'tilt-right';
+    } else if (Math.abs(pose.pitch) >= THRESHOLDS.pitch) {
+      return pose.pitch > 0 ? 'look-down' : 'look-up';
+    } else if (Math.abs(pose.yaw) >= THRESHOLDS.yaw) {
+      return pose.yaw > 0 ? 'turn-left' : 'turn-right';
+    }
+    return null;
+  }
+
+  function getNosePosition(landmarks: any) {
+    if (!landmarks || !canvasElement) return null;
+
+    // 鼻の先端のランドマーク（インデックス1）
+    const noseTip = landmarks[1];
+    if (!noseTip) return null;
+
+    return {
+      x: noseTip.x * canvasElement.width,
+      y: noseTip.y * canvasElement.height,
+    };
   }
 
   function updatePoseGuidance(pose: any) {

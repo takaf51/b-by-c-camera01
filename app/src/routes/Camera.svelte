@@ -71,6 +71,8 @@
   let poseGuidanceMessage = '';
   let poseGuidanceType = '';
   let showPoseGuidance = false;
+  let guidanceDirection: string | null = null;
+  let nosePosition: { x: number; y: number } | null = null;
   let progress = 0;
 
   // Constants
@@ -160,6 +162,9 @@
     console.log('📺 Watch later selected - closing modal');
     showCompletionModal = false;
     currentPreviewImage = null; // Clear the background image
+
+    // カメラを完全にリセット
+    resetCameraToInitialState();
     // モーダルを閉じるだけで、画面遷移はしない
   }
 
@@ -167,6 +172,9 @@
     console.log('📺 Watch now selected - closing modal');
     showCompletionModal = false;
     currentPreviewImage = null; // Clear the background image
+
+    // カメラを完全にリセット
+    resetCameraToInitialState();
     // モーダルを閉じるだけで、画面遷移はしない（動画視聴機能は将来実装予定）
   }
 
@@ -203,6 +211,8 @@
       showPoseGuidance = guidance.show;
       poseGuidanceMessage = guidance.message;
       poseGuidanceType = guidance.type;
+      guidanceDirection = guidance.direction;
+      nosePosition = guidance.nosePosition;
     }
   }
 
@@ -304,6 +314,9 @@
 
   function handleUploadSuccess(event: CustomEvent) {
     statusMessage = event.detail.message;
+
+    // 撮影成功後にカメラをリセット
+    resetCameraAfterCapture();
   }
 
   function handleUploadError(event: CustomEvent) {
@@ -378,8 +391,20 @@
   }
 
   function cancelCapture() {
+    console.log('🔄 Cancelling capture and resetting camera');
+
     // Clear any preview image
     currentPreviewImage = null;
+
+    // Reset all capture-related state
+    faceDetected = false;
+    currentFaceLandmarks = null;
+    showPoseGuidance = false;
+    poseGuidanceMessage = '';
+    poseGuidanceType = '';
+    guidanceDirection = null;
+    nosePosition = null;
+    progress = 0;
 
     // Reset face detection state
     if (faceDetection) {
@@ -391,7 +416,81 @@
       currentMode = CaptureMode.CAMERA_STARTUP;
     } else if (currentMode === CaptureMode.AFTER) {
       currentMode = CaptureMode.CHALLENGE;
+    } else {
+      // For any other mode, go to camera startup
+      currentMode = CaptureMode.CAMERA_STARTUP;
     }
+
+    console.log('✅ Camera reset completed, new mode:', currentMode);
+  }
+
+  function resetCameraAfterCapture() {
+    console.log('🔄 Resetting camera after successful capture');
+
+    // Clear all capture-related state
+    faceDetected = false;
+    currentFaceLandmarks = null;
+    showPoseGuidance = false;
+    poseGuidanceMessage = '';
+    poseGuidanceType = '';
+    guidanceDirection = null;
+    nosePosition = null;
+    progress = 0;
+    currentPreviewImage = null;
+
+    // Reset face detection state
+    if (faceDetection) {
+      faceDetection.resetDetectionState();
+    }
+
+    // Determine next mode based on current mode
+    if (currentMode === CaptureMode.BEFORE) {
+      // After BEFORE capture, go to CHALLENGE mode
+      currentMode = CaptureMode.CHALLENGE;
+    } else if (currentMode === CaptureMode.AFTER) {
+      // After AFTER capture, show completion modal
+      showCompletionModal = true;
+      currentMode = CaptureMode.CAMERA_STARTUP;
+    } else {
+      // Default to CAMERA_STARTUP
+      currentMode = CaptureMode.CAMERA_STARTUP;
+    }
+
+    console.log(
+      '✅ Camera reset after capture completed, new mode:',
+      currentMode
+    );
+  }
+
+  function resetCameraToInitialState() {
+    console.log('🔄 Resetting camera to initial state');
+
+    // Clear all state variables
+    faceDetected = false;
+    currentFaceLandmarks = null;
+    showPoseGuidance = false;
+    poseGuidanceMessage = '';
+    poseGuidanceType = '';
+    guidanceDirection = null;
+    nosePosition = null;
+    progress = 0;
+    currentPreviewImage = null;
+    statusMessage = '';
+
+    // Reset modals
+    showPreCaptureModal = false;
+    showCompletionModal = false;
+    pendingCaptureMode = null;
+
+    // Reset to camera startup mode
+    currentMode = CaptureMode.CAMERA_STARTUP;
+
+    // Reset face detection state
+    if (faceDetection) {
+      faceDetection.resetDetectionState();
+    }
+
+    console.log('✅ Camera reset to initial state completed');
   }
 </script>
 
@@ -440,6 +539,8 @@
       {showPoseGuidance}
       {poseGuidanceMessage}
       {poseGuidanceType}
+      {guidanceDirection}
+      {nosePosition}
       {currentMode}
       {CaptureMode}
       previewImage={currentPreviewImage}
