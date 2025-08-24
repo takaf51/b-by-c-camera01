@@ -62,8 +62,8 @@
   let showPoseGuidance = false;
   let lastGuidanceUpdate = 0;
   let lastGuidanceMessage = '';
-  const GUIDANCE_UPDATE_INTERVAL = 500;
-  const GUIDANCE_DISPLAY_DURATION = 3000;
+  const GUIDANCE_UPDATE_INTERVAL = 100; // より頻繁にガイダンスを更新
+  // GUIDANCE_DISPLAY_DURATION は使用しない（継続表示のため）
 
   // syncInterval変数は削除
 
@@ -546,6 +546,13 @@
         poseGuidanceMessage = '良い姿勢です！保持してください';
         poseGuidanceType = 'success';
         console.log('✅ Stable position achieved!');
+
+        // 成功メッセージは2秒後に非表示にする
+        setTimeout(() => {
+          if (stablePosition) {
+            showPoseGuidance = false;
+          }
+        }, 2000);
       }
 
       if (stableStartTime) {
@@ -646,15 +653,13 @@
       type = 'success';
     }
 
-    if (message && message !== lastGuidanceMessage) {
+    if (message) {
       poseGuidanceMessage = message;
       poseGuidanceType = type;
       showPoseGuidance = true;
       lastGuidanceMessage = message;
 
-      setTimeout(() => {
-        showPoseGuidance = false;
-      }, GUIDANCE_DISPLAY_DURATION);
+      // 姿勢が悪い間は継続的に表示（同じメッセージでも継続表示）
     }
   }
 
@@ -692,51 +697,38 @@
     // Save the current transformation matrix
     canvasCtx.save();
 
-    // 撮影中の場合、中央に円を描画
+    // プログレスバーのみ描画（白い円はCSSで表示）
+    if (
+      currentMode !== CaptureMode?.CAMERA_STARTUP &&
+      faceDetected &&
+      stablePosition &&
+      progress > 0
+    ) {
+      const centerX = canvasElement.width / 2;
+      const centerY = canvasElement.height / 2;
+      // CSS のマスク円と同じサイズに合わせる（レスポンシブ対応）
+      const circleSize = Math.min(300, window.innerWidth * 0.5);
+      const radius = circleSize / 2 - 10; // マスク円の内側にプログレスバーを描画
+
+      const progressAngle = (progress / 100) * 2 * Math.PI - Math.PI / 2;
+
+      canvasCtx.beginPath();
+      canvasCtx.arc(centerX, centerY, radius, -Math.PI / 2, progressAngle);
+      canvasCtx.strokeStyle = progress >= 100 ? '#4CAF50' : '#FFA500';
+      canvasCtx.lineWidth = 8;
+      canvasCtx.stroke();
+    }
+
+    // 中央のガイド点（必要に応じて）
     if (currentMode !== CaptureMode?.CAMERA_STARTUP && faceDetected) {
       const centerX = canvasElement.width / 2;
       const centerY = canvasElement.height / 2;
-      const radius = 150;
 
-      // 外側の円（白）
-      canvasCtx.beginPath();
-      canvasCtx.arc(centerX, centerY, radius, 0, 2 * Math.PI);
-      canvasCtx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-      canvasCtx.lineWidth = 4;
-      canvasCtx.stroke();
-
-      // プログレスバーとしての内側の円
-      if (stablePosition && progress > 0) {
-        const progressRadius = radius - 10;
-        const progressAngle = (progress / 100) * 2 * Math.PI - Math.PI / 2;
-
-        canvasCtx.beginPath();
-        canvasCtx.arc(
-          centerX,
-          centerY,
-          progressRadius,
-          -Math.PI / 2,
-          progressAngle
-        );
-        canvasCtx.strokeStyle = progress >= 100 ? '#4CAF50' : '#FFA500';
-        canvasCtx.lineWidth = 8;
-        canvasCtx.stroke();
-      }
-
-      // プログレスバーの状態は正常に動作中
-
-      // 中央のガイド点
       canvasCtx.beginPath();
       canvasCtx.arc(centerX, centerY, 8, 0, 2 * Math.PI);
       canvasCtx.fillStyle = stablePosition ? '#4CAF50' : '#FFA500';
       canvasCtx.fill();
-
-      // カウントダウン表示は削除（デザイン仕様にないため）
-      // プログレスバーのみ表示
     }
-
-    // 顔が検出されていない場合の指示は削除（デザイン仕様にないため）
-    // ガイダンスメッセージで代替
 
     // Restore the transformation matrix
     canvasCtx.restore();

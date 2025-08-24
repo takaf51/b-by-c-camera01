@@ -20,6 +20,11 @@
 
   onMount(() => {
     mounted = true;
+    console.log('🖥️ CameraPreview mounted with props:', {
+      guidanceDirection,
+      showPoseGuidance,
+      mirrorMode,
+    });
   });
 
   // Watch for mode changes (debug disabled)
@@ -228,18 +233,10 @@
           <div class="grid-line vertical" style="left: 66.66%"></div>
         </div>
 
-        <!-- 顔位置フレーム -->
-        <div class="face-frame">
-          <div class="frame-corner top-left"></div>
-          <div class="frame-corner top-right"></div>
-          <div class="frame-corner bottom-left"></div>
-          <div class="frame-corner bottom-right"></div>
+        <!-- 円形マスク（中央を丸くくり抜く） -->
+        <div class="face-circle-mask"></div>
 
-          <!-- 顔の中心点 -->
-          <div class="face-center-dot"></div>
-        </div>
-
-        <!-- 鼻の位置に点を表示（PHPと同じ実装） -->
+        <!-- 鼻の位置に点を表示 -->
         {#if nosePosition}
           <div
             class="nose-dot"
@@ -248,84 +245,88 @@
           ></div>
         {/if}
 
-        <!-- ガイダンス矢印 - 円形フレームに沿った曲線矢印 -->
+        <!-- ガイダンス矢印 - 画像ベース -->
         {#if guidanceDirection && showPoseGuidance}
-          <div
-            class="guidance-arrow-container {guidanceDirection} {mirrorMode
-              ? 'mirror'
-              : ''}"
-          >
-            <svg
-              class="guidance-arrow-svg"
-              viewBox="0 0 120 120"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              {#if guidanceDirection === 'turn-left'}
-                <!-- 左向き曲線矢印 - 円弧に沿った形 -->
+          {@const effectiveDirection =
+            mirrorMode &&
+            (guidanceDirection === 'turn-left' ||
+              guidanceDirection === 'turn-right')
+              ? guidanceDirection === 'turn-left'
+                ? 'turn-right'
+                : 'turn-left'
+              : guidanceDirection}
+          {console.log('🎯 SVG Arrow Rendering:', {
+            guidanceDirection,
+            effectiveDirection,
+            mirrorMode,
+            showPoseGuidance,
+            timestamp: new Date().toLocaleTimeString(),
+          })}
+          <div class="guidance-arrow-image {effectiveDirection}">
+            {#if effectiveDirection === 'turn-left'}
+              <!-- 左向き矢印 SVG -->
+              <svg
+                class="arrow-svg"
+                width="362"
+                height="347"
+                viewBox="0 0 362 347"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
                 <path
-                  d="M 85 35 Q 35 35 35 60 Q 35 85 85 85"
-                  fill="none"
-                  stroke="#ff4444"
-                  stroke-width="5"
-                  stroke-linecap="round"
+                  d="M50.272 269.773C47.9194 271.421 44.6696 270.852 43.0936 268.452C24.0031 239.369 14.0829 205.174 14.6914 170.31C15.3 135.446 26.4075 101.618 46.5014 73.2192C48.1602 70.8748 51.4279 70.4205 53.7215 72.1489C56.0151 73.8772 56.4657 77.1334 54.8114 79.481C36.0367 106.124 25.6602 137.824 25.09 170.491C24.5197 203.159 33.7837 235.202 51.6171 262.484C53.1884 264.888 52.6245 268.126 50.272 269.773Z"
+                  fill="#D2294C"
                 />
-                <polygon points="28,55 40,48 40,58 35,65" fill="#ff4444" />
-              {:else if guidanceDirection === 'turn-right'}
-                <!-- 右向き曲線矢印 - 円弧に沿った形 -->
                 <path
-                  d="M 35 35 Q 85 35 85 60 Q 85 85 35 85"
-                  fill="none"
-                  stroke="#ff4444"
-                  stroke-width="5"
-                  stroke-linecap="round"
+                  d="M-8.52372e-07 173.5L9.75 156.613L9.75 190.387L-8.52372e-07 173.5Z"
+                  fill="#D2294C"
                 />
-                <polygon points="92,55 80,48 80,58 85,65" fill="#ff4444" />
-              {:else if guidanceDirection === 'look-up'}
-                <!-- 上向き曲線矢印 - 円弧に沿った形 -->
-                <path
-                  d="M 35 85 Q 35 35 60 35 Q 85 35 85 85"
-                  fill="none"
-                  stroke="#ff4444"
-                  stroke-width="5"
-                  stroke-linecap="round"
-                />
-                <polygon points="55,28 62,40 72,40 65,35" fill="#ff4444" />
-              {:else if guidanceDirection === 'look-down'}
-                <!-- 下向き曲線矢印 - 円弧に沿った形 -->
-                <path
-                  d="M 35 35 Q 35 85 60 85 Q 85 85 85 35"
-                  fill="none"
-                  stroke="#ff4444"
-                  stroke-width="5"
-                  stroke-linecap="round"
-                />
-                <polygon points="55,92 62,80 72,80 65,85" fill="#ff4444" />
-              {:else if guidanceDirection === 'tilt-left'}
-                <!-- 左傾き曲線矢印 - 回転を示す円弧 -->
-                <path
-                  d="M 75 25 Q 45 45 60 75 Q 75 95 95 75"
-                  fill="none"
-                  stroke="#ff4444"
-                  stroke-width="5"
-                  stroke-linecap="round"
-                />
-                <polygon points="70,18 82,25 77,32 65,25" fill="#ff4444" />
-              {:else if guidanceDirection === 'tilt-right'}
-                <!-- 右傾き曲線矢印 - 回転を示す円弧 -->
-                <path
-                  d="M 45 25 Q 75 45 60 75 Q 45 95 25 75"
-                  fill="none"
-                  stroke="#ff4444"
-                  stroke-width="5"
-                  stroke-linecap="round"
-                />
-                <polygon points="50,18 38,25 43,32 55,25" fill="#ff4444" />
-              {/if}
-            </svg>
+              </svg>
+            {:else if effectiveDirection === 'turn-right'}
+              <!-- 右向き矢印 SVG（左向きを反転） -->
+              <svg
+                class="arrow-svg"
+                width="362"
+                height="347"
+                viewBox="0 0 362 347"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <g transform="scale(-1, 1) translate(-362, 0)">
+                  <path
+                    d="M50.272 269.773C47.9194 271.421 44.6696 270.852 43.0936 268.452C24.0031 239.369 14.0829 205.174 14.6914 170.31C15.3 135.446 26.4075 101.618 46.5014 73.2192C48.1602 70.8748 51.4279 70.4205 53.7215 72.1489C56.0151 73.8772 56.4657 77.1334 54.8114 79.481C36.0367 106.124 25.6602 137.824 25.09 170.491C24.5197 203.159 33.7837 235.202 51.6171 262.484C53.1884 264.888 52.6245 268.126 50.272 269.773Z"
+                    fill="#D2294C"
+                  />
+                  <path
+                    d="M-8.52372e-07 173.5L9.75 156.613L9.75 190.387L-8.52372e-07 173.5Z"
+                    fill="#D2294C"
+                  />
+                </g>
+              </svg>
+            {:else}
+              <!-- その他の方向は右向きをベースに回転 -->
+              <svg
+                class="arrow-svg"
+                width="362"
+                height="347"
+                viewBox="0 0 362 347"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <g transform="scale(-1, 1) translate(-362, 0)">
+                  <path
+                    d="M50.272 269.773C47.9194 271.421 44.6696 270.852 43.0936 268.452C24.0031 239.369 14.0829 205.174 14.6914 170.31C15.3 135.446 26.4075 101.618 46.5014 73.2192C48.1602 70.8748 51.4279 70.4205 53.7215 72.1489C56.0151 73.8772 56.4657 77.1334 54.8114 79.481C36.0367 106.124 25.6602 137.824 25.09 170.491C24.5197 203.159 33.7837 235.202 51.6171 262.484C53.1884 264.888 52.6245 268.126 50.272 269.773Z"
+                    fill="#D2294C"
+                  />
+                  <path
+                    d="M-8.52372e-07 173.5L9.75 156.613L9.75 190.387L-8.52372e-07 173.5Z"
+                    fill="#D2294C"
+                  />
+                </g>
+              </svg>
+            {/if}
           </div>
         {/if}
-
-        <div class="face-guide-text">顔を右にむけてください</div>
       </div>
     {/if}
   </div>
@@ -378,30 +379,33 @@
   .pose-guidance {
     position: fixed;
     top: 20px;
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
     z-index: 2000;
     width: 100%;
-    max-width: 600px;
-    padding: 0 1rem;
+    display: flex;
+    justify-content: center;
+    padding: 0;
   }
 
   .guidance-message {
-    background: linear-gradient(
-      135deg,
-      rgba(255, 152, 0, 0.95),
-      rgba(255, 111, 0, 0.95)
-    );
+    background: #d2294c;
     color: white;
-    padding: 12px 20px;
-    border-radius: 25px;
+    width: min(390px, 100vw);
+    height: 47px;
+    padding: 12px 16px;
+    border-radius: 0;
     text-align: center;
     font-size: 16px;
     font-weight: bold;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
-    border: 2px solid rgba(255, 255, 255, 0.3);
-    backdrop-filter: blur(10px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
     animation: messageSlideIn 0.3s ease-out;
+    box-sizing: border-box;
+    margin: 0;
   }
 
   .guidance-message.success {
@@ -526,71 +530,28 @@
     height: 100%;
   }
 
-  /* 顔位置フレーム */
-  .face-frame {
+  /* 円形マスク（中央を丸くくり抜く） */
+  .face-circle-mask {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 300px;
-    height: 400px;
-    border: 3px solid #007bff;
-    border-radius: 15px;
-    background: rgba(0, 123, 255, 0.1);
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.6);
+    z-index: 5;
+    pointer-events: none;
+    mask: radial-gradient(
+      circle at center,
+      transparent min(150px, 25vw),
+      black min(154px, 25.5vw)
+    );
+    -webkit-mask: radial-gradient(
+      circle at center,
+      transparent min(150px, 25vw),
+      black min(154px, 25.5vw)
+    );
   }
 
-  .frame-corner {
-    position: absolute;
-    width: 30px;
-    height: 30px;
-    border: 4px solid #007bff;
-  }
-
-  .frame-corner.top-left {
-    top: -4px;
-    left: -4px;
-    border-right: none;
-    border-bottom: none;
-    border-radius: 15px 0 0 0;
-  }
-
-  .frame-corner.top-right {
-    top: -4px;
-    right: -4px;
-    border-left: none;
-    border-bottom: none;
-    border-radius: 0 15px 0 0;
-  }
-
-  .frame-corner.bottom-left {
-    bottom: -4px;
-    left: -4px;
-    border-right: none;
-    border-top: none;
-    border-radius: 0 0 0 15px;
-  }
-
-  .frame-corner.bottom-right {
-    bottom: -4px;
-    right: -4px;
-    border-left: none;
-    border-top: none;
-    border-radius: 0 0 15px 0;
-  }
-
-  .face-center-dot {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 8px;
-    height: 8px;
-    background: #ff6b6b;
-    border-radius: 50%;
-    box-shadow: 0 0 10px rgba(255, 107, 107, 0.8);
-  }
-
-  /* 鼻の位置に表示する点（PHPと同じ実装） */
   .nose-dot {
     position: absolute;
     width: 8px;
@@ -603,76 +564,67 @@
     box-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
   }
 
-  /* ガイダンス矢印 - 円形フレームに沿った曲線矢印 */
-  .guidance-arrow-container {
+  /* ガイダンス矢印 - SVGベース、レスポンシブ対応 */
+  .guidance-arrow-image {
     position: absolute;
     z-index: 15;
     animation: pulse 1.5s ease-in-out infinite;
-    width: 120px;
-    height: 120px;
+    width: min(90px, 18vw); /* SVGのアスペクト比に合わせて調整 */
+    height: min(86px, 17vw); /* 362:347の比率を維持 */
   }
 
-  .guidance-arrow-svg {
+  .arrow-img {
     width: 100%;
     height: 100%;
     filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
   }
 
-  /* 各方向の矢印の位置調整 - 顔フレーム（300px×400px）の周囲に配置 */
-  .guidance-arrow-container.turn-left {
+  .arrow-svg {
+    width: 100%;
+    height: 100%;
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+  }
+
+  /* 矢印コンテナのスタイル */
+
+  /* 各方向の矢印の位置調整 - 白い円（200px）の周囲に配置 */
+  .guidance-arrow-image.turn-left {
     top: 50%;
-    left: calc(50% - 210px); /* 顔フレーム左端から60px外側 */
-    transform: translateY(-50%);
+    left: calc(50% - min(150px, 40vw)); /* 円の半径(100px) + 余白(50px) */
+    transform: translateY(-50%); /* 左向き矢印画像を使用 */
   }
 
-  .guidance-arrow-container.turn-right {
+  .guidance-arrow-image.turn-right {
     top: 50%;
-    right: calc(50% - 210px); /* 顔フレーム右端から60px外側 */
-    transform: translateY(-50%);
+    right: calc(50% - min(150px, 40vw)); /* 円の半径(100px) + 余白(50px) */
+    transform: translateY(-50%); /* 右向き矢印画像を使用 */
   }
 
-  .guidance-arrow-container.look-up {
-    top: calc(50% - 260px); /* 顔フレーム上端から60px外側 */
+  .guidance-arrow-image.look-up {
+    top: calc(50% - min(150px, 40vw)); /* 円の半径(100px) + 余白(50px) */
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) rotate(-90deg); /* 右向き画像を90度回転 */
   }
 
-  .guidance-arrow-container.look-down {
-    bottom: calc(50% - 260px); /* 顔フレーム下端から60px外側 */
+  .guidance-arrow-image.look-down {
+    bottom: calc(50% - min(150px, 40vw)); /* 円の半径(100px) + 余白(50px) */
     left: 50%;
-    transform: translateX(-50%);
+    transform: translateX(-50%) rotate(90deg); /* 右向き画像を90度回転 */
   }
 
-  .guidance-arrow-container.tilt-left {
-    top: calc(50% - 180px); /* 顔フレーム上部左側 */
-    left: calc(50% - 180px);
+  .guidance-arrow-image.tilt-left {
+    top: calc(50% - min(130px, 35vw)); /* 円の上部左側 */
+    left: calc(50% - min(130px, 35vw));
+    transform: rotate(135deg); /* 右向き画像を135度回転 */
   }
 
-  .guidance-arrow-container.tilt-right {
-    top: calc(50% - 180px); /* 顔フレーム上部右側 */
-    right: calc(50% - 180px);
+  .guidance-arrow-image.tilt-right {
+    top: calc(50% - min(130px, 35vw)); /* 円の上部右側 */
+    right: calc(50% - min(130px, 35vw));
+    transform: rotate(-135deg); /* 右向き画像を-135度回転 */
   }
 
-  /* ミラーモード時の矢印の向きを修正 */
-  .guidance-arrow-container.mirror.turn-left {
-    right: calc(50% - 210px);
-    left: auto;
-  }
-
-  .guidance-arrow-container.mirror.turn-right {
-    left: calc(50% - 210px);
-    right: auto;
-  }
-
-  .guidance-arrow-container.mirror.tilt-left {
-    right: calc(50% - 180px);
-    left: auto;
-  }
-
-  .guidance-arrow-container.mirror.tilt-right {
-    left: calc(50% - 180px);
-    right: auto;
-  }
+  /* ミラーモード時の特別な調整は不要 - effectiveDirectionで制御 */
 
   @keyframes pulse {
     0%,
@@ -684,22 +636,6 @@
       opacity: 1;
       transform: scale(1.1);
     }
-  }
-
-  .face-guide-text {
-    position: absolute;
-    bottom: 20px;
-    left: 50%;
-    transform: translateX(-50%);
-    color: rgba(255, 255, 255, 0.9);
-    font-size: 16px;
-    font-weight: bold;
-    text-align: center;
-    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
-    background: rgba(0, 0, 0, 0.6);
-    padding: 8px 16px;
-    border-radius: 20px;
-    backdrop-filter: blur(5px);
   }
 
   /* Idle guide styles */

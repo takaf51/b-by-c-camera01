@@ -608,7 +608,7 @@
             on:click={cancelCapture}
             class="capture-button cancel-button"
           >
-            ❌ キャンセル
+            撮影をキャンセル
           </Button>
         </div>
       {/if}
@@ -723,10 +723,15 @@
     display: flex;
     gap: 1rem;
     justify-content: center;
+    align-items: center;
     margin-bottom: 1rem;
     background: transparent;
     border: none;
-    padding: 0;
+    padding: 16px;
+    position: relative;
+    z-index: 1000;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   :global(.capture-button) {
@@ -761,10 +766,37 @@
     border: none !important;
   }
 
-  :global(.cancel-button) {
-    background: linear-gradient(135deg, #ff6b6b, #ee5a24) !important;
-    border: none !important;
+  :global(.capture-button.cancel-button),
+  :global(button.cancel-button) {
+    width: auto !important;
+    height: 46px !important;
+    min-width: 84px !important;
+    max-width: 480px !important;
+    border-radius: 50px !important;
+    border: 1px solid white !important;
+    background: transparent !important;
     color: white !important;
+    padding: 0 24px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    cursor: pointer !important;
+    transition: all 0.2s ease !important;
+    white-space: nowrap !important;
+    text-overflow: ellipsis !important;
+    overflow: hidden !important;
+    line-height: 1 !important;
+    opacity: 1 !important;
+    box-sizing: border-box !important;
+    text-align: center !important;
+  }
+
+  :global(.capture-button.cancel-button:hover),
+  :global(button.cancel-button:hover) {
+    background: rgba(255, 255, 255, 0.1) !important;
+    border-color: white !important;
   }
 
   /* Pre-capture modal styles */
