@@ -100,7 +100,7 @@
   }
 
   onDestroy(() => {
-    cleanup();
+    completeCleanup();
   });
 
   $: if (
@@ -735,15 +735,49 @@
   }
 
   function cleanup() {
+    console.log('🔄 Cleaning up camera and face detection resources');
+
+    // Stop camera but don't destroy faceMesh (for reuse)
     if (camera) {
       camera.stop();
       camera = null;
     }
+
+    // Stop video stream
+    if (videoElement && videoElement.srcObject) {
+      const stream = videoElement.srcObject as MediaStream;
+      stream.getTracks().forEach(track => {
+        track.stop();
+        console.log('🛑 Stopped camera track:', track.kind);
+      });
+      videoElement.srcObject = null;
+    }
+
+    // Reset detection state
+    faceDetected = false;
+    faceDetectionCount = 0;
+    faceDetectionStartTime = null;
+    stablePosition = false;
+    stableStartTime = null;
+    progress = 0;
+    isStartingCamera = false;
+
+    console.log('✅ Camera cleanup completed (faceMesh preserved for reuse)');
+  }
+
+  // Complete cleanup function for component destruction
+  function completeCleanup() {
+    console.log('🗑️ Complete cleanup - destroying all resources');
+    cleanup();
+
     if (faceMesh) {
       faceMesh.close();
       faceMesh = null;
     }
   }
+
+  // Export cleanup functions for external use
+  export { cleanup, completeCleanup };
 
   // Export function to get current face landmarks
   export function getCurrentFaceLandmarks() {

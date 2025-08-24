@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
   import { push } from 'svelte-spa-router';
   import Layout from '../components/Layout.svelte';
   import Button from '../components/Button.svelte';
@@ -82,6 +82,18 @@
     // Initial status will be set by camera startup
     console.log('📱 Camera component mounted');
 
+    // ページ離脱時にカメラを停止
+    const handleBeforeUnload = () => {
+      console.log('🚪 Page unloading, stopping camera');
+      if (faceDetection && faceDetection.completeCleanup) {
+        faceDetection.completeCleanup();
+      } else if (faceDetection && faceDetection.cleanup) {
+        faceDetection.cleanup();
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+
     // カメラ起動イベントリスナー
     window.addEventListener('cameraStartRequested', () => {
       console.log(
@@ -116,6 +128,11 @@
       console.log('📷 Handling start capture request');
       startActualCapture();
     });
+
+    // クリーンアップ関数を返す
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
   });
 
   // Navigation
@@ -159,6 +176,12 @@
   // 撮影完了モーダルのハンドラー
   function handleWatchLater() {
     console.log('📺 Watch later selected - closing modal');
+
+    // カメラを停止
+    if (faceDetection && faceDetection.cleanup) {
+      faceDetection.cleanup();
+    }
+
     showCompletionModal = false;
     currentPreviewImage = null; // Clear the background image
 
@@ -169,6 +192,12 @@
 
   function handleWatchNow() {
     console.log('📺 Watch now selected - closing modal');
+
+    // カメラを停止
+    if (faceDetection && faceDetection.cleanup) {
+      faceDetection.cleanup();
+    }
+
     showCompletionModal = false;
     currentPreviewImage = null; // Clear the background image
 
@@ -314,6 +343,11 @@
   function handleUploadSuccess(event: CustomEvent) {
     statusMessage = event.detail.message;
 
+    // カメラを停止
+    if (faceDetection && faceDetection.cleanup) {
+      faceDetection.cleanup();
+    }
+
     // 撮影成功後にカメラをリセット
     resetCameraAfterCapture();
   }
@@ -391,6 +425,11 @@
 
   function cancelCapture() {
     console.log('🔄 Cancelling capture and resetting camera');
+
+    // カメラを停止
+    if (faceDetection && faceDetection.cleanup) {
+      faceDetection.cleanup();
+    }
 
     // Clear any preview image
     currentPreviewImage = null;
@@ -490,6 +529,15 @@
 
     console.log('✅ Camera reset to initial state completed');
   }
+
+  onDestroy(() => {
+    console.log('🗑️ Camera component destroying, stopping camera');
+    if (faceDetection && faceDetection.completeCleanup) {
+      faceDetection.completeCleanup();
+    } else if (faceDetection && faceDetection.cleanup) {
+      faceDetection.cleanup();
+    }
+  });
 </script>
 
 <Layout title="カメラ撮影">
