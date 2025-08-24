@@ -95,7 +95,7 @@
   <!-- Mode indicator - デザインにないため削除 -->
 
   <!-- 姿勢ガイダンスメッセージ -->
-  {#if showPoseGuidance}
+  {#if showPoseGuidance && currentMode !== CaptureMode?.CAMERA_STARTUP}
     <div class="pose-guidance">
       <div class="guidance-message {poseGuidanceType}">
         {poseGuidanceMessage}
@@ -155,6 +155,15 @@
     {:else if currentMode === CaptureMode?.CAMERA_STARTUP}
       <!-- カメラ起動画面 - デザイン通り -->
       <div class="camera-startup-container">
+        <!-- 背景に撮影された写真を表示 -->
+        {#if previewImage}
+          <img
+            src={previewImage}
+            alt="撮影された写真"
+            class="startup-background-image"
+          />
+        {/if}
+
         <div class="startup-content">
           <h2 class="startup-title">
             はじめに施術前の写真を<br />アップロードしましょう
@@ -370,7 +379,7 @@
   .preview-image {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     display: block;
   }
 
@@ -529,12 +538,26 @@
     background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
     color: white;
     padding: 2rem 1rem;
+    position: relative;
+  }
+
+  .startup-background-image {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    opacity: 0.3;
+    z-index: 1;
   }
 
   .startup-content {
     text-align: center;
     max-width: 400px;
     width: 100%;
+    position: relative;
+    z-index: 2;
   }
 
   .startup-title {

@@ -233,14 +233,47 @@
     canvasCtx.save();
     canvasCtx.clearRect(0, 0, canvasElement!.width, canvasElement!.height);
 
-    // Draw video
-    canvasCtx.drawImage(
-      results.image,
-      0,
-      0,
-      canvasElement!.width,
-      canvasElement!.height
-    );
+    // Draw video with proper aspect ratio handling
+    const videoWidth = results.image.width || results.image.videoWidth;
+    const videoHeight = results.image.height || results.image.videoHeight;
+    const canvasWidth = canvasElement!.width;
+    const canvasHeight = canvasElement!.height;
+
+    // Calculate scaling to fit video into canvas while maintaining aspect ratio
+    const videoAspect = videoWidth / videoHeight;
+    const canvasAspect = canvasWidth / canvasHeight;
+
+    let drawWidth, drawHeight, drawX, drawY;
+
+    if (videoAspect > canvasAspect) {
+      // Video is wider - fit to canvas height
+      drawHeight = canvasHeight;
+      drawWidth = drawHeight * videoAspect;
+      drawX = (canvasWidth - drawWidth) / 2;
+      drawY = 0;
+    } else {
+      // Video is taller - fit to canvas width
+      drawWidth = canvasWidth;
+      drawHeight = drawWidth / videoAspect;
+      drawX = 0;
+      drawY = (canvasHeight - drawHeight) / 2;
+    }
+
+    canvasCtx.drawImage(results.image, drawX, drawY, drawWidth, drawHeight);
+
+    // Debug: Log drawing dimensions (only occasionally to avoid spam)
+    if (Math.random() < 0.01) {
+      // 1% chance to log
+      console.log('🎨 Canvas drawing debug:', {
+        video: { width: videoWidth, height: videoHeight, aspect: videoAspect },
+        canvas: {
+          width: canvasWidth,
+          height: canvasHeight,
+          aspect: canvasAspect,
+        },
+        draw: { x: drawX, y: drawY, width: drawWidth, height: drawHeight },
+      });
+    }
 
     const hasFace =
       results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0;
@@ -346,6 +379,12 @@
     stablePosition = false;
     stableStartTime = null;
     progress = 0;
+
+    // Clear pose guidance in CAMERA_STARTUP mode
+    if (currentMode === CaptureMode?.CAMERA_STARTUP) {
+      showPoseGuidance = false;
+      poseGuidanceMessage = '';
+    }
 
     // デザインにないためステータスメッセージは送信しない
 
@@ -522,6 +561,11 @@
   }
 
   function updatePoseGuidance(pose: any) {
+    // Don't show pose guidance in CAMERA_STARTUP mode
+    if (currentMode === CaptureMode?.CAMERA_STARTUP) {
+      return;
+    }
+
     let message = '';
     let type = 'warning';
 

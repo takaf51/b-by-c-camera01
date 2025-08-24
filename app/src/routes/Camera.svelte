@@ -48,6 +48,7 @@
   let currentPreviewImage: string | null = null;
   let showPreCaptureModal = false;
   let showCompletionModal = false;
+  let isSending = false;
   let pendingCaptureMode: 'before' | 'after' | null = null;
 
   // Store subscriptions
@@ -156,17 +157,17 @@
 
   // 撮影完了モーダルのハンドラー
   function handleWatchLater() {
-    console.log('📺 Watch later selected - navigating to program list');
+    console.log('📺 Watch later selected - closing modal');
     showCompletionModal = false;
-    // プログラム一覧画面に遷移
-    push('/');
+    currentPreviewImage = null; // Clear the background image
+    // モーダルを閉じるだけで、画面遷移はしない
   }
 
   function handleWatchNow() {
-    console.log('📺 Watch now selected - navigating to program list');
+    console.log('📺 Watch now selected - closing modal');
     showCompletionModal = false;
-    // プログラム一覧画面に遷移（動画視聴機能は将来実装予定）
-    push('/');
+    currentPreviewImage = null; // Clear the background image
+    // モーダルを閉じるだけで、画面遷移はしない（動画視聴機能は将来実装予定）
   }
 
   // UI controls (kept for future use but not exposed in UI)
@@ -246,6 +247,35 @@
         return;
       }
 
+      // Debug: Log canvas and video dimensions
+      if (faceDetection) {
+        const videoElement = document.querySelector(
+          '.input-video'
+        ) as HTMLVideoElement;
+        const canvasElement = document.querySelector(
+          '.output-canvas'
+        ) as HTMLCanvasElement;
+
+        console.log('📊 Capture dimensions debug:', {
+          videoElement: {
+            videoWidth: videoElement?.videoWidth,
+            videoHeight: videoElement?.videoHeight,
+            clientWidth: videoElement?.clientWidth,
+            clientHeight: videoElement?.clientHeight,
+            offsetWidth: videoElement?.offsetWidth,
+            offsetHeight: videoElement?.offsetHeight,
+          },
+          canvasElement: {
+            width: canvasElement?.width,
+            height: canvasElement?.height,
+            clientWidth: canvasElement?.clientWidth,
+            clientHeight: canvasElement?.clientHeight,
+            offsetWidth: canvasElement?.offsetWidth,
+            offsetHeight: canvasElement?.offsetHeight,
+          },
+        });
+      }
+
       // Store the captured image for preview
       currentPreviewImage = imageDataUrl;
       console.log('📸 Image captured, transitioning to preview mode:', {
@@ -294,12 +324,17 @@
       hasPreviewImage: !!currentPreviewImage,
       currentMode,
       hasImageCapture: !!imageCapture,
+      isSending,
     });
 
-    if (!currentPreviewImage || !imageCapture) {
-      console.log('❌ Missing preview image or imageCapture component');
+    if (!currentPreviewImage || !imageCapture || isSending) {
+      console.log(
+        '❌ Missing preview image, imageCapture component, or already sending'
+      );
       return;
     }
+
+    isSending = true;
 
     try {
       // Determine capture kind based on current mode
@@ -319,25 +354,26 @@
         currentFaceLandmarks
       );
 
-      // Clear preview image
-      currentPreviewImage = null;
+      // Show completion modal based on current mode before changing it
+      const captureType =
+        currentMode === CaptureMode.PREVIEW_BEFORE ? 'BEFORE' : 'AFTER';
+      console.log(`🎉 Showing completion modal for ${captureType} capture`);
 
-      // Update mode after capture completion
-      if (currentMode === CaptureMode.PREVIEW_BEFORE) {
-        // BEFORE撮影完了後もモーダルを表示
-        console.log('🎉 Showing completion modal for BEFORE capture');
-        showCompletionModal = true;
-      } else if (currentMode === CaptureMode.PREVIEW_AFTER) {
-        // AFTER撮影完了後はモーダルを表示
-        console.log('🎉 Showing completion modal for AFTER capture');
-        showCompletionModal = true;
-      }
+      // Update mode after capture completion - return to camera startup with photo
+      currentMode = CaptureMode.CAMERA_STARTUP;
+      showCompletionModal = true;
+
+      // Keep preview image for background display
+      // currentPreviewImage will be cleared when modal is closed
     } catch (error) {
       console.error('❌ Error in confirmSendImage:', error);
       statusMessage = `送信エラー: ${error instanceof Error ? error.message : 'unknown error'}`;
       // エラーが発生してもモーダルを表示
       console.log('🎉 Showing completion modal despite error');
+      currentMode = CaptureMode.CAMERA_STARTUP;
       showCompletionModal = true;
+    } finally {
+      isSending = false;
     }
   }
 
@@ -418,8 +454,9 @@
             variant="primary"
             on:click={confirmSendImage}
             class="capture-button send-button"
+            disabled={isSending}
           >
-            📤 送信する
+            {isSending ? '📤 送信中...' : '📤 送信する'}
           </Button>
         </div>
       {:else if currentMode === CaptureMode.BEFORE || currentMode === CaptureMode.AFTER}
