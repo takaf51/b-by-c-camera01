@@ -22,9 +22,9 @@
     mounted = true;
   });
 
-  // Watch for mode changes
+  // Watch for mode changes (debug disabled)
   $: if (mounted && currentMode) {
-    console.log('🖥️ Mode changed:', currentMode);
+    // console.log('🖥️ Mode changed:', currentMode);
 
     // Additional check for video element issues
     if (videoElement && (currentMode === 'BEFORE' || currentMode === 'AFTER')) {
@@ -239,11 +239,12 @@
           <div class="face-center-dot"></div>
         </div>
 
-        <!-- 鼻の位置に青い点を表示 -->
+        <!-- 鼻の位置に点を表示（PHPと同じ実装） -->
         {#if nosePosition}
           <div
             class="nose-dot"
             style="left: {nosePosition.x}px; top: {nosePosition.y}px;"
+            title="鼻の位置"
           ></div>
         {/if}
 
@@ -531,17 +532,17 @@
     box-shadow: 0 0 10px rgba(255, 107, 107, 0.8);
   }
 
-  /* 鼻の位置に表示する青い点 */
+  /* 鼻の位置に表示する点（PHPと同じ実装） */
   .nose-dot {
     position: absolute;
     width: 8px;
     height: 8px;
-    background: #007bff;
+    background: #ff0000;
     border: 2px solid white;
     border-radius: 50%;
     transform: translate(-50%, -50%);
-    z-index: 10;
-    box-shadow: 0 0 4px rgba(0, 123, 255, 0.5);
+    z-index: 15;
+    box-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
   }
 
   /* ガイダンス矢印 */

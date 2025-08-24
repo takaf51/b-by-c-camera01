@@ -18,6 +18,7 @@
   export let canvasElement: HTMLCanvasElement | undefined = undefined;
   export let showMesh: boolean = true;
   export let currentMode: string = 'idle';
+  // mirrorMode は使用しないため削除
 
   // Constants
   export const CAPTURE_COUNT: number = 1;
@@ -64,24 +65,35 @@
   const GUIDANCE_UPDATE_INTERVAL = 500;
   const GUIDANCE_DISPLAY_DURATION = 3000;
 
-  onMount(async () => {
+  // syncInterval変数は削除
+
+  onMount(() => {
     console.log('🚀 FaceDetection component mounted');
-    try {
-      await initializeMediaPipe();
-      if (videoElement) {
-        console.log('📹 Video element found, starting camera...');
-        await startCamera();
-      } else {
-        console.log('⏳ Video element not ready, waiting...');
+
+    const init = async () => {
+      try {
+        await initializeMediaPipe();
+        if (videoElement) {
+          console.log('📹 Video element found, starting camera...');
+          await startCamera();
+        } else {
+          console.log('⏳ Video element not ready, waiting...');
+        }
+
+        // 定期同期チェック機能は削除
+      } catch (error) {
+        console.error('❌ Face detection initialization failed:', error);
+        dispatch('error', {
+          message:
+            'Face detection initialization failed: ' +
+            (error instanceof Error ? error.message : String(error)),
+        });
       }
-    } catch (error) {
-      console.error('❌ Face detection initialization failed:', error);
-      dispatch('error', {
-        message:
-          'Face detection initialization failed: ' +
-          (error instanceof Error ? error.message : String(error)),
-      });
-    }
+    };
+
+    init();
+
+    // クリーンアップ関数は削除
   });
 
   // Public method to reset detection state
@@ -116,16 +128,8 @@
     });
   }
 
-  // Watch for mode changes and log camera state
-  $: if (currentMode) {
-    console.log('📱 Mode changed:', {
-      currentMode,
-      hasCamera: !!camera,
-      hasVideoElement: !!videoElement,
-      hasCanvasElement: !!canvasElement,
-      hasFaceMesh: !!faceMesh,
-    });
-  }
+  // Watch for mode changes (debug disabled)
+  // $: if (currentMode) { console.log('📱 Mode changed:', currentMode); }
 
   async function initializeMediaPipe() {
     console.log('🔧 Initializing MediaPipe FaceMesh...');
@@ -149,6 +153,8 @@
     faceMesh.onResults(onResults);
     console.log('✅ MediaPipe FaceMesh initialized');
   }
+
+  // キャンバス同期機能は削除
 
   async function startCamera() {
     if (!videoElement || !faceMesh) {
@@ -293,13 +299,8 @@
 
     const hasFace =
       results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0;
-    console.log('📸 MediaPipe results:', {
-      hasFace,
-      faceCount: results.multiFaceLandmarks?.length || 0,
-      currentMode,
-      faceDetected,
-      faceDetectionCount,
-    });
+    // MediaPipe結果のログは削除（必要時のみ有効化）
+    // console.log('📸 MediaPipe results:', { hasFace, faceCount: results.multiFaceLandmarks?.length || 0 });
 
     if (hasFace) {
       const landmarks = results.multiFaceLandmarks[0];
@@ -307,7 +308,8 @@
 
       // Calculate pose
       const pose = calculatePose(landmarks);
-      console.log('📐 Calculated pose:', pose);
+      // 姿勢計算のログは削除（必要時のみ有効化）
+      // console.log('📐 Calculated pose:', pose);
 
       updateStability(pose);
 
@@ -345,7 +347,7 @@
         message: poseGuidanceMessage,
         type: poseGuidanceType,
         direction: getGuidanceDirection(pose),
-        nosePosition: getNosePosition(results.multiFaceLandmarks?.[0]),
+        nosePosition: getNosePosition(landmarks),
       };
 
       dispatch('faceDetected', {
@@ -357,7 +359,7 @@
       });
     } else {
       // No face detected
-      console.log('❌ No face detected');
+      // console.log('❌ No face detected'); // ログ削除
       handleNoFaceDetected();
     }
 
@@ -533,16 +535,8 @@
       pose.quality >= MIN_FACE_QUALITY &&
       pose.faceSize >= MIN_FACE_SIZE;
 
-    console.log('🎯 Pose stability check:', {
-      roll: `${pose.roll.toFixed(1)}° (limit: ±${THRESHOLDS.roll}°)`,
-      pitch: `${pose.pitch.toFixed(1)}° (limit: ±${THRESHOLDS.pitch}°)`,
-      yaw: `${pose.yaw.toFixed(1)}° (limit: ±${THRESHOLDS.yaw}°)`,
-      quality: `${pose.quality.toFixed(2)} (min: ${MIN_FACE_QUALITY})`,
-      faceSize: `${pose.faceSize.toFixed(3)} (min: ${MIN_FACE_SIZE})`,
-      isGoodPose,
-      stablePosition,
-      progress: progress.toFixed(1),
-    });
+    // 姿勢安定性チェックのログは削除（必要時のみ有効化）
+    // console.log('🎯 Pose stability check:', { roll: pose.roll.toFixed(1), pitch: pose.pitch.toFixed(1), yaw: pose.yaw.toFixed(1), isGoodPose, progress: progress.toFixed(1) });
 
     if (isGoodPose) {
       if (!stablePosition) {
@@ -592,17 +586,29 @@
     return null;
   }
 
+  // PHPと同じ鼻の位置計算（完全移植版）
   function getNosePosition(landmarks: any) {
     if (!landmarks || !canvasElement) return null;
 
     // 鼻の先端のランドマーク（インデックス1）
-    const noseTip = landmarks[1];
-    if (!noseTip) return null;
+    const nose = landmarks[1];
+    if (!nose) return null;
 
-    return {
-      x: noseTip.x * canvasElement.width,
-      y: noseTip.y * canvasElement.height,
-    };
+    // PHPの実装と完全に同じ座標変換
+    // const noseX = (1 - nose.x) * outputCanvas.width;
+    // const noseY = nose.y * outputCanvas.height;
+    const noseX = (1 - nose.x) * canvasElement.width;
+    const noseY = nose.y * canvasElement.height;
+
+    // 表示サイズに合わせてスケーリング
+    const canvasRect = canvasElement.getBoundingClientRect();
+    const scaleX = canvasRect.width / canvasElement.width;
+    const scaleY = canvasRect.height / canvasElement.height;
+
+    const displayX = noseX * scaleX;
+    const displayY = noseY * scaleY;
+
+    return { x: displayX, y: displayY };
   }
 
   function updatePoseGuidance(pose: any) {
@@ -783,6 +789,8 @@
   export function getCurrentFaceLandmarks() {
     return faceLandmarks;
   }
+
+  // キャンバス同期機能は削除
 
   // Export guidance state
   export { showPoseGuidance, poseGuidanceMessage, poseGuidanceType };

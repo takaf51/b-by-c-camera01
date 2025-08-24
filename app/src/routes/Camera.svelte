@@ -56,14 +56,8 @@
   $: uploadError = $reportError;
   $: reportId = $currentReportId;
 
-  // Debug modal state
-  $: {
-    console.log('🔍 Modal state debug:', {
-      showCompletionModal,
-      currentMode,
-      hasPreviewImage: !!currentPreviewImage,
-    });
-  }
+  // Debug modal state (disabled)
+  // $: { console.log('🔍 Modal state debug:', { showCompletionModal, currentMode }); }
 
   // Face detection state
   let faceDetected = false;
