@@ -42,12 +42,19 @@
     push('/plan/list');
   }
 
-  // プログラム開始
+  // プログラム開始 - モーダルを表示せず直接カメラ画面に遷移
   function handleStartProgram() {
-    showStartModal = true;
+    console.log('handleStartProgram: programId', programId);
+    push(`/camera/${programId}`);
+
+    // Camera.svelteに遷移後、カメラ起動画面を表示するためのイベントを発火
+    setTimeout(() => {
+      const event = new CustomEvent('cameraStartRequested');
+      window.dispatchEvent(event);
+    }, 100);
   }
 
-  // カメラ起動
+  // カメラ起動（モーダル用 - 使用しない）
   function handleStartCamera() {
     showStartModal = false;
     console.log('handleStartCamera: programId', programId);

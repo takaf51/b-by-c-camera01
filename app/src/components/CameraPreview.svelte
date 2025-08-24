@@ -51,9 +51,9 @@
 
   // カメラ起動ボタンのハンドラー
   function handleCameraStart() {
-    console.log('📷 Camera start requested');
-    // 撮影前確認モーダルを表示するイベントを発火
-    const event = new CustomEvent('cameraStartRequested');
+    console.log('📷 Camera start requested - starting actual capture');
+    // モーダルを表示せず、直接撮影開始イベントを発火
+    const event = new CustomEvent('startActualCapture');
     window.dispatchEvent(event);
   }
 
