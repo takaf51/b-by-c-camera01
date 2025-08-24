@@ -38,8 +38,8 @@
 
   // Constants - PHP版と同じ厳しい設定
   const FACE_DETECTION_THRESHOLD = 5; // Increased from 3 to 5
-  const FACE_DETECTION_DELAY = 2.0; // Back to 2.0 seconds like PHP
-  const STABILITY_TIME = 1.5; // Increased to 1.5 seconds
+  const FACE_DETECTION_DELAY = 3.0; // 姿勢安定後の自動撮影までの待機時間を3秒に設定
+  // const STABILITY_TIME = 1.5; // 不要になったため削除（FACE_DETECTION_DELAYを使用）
   const THRESHOLDS = {
     roll: 10.0, // Reduced from 15.0 to 10.0 degrees
     pitch: 10.0, // Reduced from 15.0 to 10.0 degrees
@@ -550,10 +550,11 @@
 
       if (stableStartTime) {
         const elapsed = (now - stableStartTime) / 1000;
-        progress = Math.min((elapsed / STABILITY_TIME) * 100, 100);
+        // プログレスバーを姿勢安定後の自動撮影待機時間（FACE_DETECTION_DELAY）に合わせる
+        progress = Math.min((elapsed / FACE_DETECTION_DELAY) * 100, 100);
 
         if (progress >= 100) {
-          console.log('🎉 Stability progress completed!');
+          console.log('🎉 Auto capture countdown completed!');
         }
       }
     } else {
@@ -658,9 +659,10 @@
   }
 
   function checkAutoCapture() {
-    if (!faceDetected || !faceDetectionStartTime) return;
+    if (!faceDetected || !stableStartTime) return;
 
-    const elapsed = (performance.now() - faceDetectionStartTime) / 1000;
+    // 姿勢が安定してからの経過時間を計算
+    const elapsed = (performance.now() - stableStartTime) / 1000;
 
     console.log('Auto capture check:', {
       elapsed: elapsed.toFixed(2),
@@ -670,7 +672,7 @@
       currentMode,
     });
 
-    // PHP版と同じ厳しい条件 - 完全な安定状態のみで撮影
+    // 姿勢が安定してから3秒経過で撮影
     if (elapsed >= FACE_DETECTION_DELAY && stablePosition && progress >= 100) {
       console.log('🎯 Auto capture triggered!');
       dispatch('autoCapture', { landmarks: faceLandmarks });
