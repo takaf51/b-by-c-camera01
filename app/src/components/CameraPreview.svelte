@@ -365,25 +365,25 @@
                 />
                 <polygon points="50,87 47,85 53,85" fill="#D2294C" />
               {:else if effectiveDirection === 'tilt-left'}
-                <!-- 左上斜め矢印 -->
+                <!-- 左傾き矢印 - 11時-12時から9時-10時の円弧（右傾きと対称） -->
                 <path
-                  d="M 67.7 32.3 A 25 25 0 0 1 32.3 67.7"
+                  d="M 43 20 A 35 35 0 0 0 20 48"
                   fill="none"
                   stroke="#D2294C"
-                  stroke-width="4"
+                  stroke-width={arrowStrokeWidth}
                   opacity="1"
                 />
-                <polygon points="35,65 27,73 35,69" fill="#D2294C" />
+                <polygon points="22.5,47 18,46.5 20,50" fill="#D2294C" />
               {:else if effectiveDirection === 'tilt-right'}
-                <!-- 右上斜め矢印 -->
+                <!-- 右傾き矢印 - 0時-1時から2時-3時の円弧（調整版） -->
                 <path
-                  d="M 32.3 32.3 A 25 25 0 0 1 67.7 67.7"
+                  d="M 57 20 A 35 35 0 0 1 80 48"
                   fill="none"
                   stroke="#D2294C"
-                  stroke-width="4"
+                  stroke-width={arrowStrokeWidth}
                   opacity="1"
                 />
-                <polygon points="65,65 73,73 69,69" fill="#D2294C" />
+                <polygon points="77.5,47 82,46.5 80,50" fill="#D2294C" />
               {:else}
                 <!-- デフォルト: 右向き矢印 -->
                 <path
