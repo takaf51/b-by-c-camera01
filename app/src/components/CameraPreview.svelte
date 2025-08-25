@@ -275,8 +275,8 @@
 
         <!-- 白いテキストエリア -->
         <div class="guide-instructions">
-          <div class="instruction-title">正確な顔のデータ取得のため、</div>
-          <div class="instruction-subtitle">
+          <div class="instruction-text">
+            正確な顔のデータ取得のため、<br />
             撮影は顔を引いて真顔でおこなってください
           </div>
         </div>
@@ -614,7 +614,7 @@
     position: relative;
     width: 100vw;
     height: 100vh;
-    background-color: #000;
+    background-color: #222222;
     overflow: hidden;
     flex: 1;
     display: flex;
@@ -764,7 +764,7 @@
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.8);
+    background: #222222;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -899,11 +899,12 @@
   .pre-capture-guide-container {
     width: 100%;
     height: 100%;
-    background: #2c3e50;
+    background: #222222;
     color: white;
     display: flex;
     flex-direction: column;
     position: relative;
+    padding: 0 0 1rem 0;
   }
 
   .camera-startup-container {
@@ -912,7 +913,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(135deg, #ff6b6b 0%, #4ecdc4 100%);
+    background: url('/assets/images/bg-bokeh.jpg') center/cover no-repeat;
     color: white;
     padding: 2rem 1rem;
     position: relative;
@@ -1032,7 +1033,7 @@
 
   /* 撮影例画面のヘッダー */
   .guide-header {
-    background: #2c3e50;
+    background: #222222;
     padding: 1rem;
     display: flex;
     align-items: center;
@@ -1064,32 +1065,29 @@
   .guide-instructions {
     background: white;
     color: #333;
-    padding: 1.5rem;
+    padding: 1rem 1.5rem;
     text-align: center;
+    margin: 1rem 1.5rem 1rem 1.5rem;
+    border-radius: 8px;
   }
 
-  .instruction-title {
+  .instruction-text {
     font-size: 1rem;
-    font-weight: 600;
-    margin-bottom: 0.25rem;
-    color: #333;
-  }
-
-  .instruction-subtitle {
-    font-size: 1rem;
-    color: #c83e3e;
-    font-weight: 500;
+    color: #d2294c;
+    font-weight: normal;
+    line-height: 1.5;
   }
 
   /* 撮影例画像セクション */
   .guide-image-section {
-    background: #f0f0f0;
-    padding: 2rem;
+    background: white;
+    padding: 1.5rem 2rem;
     display: flex;
     flex-direction: column;
     align-items: center;
-    flex: 1;
     justify-content: center;
+    margin: 0 1.5rem 1rem 1.5rem;
+    border-radius: 8px;
   }
 
   .guide-example-image {
@@ -1111,8 +1109,8 @@
 
   /* ボタンエリア */
   .guide-buttons {
-    background: #2c3e50;
-    padding: 1.5rem;
+    background: #222222;
+    padding: 1rem 1.5rem 2rem 1.5rem;
     display: flex;
     gap: 1rem;
   }
