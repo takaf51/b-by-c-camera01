@@ -67,6 +67,7 @@
   let showPoseGuidance = false;
   let guidanceDirection: string | null = null;
   let nosePosition: { x: number; y: number } | null = null;
+
   let progress = 0;
 
   // Constants

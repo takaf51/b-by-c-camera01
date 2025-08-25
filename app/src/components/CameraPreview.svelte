@@ -245,7 +245,7 @@
           ></div>
         {/if}
 
-        <!-- ガイダンス矢印 - 画像ベース -->
+        <!-- SVG矢印 - コンテナ全体に広げて円弧で描画 -->
         {#if guidanceDirection && showPoseGuidance}
           {@const effectiveDirection =
             mirrorMode &&
@@ -262,69 +262,78 @@
             showPoseGuidance,
             timestamp: new Date().toLocaleTimeString(),
           })}
-          <div class="guidance-arrow-image {effectiveDirection}">
-            {#if effectiveDirection === 'turn-left'}
-              <!-- 左向き矢印 SVG -->
-              <svg
-                class="arrow-svg"
-                width="362"
-                height="347"
-                viewBox="0 0 362 347"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
+
+          <div class="dynamic-elements">
+            <svg
+              class="arrow-svg"
+              viewBox="0 0 100 100"
+              style:opacity="1"
+              style:transform={effectiveDirection === 'turn-left'
+                ? 'scaleX(-1)'
+                : 'none'}
+            >
+              {#if effectiveDirection === 'turn-right' || effectiveDirection === 'turn-left'}
+                <!-- 左右向き矢印 - Figma仕様サイズ -->
                 <path
-                  d="M50.272 269.773C47.9194 271.421 44.6696 270.852 43.0936 268.452C24.0031 239.369 14.0829 205.174 14.6914 170.31C15.3 135.446 26.4075 101.618 46.5014 73.2192C48.1602 70.8748 51.4279 70.4205 53.7215 72.1489C56.0151 73.8772 56.4657 77.1334 54.8114 79.481C36.0367 106.124 25.6602 137.824 25.09 170.491C24.5197 203.159 33.7837 235.202 51.6171 262.484C53.1884 264.888 52.6245 268.126 50.272 269.773Z"
-                  fill="#D2294C"
+                  d="M 50 25 A 25 25 0 0 1 75 50"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="4"
+                  opacity="1"
                 />
+                <polygon points="75,48 87,50 75,52" fill="#D2294C" />
+              {:else if effectiveDirection === 'look-up'}
+                <!-- 上向き矢印 -->
                 <path
-                  d="M-8.52372e-07 173.5L9.75 156.613L9.75 190.387L-8.52372e-07 173.5Z"
-                  fill="#D2294C"
+                  d="M 25 50 A 25 25 0 0 1 50 25"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="4"
+                  opacity="1"
                 />
-              </svg>
-            {:else if effectiveDirection === 'turn-right'}
-              <!-- 右向き矢印 SVG（左向きを反転） -->
-              <svg
-                class="arrow-svg"
-                width="362"
-                height="347"
-                viewBox="0 0 362 347"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <g transform="scale(-1, 1) translate(-362, 0)">
-                  <path
-                    d="M50.272 269.773C47.9194 271.421 44.6696 270.852 43.0936 268.452C24.0031 239.369 14.0829 205.174 14.6914 170.31C15.3 135.446 26.4075 101.618 46.5014 73.2192C48.1602 70.8748 51.4279 70.4205 53.7215 72.1489C56.0151 73.8772 56.4657 77.1334 54.8114 79.481C36.0367 106.124 25.6602 137.824 25.09 170.491C24.5197 203.159 33.7837 235.202 51.6171 262.484C53.1884 264.888 52.6245 268.126 50.272 269.773Z"
-                    fill="#D2294C"
-                  />
-                  <path
-                    d="M-8.52372e-07 173.5L9.75 156.613L9.75 190.387L-8.52372e-07 173.5Z"
-                    fill="#D2294C"
-                  />
-                </g>
-              </svg>
-            {:else}
-              <!-- その他の方向は右向きをベースに回転 -->
-              <svg
-                class="arrow-svg"
-                width="362"
-                height="347"
-                viewBox="0 0 362 347"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <g transform="scale(-1, 1) translate(-362, 0)">
-                  <path
-                    d="M50.272 269.773C47.9194 271.421 44.6696 270.852 43.0936 268.452C24.0031 239.369 14.0829 205.174 14.6914 170.31C15.3 135.446 26.4075 101.618 46.5014 73.2192C48.1602 70.8748 51.4279 70.4205 53.7215 72.1489C56.0151 73.8772 56.4657 77.1334 54.8114 79.481C36.0367 106.124 25.6602 137.824 25.09 170.491C24.5197 203.159 33.7837 235.202 51.6171 262.484C53.1884 264.888 52.6245 268.126 50.272 269.773Z"
-                    fill="#D2294C"
-                  />
-                  <path
-                    d="M-8.52372e-07 173.5L9.75 156.613L9.75 190.387L-8.52372e-07 173.5Z"
-                    fill="#D2294C"
-                  />
-                </g>
-              </svg>
-            {/if}
+                <polygon points="48,25 50,13 52,25" fill="#D2294C" />
+              {:else if effectiveDirection === 'look-down'}
+                <!-- 下向き矢印 -->
+                <path
+                  d="M 75 50 A 25 25 0 0 1 50 75"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="4"
+                  opacity="1"
+                />
+                <polygon points="48,75 50,87 52,75" fill="#D2294C" />
+              {:else if effectiveDirection === 'tilt-left'}
+                <!-- 左上斜め矢印 -->
+                <path
+                  d="M 67.7 32.3 A 25 25 0 0 1 32.3 67.7"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="4"
+                  opacity="1"
+                />
+                <polygon points="35,65 27,73 35,69" fill="#D2294C" />
+              {:else if effectiveDirection === 'tilt-right'}
+                <!-- 右上斜め矢印 -->
+                <path
+                  d="M 32.3 32.3 A 25 25 0 0 1 67.7 67.7"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="4"
+                  opacity="1"
+                />
+                <polygon points="65,65 73,73 69,69" fill="#D2294C" />
+              {:else}
+                <!-- デフォルト: 右向き矢印 -->
+                <path
+                  d="M 50 25 A 25 25 0 0 1 75 50"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="4"
+                  opacity="1"
+                />
+                <polygon points="75,48 87,50 75,52" fill="#D2294C" />
+              {/if}
+            </svg>
           </div>
         {/if}
       </div>
@@ -540,16 +549,9 @@
     background: rgba(0, 0, 0, 0.6);
     z-index: 5;
     pointer-events: none;
-    mask: radial-gradient(
-      circle at center,
-      transparent min(150px, 25vw),
-      black min(154px, 25.5vw)
-    );
-    -webkit-mask: radial-gradient(
-      circle at center,
-      transparent min(150px, 25vw),
-      black min(154px, 25.5vw)
-    );
+    /* マスクの円半径を30%に設定（viewBox 100x100の30に対応） */
+    mask: radial-gradient(circle at center, transparent 30%, black 31%);
+    -webkit-mask: radial-gradient(circle at center, transparent 30%, black 31%);
   }
 
   .nose-dot {
@@ -564,67 +566,27 @@
     box-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
   }
 
-  /* ガイダンス矢印 - SVGベース、レスポンシブ対応 */
-  .guidance-arrow-image {
+  /* SVG矢印コンテナ - コンテナ全体に広げる */
+  .dynamic-elements {
     position: absolute;
-    z-index: 15;
-    animation: pulse 1.5s ease-in-out infinite;
-    width: min(90px, 18vw); /* SVGのアスペクト比に合わせて調整 */
-    height: min(86px, 17vw); /* 362:347の比率を維持 */
-  }
-
-  .arrow-img {
+    top: 0;
+    left: 0;
     width: 100%;
     height: 100%;
-    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+    z-index: 15;
+    pointer-events: none;
   }
 
+  /* SVG要素も100%に広げる */
   .arrow-svg {
     width: 100%;
     height: 100%;
+    animation: pulse 1.5s ease-in-out infinite;
     filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease;
   }
-
-  /* 矢印コンテナのスタイル */
-
-  /* 各方向の矢印の位置調整 - 白い円（200px）の周囲に配置 */
-  .guidance-arrow-image.turn-left {
-    top: 50%;
-    left: calc(50% - min(150px, 40vw)); /* 円の半径(100px) + 余白(50px) */
-    transform: translateY(-50%); /* 左向き矢印画像を使用 */
-  }
-
-  .guidance-arrow-image.turn-right {
-    top: 50%;
-    right: calc(50% - min(150px, 40vw)); /* 円の半径(100px) + 余白(50px) */
-    transform: translateY(-50%); /* 右向き矢印画像を使用 */
-  }
-
-  .guidance-arrow-image.look-up {
-    top: calc(50% - min(150px, 40vw)); /* 円の半径(100px) + 余白(50px) */
-    left: 50%;
-    transform: translateX(-50%) rotate(-90deg); /* 右向き画像を90度回転 */
-  }
-
-  .guidance-arrow-image.look-down {
-    bottom: calc(50% - min(150px, 40vw)); /* 円の半径(100px) + 余白(50px) */
-    left: 50%;
-    transform: translateX(-50%) rotate(90deg); /* 右向き画像を90度回転 */
-  }
-
-  .guidance-arrow-image.tilt-left {
-    top: calc(50% - min(130px, 35vw)); /* 円の上部左側 */
-    left: calc(50% - min(130px, 35vw));
-    transform: rotate(135deg); /* 右向き画像を135度回転 */
-  }
-
-  .guidance-arrow-image.tilt-right {
-    top: calc(50% - min(130px, 35vw)); /* 円の上部右側 */
-    right: calc(50% - min(130px, 35vw));
-    transform: rotate(-135deg); /* 右向き画像を-135度回転 */
-  }
-
-  /* ミラーモード時の特別な調整は不要 - effectiveDirectionで制御 */
 
   @keyframes pulse {
     0%,

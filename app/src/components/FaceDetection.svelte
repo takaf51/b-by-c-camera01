@@ -583,6 +583,11 @@
   function getGuidanceDirection(pose: any) {
     if (!pose) return null;
 
+    // 顔の品質が低い場合は矢印を表示しない
+    if (pose.quality < MIN_FACE_QUALITY) {
+      return null;
+    }
+
     // 姿勢に基づいて矢印の方向を決定
     if (Math.abs(pose.roll) >= THRESHOLDS.roll) {
       return pose.roll > 0 ? 'tilt-left' : 'tilt-right';
