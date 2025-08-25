@@ -10,6 +10,7 @@
   export let poseGuidanceType: string = '';
   export let guidanceDirection: string | null = null;
   export let nosePosition: { x: number; y: number } | null = null;
+
   export let currentMode: string = 'idle';
 
   // Constants
@@ -287,7 +288,7 @@
         <!-- 円形マスク（中央を丸くくり抜く） -->
         <div class="face-circle-mask"></div>
 
-        <!-- 鼻の位置に点を表示 -->
+        <!-- 鼻の位置に点を表示（追従する点） -->
         {#if nosePosition}
           <div
             class="nose-dot"
@@ -295,7 +296,6 @@
             title="鼻の位置"
           ></div>
         {/if}
-
         <!-- SVG矢印 - コンテナ全体に広げて円弧で描画 -->
         {#if guidanceDirection && showPoseGuidance}
           {@const effectiveDirection =
@@ -633,7 +633,6 @@
     z-index: 15;
     box-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
   }
-
   /* SVG矢印コンテナ - コンテナ全体に広げる */
   .dynamic-elements {
     position: absolute;

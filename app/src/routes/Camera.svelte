@@ -437,6 +437,7 @@
     poseGuidanceType = '';
     guidanceDirection = null;
     nosePosition = null;
+
     progress = 0;
 
     // Reset face detection state
@@ -468,6 +469,7 @@
     poseGuidanceType = '';
     guidanceDirection = null;
     nosePosition = null;
+
     progress = 0;
     currentPreviewImage = null;
 
@@ -506,6 +508,7 @@
     poseGuidanceType = '';
     guidanceDirection = null;
     nosePosition = null;
+
     progress = 0;
     currentPreviewImage = null;
     statusMessage = '';

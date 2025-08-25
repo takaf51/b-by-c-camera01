@@ -725,15 +725,6 @@
     }
 
     // 中央のガイド点（必要に応じて）
-    if (currentMode !== CaptureMode?.CAMERA_STARTUP && faceDetected) {
-      const centerX = canvasElement.width / 2;
-      const centerY = canvasElement.height / 2;
-
-      canvasCtx.beginPath();
-      canvasCtx.arc(centerX, centerY, 8, 0, 2 * Math.PI);
-      canvasCtx.fillStyle = stablePosition ? '#4CAF50' : '#FFA500';
-      canvasCtx.fill();
-    }
 
     // Restore the transformation matrix
     canvasCtx.restore();
