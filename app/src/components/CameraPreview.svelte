@@ -301,10 +301,16 @@
           {@const effectiveDirection =
             mirrorMode &&
             (guidanceDirection === 'turn-left' ||
-              guidanceDirection === 'turn-right')
+              guidanceDirection === 'turn-right' ||
+              guidanceDirection === 'tilt-left' ||
+              guidanceDirection === 'tilt-right')
               ? guidanceDirection === 'turn-left'
                 ? 'turn-right'
-                : 'turn-left'
+                : guidanceDirection === 'turn-right'
+                  ? 'turn-left'
+                  : guidanceDirection === 'tilt-left'
+                    ? 'tilt-right'
+                    : 'tilt-left'
               : guidanceDirection}
           {console.log('🎯 SVG Arrow Rendering:', {
             guidanceDirection,
