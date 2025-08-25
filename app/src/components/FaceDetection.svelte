@@ -724,8 +724,6 @@
       canvasCtx.stroke();
     }
 
-    // 中央のガイド点（必要に応じて）
-
     // Restore the transformation matrix
     canvasCtx.restore();
   }

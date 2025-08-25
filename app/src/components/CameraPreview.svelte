@@ -77,9 +77,14 @@
     });
   }
 
-  // Watch for mode changes (debug disabled)
+  // Watch for mode changes (debug enabled for troubleshooting)
   $: if (mounted && currentMode) {
-    // console.log('🖥️ Mode changed:', currentMode);
+    console.log(
+      '🖥️ Mode changed:',
+      currentMode,
+      'CaptureMode.CONFIRMATION:',
+      CaptureMode?.CONFIRMATION
+    );
 
     // Additional check for video element issues
     if (videoElement && (currentMode === 'BEFORE' || currentMode === 'AFTER')) {
@@ -106,9 +111,9 @@
 
   // カメラ起動ボタンのハンドラー
   function handleCameraStart() {
-    console.log('📷 Camera start requested - starting actual capture');
-    // モーダルを表示せず、直接撮影開始イベントを発火
-    const event = new CustomEvent('startActualCapture');
+    console.log('📷 Camera start requested - going to confirmation screen');
+    // 確認事項画面に遷移するイベントを発火
+    const event = new CustomEvent('cameraStartRequested');
     window.dispatchEvent(event);
   }
 
@@ -146,6 +151,14 @@
     const event = new CustomEvent('startCaptureRequested');
     window.dispatchEvent(event);
   }
+
+  // 確認事項完了ボタンのハンドラー
+  function handleConfirmationComplete() {
+    console.log('✅ Confirmation completed - going to guide screen');
+    // 撮影例画面に遷移するイベントを発火
+    const event = new CustomEvent('confirmationCompleted');
+    window.dispatchEvent(event);
+  }
 </script>
 
 <svelte:window bind:innerWidth bind:innerHeight />
@@ -171,6 +184,83 @@
         alt="撮影プレビュー"
         class="preview-image {mirrorMode ? 'mirror' : ''}"
       />
+    {:else if currentMode === CaptureMode?.CONFIRMATION}
+      <!-- 確認事項画面（復元版） -->
+      <div class="confirmation-fullscreen">
+        <div class="confirmation-modal-content">
+          <h2 class="confirmation-modal-title">撮影の前にご確認ください</h2>
+
+          <div class="confirmation-warning-section">
+            <div class="confirmation-warning-icon">⚠️</div>
+            <div class="confirmation-warning-text">
+              <p><strong>前後の比較はデータ分析されます。</strong></p>
+              <p>正確な結果を得るため、以下の通りご撮影ください。</p>
+            </div>
+          </div>
+
+          <div class="confirmation-guidelines-container">
+            <div class="confirmation-guidelines-grid">
+              <div class="confirmation-guideline-item good">
+                <div class="confirmation-guideline-frame">
+                  <img
+                    src="/assets/images/checklist-good.png"
+                    alt="正しい撮影例"
+                    class="confirmation-guideline-image"
+                  />
+                </div>
+                <p class="confirmation-guideline-text">
+                  顔の輪郭が明確、<br />明るく無地の背景
+                </p>
+              </div>
+
+              <div class="confirmation-guideline-item bad">
+                <div class="confirmation-guideline-frame">
+                  <img
+                    src="/assets/images/checklist-bad-hair.png"
+                    alt="髪で耳が隠れている例"
+                    class="confirmation-guideline-image"
+                  />
+                </div>
+                <p class="confirmation-guideline-text">
+                  顔に髪がかかって<br />耳が隠れている
+                </p>
+              </div>
+
+              <div class="confirmation-guideline-item bad">
+                <div class="confirmation-guideline-frame">
+                  <img
+                    src="/assets/images/checklist-bad-shadow.png"
+                    alt="強い陰影がある例"
+                    class="confirmation-guideline-image"
+                  />
+                </div>
+                <p class="confirmation-guideline-text">
+                  顔に強い陰影が<br />ついている
+                </p>
+              </div>
+
+              <div class="confirmation-guideline-item bad">
+                <div class="confirmation-guideline-frame">
+                  <img
+                    src="/assets/images/checklist-bad-background.png"
+                    alt="背景が無地以外の例"
+                    class="confirmation-guideline-image"
+                  />
+                </div>
+                <p class="confirmation-guideline-text">背景が<br />無地以外</p>
+              </div>
+            </div>
+          </div>
+
+          <button
+            class="confirmation-confirm-button"
+            on:click={handleConfirmationComplete}
+          >
+            <span class="confirmation-confirm-icon">✓</span>
+            確認しました
+          </button>
+        </div>
+      </div>
     {:else if currentMode === CaptureMode?.PRE_CAPTURE_GUIDE}
       <!-- 撮影例ガイド画面 - デザイン完全再現 -->
       <div class="pre-capture-guide-container">
@@ -667,6 +757,144 @@
     }
   }
 
+  /* 確認事項画面のスタイル（復元版） */
+  .confirmation-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+  }
+
+  .confirmation-modal-content {
+    background: white;
+    border-radius: 20px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    padding: 30px 25px;
+  }
+
+  .confirmation-modal-title {
+    text-align: center;
+    margin: 0 0 25px 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+    line-height: 1.4;
+  }
+
+  .confirmation-warning-section {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    margin-bottom: 25px;
+    padding: 15px;
+    background: #fff3cd;
+    border-radius: 8px;
+    border-left: 4px solid #ffc107;
+  }
+
+  .confirmation-warning-icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    margin-top: 2px;
+  }
+
+  .confirmation-warning-text {
+    flex: 1;
+  }
+
+  .confirmation-warning-text p {
+    margin: 0 0 8px 0;
+    color: #856404;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+
+  .confirmation-warning-text p:last-child {
+    margin-bottom: 0;
+  }
+
+  .confirmation-warning-text strong {
+    font-weight: 600;
+  }
+
+  .confirmation-guidelines-container {
+    margin-bottom: 30px;
+  }
+
+  .confirmation-guidelines-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+  }
+
+  .confirmation-guideline-item {
+    text-align: center;
+  }
+
+  .confirmation-guideline-frame {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    margin-bottom: 10px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .confirmation-guideline-image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border-radius: 8px;
+  }
+
+  .confirmation-guideline-text {
+    font-size: 12px;
+    color: #333;
+    line-height: 1.4;
+    margin: 0;
+    font-weight: 500;
+  }
+
+  .confirmation-confirm-button {
+    width: 100%;
+    background: linear-gradient(135deg, #e91e63, #ad1457);
+    border: none;
+    color: white;
+    padding: 15px 20px;
+    font-size: 16px;
+    font-weight: 600;
+    border-radius: 25px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+  }
+
+  .confirmation-confirm-button:hover {
+    background: linear-gradient(135deg, #ad1457, #880e4f);
+    transform: translateY(-1px);
+  }
+
+  .confirmation-confirm-icon {
+    font-size: 18px;
+  }
+
   /* Idle guide styles */
   .pre-capture-guide-container {
     width: 100%;
@@ -1023,6 +1251,35 @@
 
   /* モバイル・タブレット最適化 */
   @media (max-width: 768px) {
+    .confirmation-fullscreen {
+      padding: 15px;
+    }
+
+    .confirmation-modal-content {
+      padding: 25px 20px;
+    }
+
+    .confirmation-modal-title {
+      font-size: 16px;
+    }
+
+    .confirmation-warning-text p {
+      font-size: 13px;
+    }
+
+    .confirmation-guidelines-grid {
+      gap: 12px;
+    }
+
+    .confirmation-guideline-text {
+      font-size: 11px;
+    }
+
+    .confirmation-confirm-button {
+      padding: 12px 16px;
+      font-size: 15px;
+    }
+
     .guide-header {
       padding: 0.8rem;
       font-size: 1rem;

@@ -29,6 +29,7 @@
   // 撮影モード定義
   const CaptureMode = {
     CAMERA_STARTUP: 'CAMERA_STARTUP', // カメラ起動画面（最初の状態）
+    CONFIRMATION: 'CONFIRMATION', // 確認事項画面
     PRE_CAPTURE_GUIDE: 'PRE_CAPTURE_GUIDE', // 撮影例画面
     BEFORE: 'BEFORE',
     PREVIEW_BEFORE: 'PREVIEW_BEFORE',
@@ -89,13 +90,13 @@
 
     window.addEventListener('beforeunload', handleBeforeUnload);
 
-    // カメラ起動イベントリスナー
+    // カメラ起動イベントリスナー（確認事項画面に遷移）
     window.addEventListener('cameraStartRequested', () => {
       console.log(
-        '📷 Handling camera start request - going directly to camera startup'
+        '📷 Handling camera start request - going to confirmation screen'
       );
-      // モーダルを表示せず、直接カメラ起動画面に遷移
-      currentMode = CaptureMode.CAMERA_STARTUP;
+      // まず確認事項画面に遷移
+      currentMode = CaptureMode.CONFIRMATION;
       pendingCaptureMode = 'before'; // デフォルトでBEFORE撮影を設定
     });
 
@@ -116,6 +117,12 @@
     window.addEventListener('startActualCapture', () => {
       console.log('📷 Starting actual capture');
       startActualCapture();
+    });
+
+    // 確認事項完了イベントリスナー（撮影例画面に遷移）
+    window.addEventListener('confirmationCompleted', () => {
+      console.log('✅ Confirmation completed - going to guide screen');
+      currentMode = CaptureMode.PRE_CAPTURE_GUIDE;
     });
 
     // 撮影開始イベントリスナー（撮影例画面から）
