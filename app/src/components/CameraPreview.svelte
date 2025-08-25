@@ -295,15 +295,15 @@
                 />
                 <polygon points="8,50 10,53 10,47" fill="#D2294C" />
               {:else if effectiveDirection === 'turn-right'}
-                <!-- 右向き矢印 - 元の実装 -->
+                <!-- 右向き矢印 - 左矢印と同じ条件で実装 -->
                 <path
-                  d="M 50 25 A 25 25 0 0 1 75 50"
+                  d="M 80 28.4 A 35 35 0 0 1 80 71.6"
                   fill="none"
                   stroke="#D2294C"
-                  stroke-width="4"
+                  stroke-width={arrowStrokeWidth}
                   opacity="1"
                 />
-                <polygon points="75,48 87,50 75,52" fill="#D2294C" />
+                <polygon points="92,50 90,53 90,47" fill="#D2294C" />
               {:else if effectiveDirection === 'look-up'}
                 <!-- 上向き矢印 -->
                 <path
