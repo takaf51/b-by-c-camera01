@@ -18,6 +18,23 @@
 
   let mounted = false;
 
+  // 画面サイズ取得
+  let innerWidth = 0;
+  let innerHeight = 0;
+
+  // 基準画面サイズ（iPhone 8）
+  const BASE_WIDTH = 375;
+  const BASE_HEIGHT = 667;
+
+  // スケールファクター計算
+  $: scaleFactor = Math.min(innerWidth / BASE_WIDTH, innerHeight / BASE_HEIGHT);
+
+  // 矢印のサイズ調整（5倍スケール考慮、以前の良好な値ベース）
+  $: arrowStrokeWidth = 2; // 以前の2pxが適切だった
+  $: triangleWidth = 8; // 以前の25-17=8が適切だった
+  $: triangleHeight = 4; // 以前の52-48=4が適切だった
+  $: arrowGap = 0; // 以前は25で位置決めしていた
+
   onMount(() => {
     mounted = true;
     console.log('🖥️ CameraPreview mounted with props:', {
@@ -97,6 +114,8 @@
     window.dispatchEvent(event);
   }
 </script>
+
+<svelte:window bind:innerWidth bind:innerHeight />
 
 <div class="preview-container">
   <!-- Mode indicator - デザインにないため削除 -->
@@ -266,15 +285,15 @@
           <div class="dynamic-elements">
             <svg class="arrow-svg" viewBox="0 0 100 100" style:opacity="1">
               {#if effectiveDirection === 'turn-left'}
-                <!-- 左向き矢印 - 8時から10時方向の円弧 -->
+                <!-- 左向き矢印 - カーブを緩やかにして左に移動 -->
                 <path
-                  d="M 30 28.4 A 25 25 0 0 0 30 71.6"
+                  d="M 20 28.4 A 35 35 0 0 0 20 71.6"
                   fill="none"
                   stroke="#D2294C"
-                  stroke-width="2px"
+                  stroke-width={arrowStrokeWidth}
                   opacity="1"
                 />
-                <polygon points="12,50 15,52 15,48" fill="#D2294C" />
+                <polygon points="8,50 10,53 10,47" fill="#D2294C" />
               {:else if effectiveDirection === 'turn-right'}
                 <!-- 右向き矢印 - 元の実装 -->
                 <path
@@ -599,7 +618,7 @@
     }
     50% {
       opacity: 1;
-      transform: scale(1.1);
+      transform: scale(1);
     }
   }
 
