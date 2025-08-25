@@ -345,25 +345,25 @@
                   fill="#D2294C"
                 />
               {:else if effectiveDirection === 'look-up'}
-                <!-- 上向き矢印 -->
+                <!-- 上向き矢印 - 左右矢印と同じクオリティで実装 -->
                 <path
-                  d="M 25 50 A 25 25 0 0 1 50 25"
+                  d="M 28.4 25 A 35 35 0 0 1 71.6 25"
                   fill="none"
                   stroke="#D2294C"
-                  stroke-width="4"
+                  stroke-width={arrowStrokeWidth}
                   opacity="1"
                 />
-                <polygon points="48,25 50,13 52,25" fill="#D2294C" />
+                <polygon points="50,13 53,15 47,15" fill="#D2294C" />
               {:else if effectiveDirection === 'look-down'}
-                <!-- 下向き矢印 -->
+                <!-- 下向き矢印 - 左右矢印と同じクオリティで実装 -->
                 <path
-                  d="M 75 50 A 25 25 0 0 1 50 75"
+                  d="M 71.6 75 A 35 35 0 0 1 28.4 75"
                   fill="none"
                   stroke="#D2294C"
-                  stroke-width="4"
+                  stroke-width={arrowStrokeWidth}
                   opacity="1"
                 />
-                <polygon points="48,75 50,87 52,75" fill="#D2294C" />
+                <polygon points="50,87 47,85 53,85" fill="#D2294C" />
               {:else if effectiveDirection === 'tilt-left'}
                 <!-- 左上斜め矢印 -->
                 <path

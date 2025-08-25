@@ -592,7 +592,7 @@
     if (Math.abs(pose.roll) >= THRESHOLDS.roll) {
       return pose.roll > 0 ? 'tilt-left' : 'tilt-right';
     } else if (Math.abs(pose.pitch) >= THRESHOLDS.pitch) {
-      return pose.pitch > 0 ? 'look-down' : 'look-up';
+      return pose.pitch > 0 ? 'look-up' : 'look-down';
     } else if (Math.abs(pose.yaw) >= THRESHOLDS.yaw) {
       return pose.yaw > 0 ? 'turn-left' : 'turn-right';
     }
@@ -648,8 +648,8 @@
     } else if (Math.abs(pose.pitch) >= THRESHOLDS.pitch) {
       message =
         pose.pitch > 0
-          ? '顔を少し下に向けてください'
-          : '顔を少し上に向けてください';
+          ? '顔を少し上に向けてください'
+          : '顔を少し下に向けてください';
     } else if (Math.abs(pose.yaw) >= THRESHOLDS.yaw) {
       message =
         pose.yaw > 0 ? '顔を右に向けてください' : '顔を左に向けてください';
