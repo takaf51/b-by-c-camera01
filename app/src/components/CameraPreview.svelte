@@ -35,6 +35,25 @@
   $: triangleHeight = 4; // 以前の52-48=4が適切だった
   $: arrowGap = 0; // 以前は25で位置決めしていた
 
+  // レスポンシブ対応：マスクの円と同じ基準（高さベース）で統一
+  const MASK_RADIUS_PERCENT = 30; // マスクの円半径（%）
+  const CENTER = 50; // viewBox中央
+
+  // 画面のアスペクト比とマスクの円の実際のサイズを計算
+  $: screenAspect = innerWidth / innerHeight;
+  $: maskRadiusInViewBox = (MASK_RADIUS_PERCENT / 100) * 100; // 30% = 30 viewBox units
+
+  // マスクの円は高さ基準なので、矢印位置も高さ基準で計算
+  // 画面が横に広い場合は、マスクの円の実際の位置に合わせて調整
+  $: heightToWidthRatio = innerHeight / innerWidth;
+  $: effectiveRadius =
+    maskRadiusInViewBox * Math.min(1, heightToWidthRatio * screenAspect);
+
+  $: leftArrowX = CENTER - effectiveRadius + 5;
+  $: rightArrowX = CENTER + effectiveRadius - 5;
+  $: leftTriangleX = leftArrowX - 12;
+  $: rightTriangleX = rightArrowX + 12;
+
   onMount(() => {
     mounted = true;
     console.log('🖥️ CameraPreview mounted with props:', {
@@ -43,6 +62,19 @@
       mirrorMode,
     });
   });
+
+  // デバッグ用：画面サイズと矢印位置をログ出力
+  $: if (mounted && innerWidth > 0) {
+    console.log('📱 Screen info:', {
+      width: innerWidth,
+      height: innerHeight,
+      aspect: screenAspect.toFixed(2),
+      heightToWidthRatio: heightToWidthRatio.toFixed(2),
+      effectiveRadius: effectiveRadius.toFixed(1),
+      leftArrowX: leftArrowX.toFixed(1),
+      rightArrowX: rightArrowX.toFixed(1),
+    });
+  }
 
   // Watch for mode changes (debug disabled)
   $: if (mounted && currentMode) {
@@ -285,25 +317,33 @@
           <div class="dynamic-elements">
             <svg class="arrow-svg" viewBox="0 0 100 100" style:opacity="1">
               {#if effectiveDirection === 'turn-left'}
-                <!-- 左向き矢印 - カーブを緩やかにして左に移動 -->
+                <!-- 左向き矢印 - レスポンシブ対応 -->
                 <path
-                  d="M 20 28.4 A 35 35 0 0 0 20 71.6"
+                  d="M {leftArrowX} 28.4 A 35 35 0 0 0 {leftArrowX} 71.6"
                   fill="none"
                   stroke="#D2294C"
                   stroke-width={arrowStrokeWidth}
                   opacity="1"
                 />
-                <polygon points="8,50 10,53 10,47" fill="#D2294C" />
+                <polygon
+                  points="{leftTriangleX},50 {leftTriangleX +
+                    2},53 {leftTriangleX + 2},47"
+                  fill="#D2294C"
+                />
               {:else if effectiveDirection === 'turn-right'}
-                <!-- 右向き矢印 - 左矢印と同じ条件で実装 -->
+                <!-- 右向き矢印 - レスポンシブ対応 -->
                 <path
-                  d="M 80 28.4 A 35 35 0 0 1 80 71.6"
+                  d="M {rightArrowX} 28.4 A 35 35 0 0 1 {rightArrowX} 71.6"
                   fill="none"
                   stroke="#D2294C"
                   stroke-width={arrowStrokeWidth}
                   opacity="1"
                 />
-                <polygon points="92,50 90,53 90,47" fill="#D2294C" />
+                <polygon
+                  points="{rightTriangleX},50 {rightTriangleX -
+                    2},53 {rightTriangleX - 2},47"
+                  fill="#D2294C"
+                />
               {:else if effectiveDirection === 'look-up'}
                 <!-- 上向き矢印 -->
                 <path
