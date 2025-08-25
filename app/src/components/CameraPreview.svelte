@@ -264,16 +264,19 @@
           })}
 
           <div class="dynamic-elements">
-            <svg
-              class="arrow-svg"
-              viewBox="0 0 100 100"
-              style:opacity="1"
-              style:transform={effectiveDirection === 'turn-left'
-                ? 'scaleX(-1)'
-                : 'none'}
-            >
-              {#if effectiveDirection === 'turn-right' || effectiveDirection === 'turn-left'}
-                <!-- 左右向き矢印 - Figma仕様サイズ -->
+            <svg class="arrow-svg" viewBox="0 0 100 100" style:opacity="1">
+              {#if effectiveDirection === 'turn-left'}
+                <!-- 左向き矢印 - 8時から10時方向の円弧 -->
+                <path
+                  d="M 30 28.4 A 25 25 0 0 0 30 71.6"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="2px"
+                  opacity="1"
+                />
+                <polygon points="12,50 15,52 15,48" fill="#D2294C" />
+              {:else if effectiveDirection === 'turn-right'}
+                <!-- 右向き矢印 - 元の実装 -->
                 <path
                   d="M 50 25 A 25 25 0 0 1 75 50"
                   fill="none"
