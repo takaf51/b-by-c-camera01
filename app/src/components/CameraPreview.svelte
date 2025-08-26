@@ -11,6 +11,9 @@
   export let guidanceDirection: string | null = null;
   export let nosePosition: { x: number; y: number } | null = null;
 
+  // nosePosition を使用（Svelte警告回避）
+  $: nosePositionUsed = nosePosition;
+
   export let currentMode: string = 'idle';
 
   // Constants

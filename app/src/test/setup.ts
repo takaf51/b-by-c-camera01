@@ -6,7 +6,7 @@ import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 
 // MediaPipe関連のグローバルモック
-global.MediaStream = class MockMediaStream {
+(globalThis as any).MediaStream = class MockMediaStream {
   getTracks() {
     return [{ stop: vi.fn() }];
   }
@@ -16,7 +16,7 @@ global.MediaStream = class MockMediaStream {
 Object.defineProperty(navigator, 'mediaDevices', {
   writable: true,
   value: {
-    getUserMedia: vi.fn().mockResolvedValue(new global.MediaStream()),
+    getUserMedia: vi.fn().mockResolvedValue(new (globalThis as any).MediaStream()),
   },
 });
 
@@ -49,7 +49,7 @@ Object.defineProperty(HTMLVideoElement.prototype, 'readyState', {
 });
 
 // Image要素のモック
-global.Image = class MockImage {
+(globalThis as any).Image = class MockImage {
   width = 640;
   height = 480;
   onload: (() => void) | null = null;
@@ -66,7 +66,7 @@ global.Image = class MockImage {
 
 // Console output suppression for cleaner test output
 const originalConsole = console;
-global.console = {
+(globalThis as any).console = {
   ...originalConsole,
   log: vi.fn(),
   warn: vi.fn(),

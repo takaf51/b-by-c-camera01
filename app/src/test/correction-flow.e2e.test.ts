@@ -96,7 +96,7 @@ test.describe('2D Correction Feature E2E Tests', () => {
     
     // AffineCorrection.correctImage がエラーを投げるように設定
     await page.addInitScript(() => {
-      window.mockCorrectionError = true;
+      (window as any).mockCorrectionError = true;
     });
     
     // Before撮影まで実行

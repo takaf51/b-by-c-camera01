@@ -41,8 +41,8 @@ class MockImage {
 }
 
 // グローバルモック設定
-global.HTMLCanvasElement = MockCanvas as any;
-global.Image = MockImage as any;
+(globalThis as any).HTMLCanvasElement = MockCanvas as any;
+(globalThis as any).Image = MockImage as any;
 
 describe('AffineCorrection', () => {
   let affineCorrection: AffineCorrection;
@@ -126,13 +126,13 @@ describe('AffineCorrection', () => {
         }
       };
       
-      const originalImage = global.Image;
-      global.Image = FailingImage as any;
+      const originalImage = (globalThis as any).Image;
+      (globalThis as any).Image = FailingImage as any;
       
       try {
         await expect(affineCorrection.correctImage('invalid-data', mockPose)).rejects.toThrow();
       } finally {
-        global.Image = originalImage;
+        (globalThis as any).Image = originalImage;
       }
     });
   });
