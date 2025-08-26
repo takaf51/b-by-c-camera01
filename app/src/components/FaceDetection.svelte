@@ -36,6 +36,10 @@
   let faceDetectionStartTime: number | null = null;
   let faceLandmarks: any = null;
 
+  // Video dimensions for accurate coordinate transformation
+  let currentVideoWidth = 0;
+  let currentVideoHeight = 0;
+
   // Constants - PHP版と同じ厳しい設定
   const FACE_DETECTION_THRESHOLD = 5; // Increased from 3 to 5
   const FACE_DETECTION_DELAY = 3.0; // 姿勢安定後の自動撮影までの待機時間を3秒に設定
@@ -261,6 +265,21 @@
     const canvasWidth = canvasElement!.width;
     const canvasHeight = canvasElement!.height;
 
+    // Save current video dimensions for coordinate transformation
+    currentVideoWidth = videoWidth;
+    currentVideoHeight = videoHeight;
+
+    // Debug: Log video dimensions when they change
+    if (Math.random() < 0.01) {
+      // 1% chance to avoid spam
+      console.log('📊 Video dimensions saved:', {
+        videoWidth: currentVideoWidth,
+        videoHeight: currentVideoHeight,
+        canvasWidth,
+        canvasHeight,
+      });
+    }
+
     // Calculate scaling to fit video into canvas while maintaining aspect ratio
     const videoAspect = videoWidth / videoHeight;
     const canvasAspect = canvasWidth / canvasHeight;
@@ -458,48 +477,72 @@
   }
 
   function calculatePose(landmarks: any) {
-    // PHP版と同じ姿勢計算ロジック
+    // PHP版と完全に同じ姿勢計算ロジック
     try {
-      // 顔の主要ポイントを取得（MediaPipe FaceMesh標準インデックス）
-      const nose = landmarks[1]; // 鼻先
-      const leftEye = landmarks[33]; // 左目内側
-      const rightEye = landmarks[263]; // 右目内側
-      const chin = landmarks[175]; // 顎
-      const forehead = landmarks[10]; // 額中央
+      // 特徴点の取得（PHPと同じインデックス）
+      const nose = landmarks[1];
+      const leftEye = landmarks[33];
+      const rightEye = landmarks[263];
+      const leftMouth = landmarks[61];
+      const rightMouth = landmarks[291];
 
-      if (!nose || !leftEye || !rightEye || !chin || !forehead) {
+      if (!nose || !leftEye || !rightEye || !leftMouth || !rightMouth) {
         throw new Error('Required landmarks not found');
       }
 
-      // Roll（左右の傾き）を計算 - 目の水平線から
-      const eyeVector = {
-        x: rightEye.x - leftEye.x,
-        y: rightEye.y - leftEye.y,
-      };
-      const roll = Math.atan2(eyeVector.y, eyeVector.x) * (180 / Math.PI);
+      // ロール（Z軸回転）- 目の傾き - ミラーリング対応
+      const eyeDiffY = rightEye.y - leftEye.y;
+      const eyeDiffX = rightEye.x - leftEye.x;
+      const roll = (-Math.atan2(eyeDiffY, eyeDiffX) * 180) / Math.PI;
 
-      // Pitch（上下の向き）を計算 - 顔の縦方向から
-      const faceHeight = Math.abs(chin.y - forehead.y);
-      const noseOffset = nose.y - (forehead.y + chin.y) / 2;
-      const pitch = Math.atan2(noseOffset, faceHeight) * (180 / Math.PI);
-
-      // Yaw（左右の向き）を計算 - 鼻の位置から
+      // ピッチ（X軸回転）- 縦方向の傾き - 修正版
       const eyeCenter = {
-        x: (leftEye.x + rightEye.x) / 2,
         y: (leftEye.y + rightEye.y) / 2,
+        z: (leftEye.z + rightEye.z) / 2,
       };
-      const noseOffset_x = nose.x - eyeCenter.x;
-      const eyeDistance = Math.sqrt(
-        eyeVector.x * eyeVector.x + eyeVector.y * eyeVector.y
-      );
-      const yaw = Math.atan2(noseOffset_x, eyeDistance) * (180 / Math.PI);
+
+      // 鼻と目の中心の位置関係
+      const eyeNoseY = eyeCenter.y - nose.y;
+      const eyeNoseZ = eyeCenter.z - nose.z;
+
+      // 角度計算 - 符号と引数を調整
+      let rawPitch = (-Math.atan2(eyeNoseZ, eyeNoseY) * 180) / Math.PI;
+
+      // 180度問題の解決
+      if (rawPitch > 90) {
+        rawPitch = rawPitch - 180;
+      } else if (rawPitch < -90) {
+        rawPitch = rawPitch + 180;
+      }
+
+      // 最終的なピッチ値（デバイス別オフセット）
+      const screenWidth = window.innerWidth;
+      let pitch;
+      if (screenWidth <= 480) {
+        // iPhone: +30度
+        pitch = rawPitch - 65 + 30;
+      } else if (screenWidth <= 1024) {
+        // iPad: +10度（元の重要な調整）
+        pitch = rawPitch - 65 + 10;
+      } else {
+        // PC: オフセットなし
+        pitch = rawPitch - 35;
+      }
+
+      // ヨー（Y軸回転）- 横方向の向き
+      const eyeMidPoint = {
+        x: (leftEye.x + rightEye.x) / 2,
+      };
+      const noseMidOffset = eyeMidPoint.x - nose.x;
+      const yaw = noseMidOffset * 500;
 
       // 顔のサイズを計算
       const faceSize = calculateFaceSize(landmarks);
 
-      // 距離と品質の計算（より厳密に）
+      // 距離と品質の計算
+      const eyeDistance = Math.sqrt(eyeDiffX * eyeDiffX + eyeDiffY * eyeDiffY);
       const distance = Math.max(0.5, Math.min(2.0, 1.0 / eyeDistance));
-      const quality = Math.max(0.0, Math.min(1.0, faceSize * 2)); // Face size based quality
+      const quality = Math.max(0.0, Math.min(1.0, faceSize * 2));
 
       const result = {
         roll: Math.round(roll * 10) / 10,
@@ -601,17 +644,57 @@
 
   // PHPと同じ鼻の位置計算（完全移植版）
   function getNosePosition(landmarks: any) {
-    if (!landmarks || !canvasElement) return null;
+    if (
+      !landmarks ||
+      !canvasElement ||
+      currentVideoWidth === 0 ||
+      currentVideoHeight === 0
+    ) {
+      // Debug: Log why getNosePosition is returning null
+      if (Math.random() < 0.1) {
+        // 10% chance to avoid spam
+        console.log('🔍 getNosePosition returning null:', {
+          hasLandmarks: !!landmarks,
+          hasCanvasElement: !!canvasElement,
+          currentVideoWidth,
+          currentVideoHeight,
+        });
+      }
+      return null;
+    }
 
     // 鼻の先端のランドマーク（インデックス1）
     const nose = landmarks[1];
     if (!nose) return null;
 
-    // PHPの実装と完全に同じ座標変換
-    // const noseX = (1 - nose.x) * outputCanvas.width;
-    // const noseY = nose.y * outputCanvas.height;
-    const noseX = (1 - nose.x) * canvasElement.width;
-    const noseY = nose.y * canvasElement.height;
+    // onResults関数と同じアスペクト比計算を使用
+    const videoWidth = currentVideoWidth;
+    const videoHeight = currentVideoHeight;
+    const canvasWidth = canvasElement.width;
+    const canvasHeight = canvasElement.height;
+
+    const videoAspect = videoWidth / videoHeight;
+    const canvasAspect = canvasWidth / canvasHeight;
+
+    let drawWidth, drawHeight, drawX, drawY;
+
+    if (videoAspect > canvasAspect) {
+      // Video is wider - fit to canvas height
+      drawHeight = canvasHeight;
+      drawWidth = drawHeight * videoAspect;
+      drawX = (canvasWidth - drawWidth) / 2;
+      drawY = 0;
+    } else {
+      // Video is taller - fit to canvas width
+      drawWidth = canvasWidth;
+      drawHeight = drawWidth / videoAspect;
+      drawX = 0;
+      drawY = (canvasHeight - drawHeight) / 2;
+    }
+
+    // 実際の描画領域内での座標計算
+    const noseX = (1 - nose.x) * drawWidth + drawX;
+    const noseY = nose.y * drawHeight + drawY;
 
     // 表示サイズに合わせてスケーリング
     const canvasRect = canvasElement.getBoundingClientRect();
@@ -620,6 +703,19 @@
 
     const displayX = noseX * scaleX;
     const displayY = noseY * scaleY;
+
+    // Debug: Log successful nose position calculation
+    if (Math.random() < 0.05) {
+      // 5% chance to avoid spam
+      console.log('🎯 Nose position calculated:', {
+        nose: { x: nose.x, y: nose.y },
+        videoAspect: videoAspect.toFixed(2),
+        canvasAspect: canvasAspect.toFixed(2),
+        drawRegion: { drawX, drawY, drawWidth, drawHeight },
+        canvasCoords: { noseX, noseY },
+        displayCoords: { displayX, displayY },
+      });
+    }
 
     return { x: displayX, y: displayY };
   }
@@ -666,6 +762,66 @@
 
       // 姿勢が悪い間は継続的に表示（同じメッセージでも継続表示）
     }
+  }
+
+  // PHPと同じピノキオ棒（青い軸）描画機能
+  function drawPoseAxes(landmarks: any) {
+    if (!canvasCtx || !canvasElement) return;
+
+    // 現在の姿勢を計算
+    const pose = calculatePose(landmarks);
+
+    // 鏡像表示に対応するための変換
+    canvasCtx.scale(-1, 1);
+    canvasCtx.translate(-canvasElement.width, 0);
+
+    const nose = landmarks[1];
+    const scale = 0.2; // 軸の長さ
+
+    // 座標軸の描画（鼻から伸びる青い軸）
+    // ミラーリング時の座標に変換
+    const noseX = (1 - nose.x) * canvasElement.width;
+    const noseY = nose.y * canvasElement.height;
+
+    // Z軸（青）- ヨー（顔の向き）に応じて方向が変わる
+    const zAxisX =
+      noseX +
+      Math.sin((pose.yaw * Math.PI) / 180) * scale * canvasElement.width;
+
+    // 円柱の描画（Z軸）
+    const cylinderWidth = 12; // 円柱の幅
+
+    // グラデーションで円柱効果を作成
+    const gradient = canvasCtx.createLinearGradient(
+      noseX,
+      noseY,
+      zAxisX,
+      noseY
+    );
+    gradient.addColorStop(0, 'rgba(0, 0, 255, 1)'); // 濃い青（始点）
+    gradient.addColorStop(1, 'rgba(100, 100, 255, 1)'); // 明るい青（終点）
+
+    // 円柱の本体を描画
+    canvasCtx.beginPath();
+    canvasCtx.moveTo(noseX, noseY - cylinderWidth / 2);
+    canvasCtx.lineTo(zAxisX, noseY - cylinderWidth / 2);
+    canvasCtx.lineTo(zAxisX, noseY + cylinderWidth / 2);
+    canvasCtx.lineTo(noseX, noseY + cylinderWidth / 2);
+    canvasCtx.closePath();
+    canvasCtx.fillStyle = gradient;
+    canvasCtx.fill();
+
+    // 終点の円を描画
+    canvasCtx.beginPath();
+    canvasCtx.arc(zAxisX, noseY, cylinderWidth / 2, 0, Math.PI * 2);
+    canvasCtx.fillStyle = 'rgba(100, 100, 255, 1)';
+    canvasCtx.fill();
+
+    // 始点の円を描画
+    canvasCtx.beginPath();
+    canvasCtx.arc(noseX, noseY, cylinderWidth / 2, 0, Math.PI * 2);
+    canvasCtx.fillStyle = 'rgba(0, 0, 255, 1)';
+    canvasCtx.fill();
   }
 
   function checkAutoCapture() {
@@ -722,6 +878,11 @@
       canvasCtx.strokeStyle = progress >= 100 ? '#4CAF50' : '#FFA500';
       canvasCtx.lineWidth = 8;
       canvasCtx.stroke();
+    }
+
+    // ピノキオ棒（青い軸）の描画 - PHPと同じ実装
+    if (faceLandmarks && faceDetected) {
+      drawPoseAxes(faceLandmarks);
     }
 
     // Restore the transformation matrix

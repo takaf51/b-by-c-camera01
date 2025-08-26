@@ -9,7 +9,6 @@
   export let poseGuidanceMessage: string = '';
   export let poseGuidanceType: string = '';
   export let guidanceDirection: string | null = null;
-  export let nosePosition: { x: number; y: number } | null = null;
 
   export let currentMode: string = 'idle';
 
@@ -378,14 +377,7 @@
         <!-- 円形マスク（中央を丸くくり抜く） -->
         <div class="face-circle-mask"></div>
 
-        <!-- 鼻の位置に点を表示（追従する点） -->
-        {#if nosePosition}
-          <div
-            class="nose-dot"
-            style="left: {nosePosition.x}px; top: {nosePosition.y}px;"
-            title="鼻の位置"
-          ></div>
-        {/if}
+        <!-- 鼻の位置の点は削除（ピノキオ棒をFaceDetectionで描画） -->
         <!-- SVG矢印 - コンテナ全体に広げて円弧で描画 -->
         {#if guidanceDirection && showPoseGuidance}
           {@const effectiveDirection =
@@ -712,17 +704,7 @@
     -webkit-mask: radial-gradient(circle at center, transparent 30%, black 31%);
   }
 
-  .nose-dot {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: #ff0000;
-    border: 2px solid white;
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 15;
-    box-shadow: 0 0 6px rgba(255, 0, 0, 0.6);
-  }
+  /* nose-dot スタイルは削除（ピノキオ棒をFaceDetectionで描画） */
   /* SVG矢印コンテナ - コンテナ全体に広げる */
   .dynamic-elements {
     position: absolute;
