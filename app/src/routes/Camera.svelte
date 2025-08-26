@@ -7,6 +7,10 @@
   import FaceDetection from '../components/FaceDetection.svelte';
   import ImageCapture from '../components/ImageCapture.svelte';
   import {
+    AffineCorrection,
+    type CorrectionResult,
+  } from '../lib/AffineCorrection';
+  import {
     isReportUploading,
     reportError,
     currentReportId,
@@ -33,6 +37,7 @@
     PRE_CAPTURE_GUIDE: 'PRE_CAPTURE_GUIDE', // 撮影例画面
     BEFORE: 'BEFORE',
     PREVIEW_BEFORE: 'PREVIEW_BEFORE',
+    CORRECTION: 'CORRECTION', // 2D補正画面
     CHALLENGE: 'CHALLENGE',
     AFTER: 'AFTER',
     PREVIEW_AFTER: 'PREVIEW_AFTER',
@@ -52,6 +57,14 @@
   let isSending = false;
   let pendingCaptureMode: 'before' | 'after' | null = null;
 
+  // 2D補正機能の状態
+  let affineCorrection: AffineCorrection;
+  let beforeImageData: string | null = null;
+  let beforePoseData: any = null;
+  let beforeLandmarks: any = null;
+  let correctionResult: CorrectionResult | null = null;
+  let isProcessingCorrection = false;
+
   // Store subscriptions
   $: uploading = $isReportUploading;
   $: uploadError = $reportError;
@@ -63,6 +76,7 @@
   // Face detection state
   let faceDetected = false;
   let currentFaceLandmarks: any = null;
+  let currentPose: any = null;
   let poseGuidanceMessage = '';
   let poseGuidanceType = '';
   let showPoseGuidance = false;
@@ -77,6 +91,9 @@
   onMount(() => {
     // Initial status will be set by camera startup
     console.log('📱 Camera component mounted');
+
+    // Initialize AffineCorrection
+    affineCorrection = new AffineCorrection();
 
     // ページ離脱時にカメラを停止
     const handleBeforeUnload = () => {
@@ -233,6 +250,7 @@
     } = event.detail;
 
     currentFaceLandmarks = landmarks;
+    currentPose = pose;
     faceDetected = !!landmarks;
     progress = faceProgress;
 
@@ -325,8 +343,13 @@
 
       // Transition to preview mode instead of sending to API immediately
       if (currentMode === CaptureMode.BEFORE) {
+        // Store before image data and pose for correction
+        beforeImageData = imageDataUrl;
+        beforePoseData = currentPose;
+        beforeLandmarks = currentFaceLandmarks;
+
         currentMode = CaptureMode.PREVIEW_BEFORE;
-        console.log('📸 Switched to PREVIEW_BEFORE mode');
+        console.log('📸 Switched to PREVIEW_BEFORE mode, stored before data');
       } else if (currentMode === CaptureMode.AFTER) {
         currentMode = CaptureMode.PREVIEW_AFTER;
         console.log('📸 Switched to PREVIEW_AFTER mode');
@@ -366,6 +389,42 @@
     // Images cleared
   }
 
+  // 2D補正処理
+  async function performAffineCorrection() {
+    if (!beforeImageData || !beforePoseData || !affineCorrection) {
+      console.error('❌ Missing data for correction:', {
+        hasBeforeImage: !!beforeImageData,
+        hasBeforePose: !!beforePoseData,
+        hasAffineCorrection: !!affineCorrection,
+      });
+      return;
+    }
+
+    isProcessingCorrection = true;
+    console.log('🔧 Starting 2D affine correction...');
+
+    try {
+      correctionResult = await affineCorrection.correctImage(
+        beforeImageData,
+        beforePoseData,
+        beforeLandmarks
+      );
+
+      console.log('✅ 2D correction completed:', {
+        originalPose: correctionResult.originalPose,
+        correctedPose: correctionResult.estimatedCorrectedPose,
+      });
+
+      // Switch to correction results view
+      currentMode = CaptureMode.CORRECTION;
+    } catch (error) {
+      console.error('❌ 2D correction failed:', error);
+      statusMessage = `補正処理エラー: ${error instanceof Error ? error.message : 'unknown error'}`;
+    } finally {
+      isProcessingCorrection = false;
+    }
+  }
+
   // Preview mode functions
   async function confirmSendImage() {
     console.log('📤 confirmSendImage called:', {
@@ -387,17 +446,26 @@
     try {
       // Determine capture kind based on current mode
       const kind =
-        currentMode === CaptureMode.PREVIEW_BEFORE ? 'before' : 'after';
+        currentMode === CaptureMode.PREVIEW_BEFORE ||
+        currentMode === CaptureMode.CORRECTION
+          ? 'before'
+          : 'after';
+
+      // Use corrected image if available and in correction mode
+      const imageToSend =
+        currentMode === CaptureMode.CORRECTION && correctionResult
+          ? correctionResult.correctedImageUrl
+          : currentPreviewImage;
 
       // Add to captured images
       capturedImages = imageCapture.addCapturedImage(
-        currentPreviewImage,
+        imageToSend,
         capturedImages
       );
 
       // Send image to API
       await imageCapture.sendImageToAPI(
-        currentPreviewImage,
+        imageToSend,
         kind,
         currentFaceLandmarks
       );
@@ -595,6 +663,8 @@
       {currentMode}
       {CaptureMode}
       previewImage={currentPreviewImage}
+      {beforeImageData}
+      {correctionResult}
     />
 
     <!-- Camera Controls (Integrated in status panel) -->
@@ -602,13 +672,58 @@
       {#if currentMode === CaptureMode.PREVIEW_BEFORE || currentMode === CaptureMode.PREVIEW_AFTER}
         <!-- Preview mode controls -->
         <div class="preview-controls">
+          {#if currentMode === CaptureMode.PREVIEW_BEFORE}
+            <Button
+              variant="secondary"
+              on:click={performAffineCorrection}
+              class="capture-button correction-button"
+              disabled={isProcessingCorrection}
+            >
+              {isProcessingCorrection ? '🔧 補正処理中...' : '🔧 2D補正実行'}
+            </Button>
+            <Button
+              variant="primary"
+              on:click={confirmSendImage}
+              class="capture-button send-button"
+              disabled={isSending}
+            >
+              {isSending ? '📤 送信中...' : '📤 送信する（補正なし）'}
+            </Button>
+          {:else}
+            <Button
+              variant="primary"
+              on:click={confirmSendImage}
+              class="capture-button send-button"
+              disabled={isSending}
+            >
+              {isSending ? '📤 送信中...' : '📤 送信する'}
+            </Button>
+          {/if}
+        </div>
+      {:else if currentMode === CaptureMode.CORRECTION}
+        <!-- Correction results mode controls -->
+        <div class="correction-controls">
+          <Button
+            variant="secondary"
+            on:click={() => (currentMode = CaptureMode.PREVIEW_BEFORE)}
+            class="back-button"
+          >
+            ← Before画像に戻る
+          </Button>
           <Button
             variant="primary"
             on:click={confirmSendImage}
-            class="capture-button send-button"
             disabled={isSending}
+            class="send-button"
           >
-            {isSending ? '📤 送信中...' : '📤 送信する'}
+            {isSending ? '📤 送信中...' : '📤 補正後画像を送信'}
+          </Button>
+          <Button
+            variant="primary"
+            on:click={() => (currentMode = CaptureMode.AFTER)}
+            class="next-button"
+          >
+            After撮影へ →
           </Button>
         </div>
       {:else if currentMode === CaptureMode.BEFORE || currentMode === CaptureMode.AFTER}

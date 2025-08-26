@@ -9,12 +9,17 @@
   export let poseGuidanceMessage: string = '';
   export let poseGuidanceType: string = '';
   export let guidanceDirection: string | null = null;
+  export let nosePosition: { x: number; y: number } | null = null;
 
   export let currentMode: string = 'idle';
 
   // Constants
   export let CaptureMode: any;
   export let previewImage: string | null = null;
+
+  // 2D correction props
+  export let beforeImageData: string | null = null;
+  export let correctionResult: any = null;
 
   let mounted = false;
 
@@ -346,6 +351,65 @@
           <button class="skip-button" on:click={handleCancel}>
             中止する
           </button>
+        </div>
+      </div>
+    {:else if currentMode === CaptureMode?.CORRECTION && correctionResult}
+      <!-- 2D補正結果表示画面 -->
+      <div class="correction-results-container">
+        <div class="correction-header">
+          <h2 class="correction-title">🔧 2D補正結果</h2>
+          <p class="correction-subtitle">元画像と補正後画像の比較です</p>
+        </div>
+
+        <div class="correction-comparison">
+          <div class="correction-item">
+            <h3 class="correction-item-title">📸 元画像（Before）</h3>
+            <img src={beforeImageData} alt="元画像" class="correction-image" />
+            <div class="correction-info">
+              <div class="pose-data">
+                <strong>元姿勢:</strong><br />
+                ロール: {correctionResult.originalPose.roll.toFixed(1)}°<br />
+                ピッチ: {correctionResult.originalPose.pitch.toFixed(1)}°<br />
+                ヨー: {correctionResult.originalPose.yaw.toFixed(1)}°
+              </div>
+            </div>
+          </div>
+
+          <div class="correction-item">
+            <h3 class="correction-item-title">✨ 補正後画像</h3>
+            <img
+              src={correctionResult.correctedImageUrl}
+              alt="補正後画像"
+              class="correction-image"
+            />
+            <div class="correction-info">
+              <div class="pose-data">
+                <strong>補正後姿勢:</strong><br />
+                ロール: {correctionResult.estimatedCorrectedPose.roll.toFixed(
+                  1
+                )}°<br />
+                ピッチ: {correctionResult.estimatedCorrectedPose.pitch.toFixed(
+                  1
+                )}°<br />
+                ヨー: {correctionResult.estimatedCorrectedPose.yaw.toFixed(1)}°
+              </div>
+              <div class="improvement-data">
+                <strong>改善度:</strong><br />
+                ロール: {Math.abs(
+                  correctionResult.originalPose.roll -
+                    correctionResult.estimatedCorrectedPose.roll
+                ).toFixed(1)}°<br />
+                ピッチ: {Math.abs(
+                  correctionResult.originalPose.pitch -
+                    correctionResult.estimatedCorrectedPose.pitch
+                ).toFixed(1)}°<br />
+                ヨー: {Math.abs(
+                  correctionResult.originalPose.yaw -
+                    correctionResult.estimatedCorrectedPose.yaw
+                ).toFixed(1)}°
+              </div>
+            </div>
+          </div>
         </div>
       </div>
     {:else if (currentMode === CaptureMode?.BEFORE || currentMode === CaptureMode?.AFTER) && !previewImage}
@@ -1308,6 +1372,125 @@
 
     .pose-guidance {
       top: 120px;
+    }
+  }
+
+  /* 2D補正結果表示のスタイル */
+  .correction-results-container {
+    width: 100%;
+    height: 100vh;
+    background: #f5f5f5;
+    overflow-y: auto;
+    padding: 20px;
+    box-sizing: border-box;
+  }
+
+  .correction-header {
+    text-align: center;
+    margin-bottom: 30px;
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  }
+
+  .correction-title {
+    margin: 0 0 10px 0;
+    color: #333;
+    font-size: 24px;
+    font-weight: 600;
+  }
+
+  .correction-subtitle {
+    margin: 0;
+    color: #666;
+    font-size: 16px;
+  }
+
+  .correction-comparison {
+    display: flex;
+    gap: 20px;
+    max-width: 1000px;
+    margin: 0 auto;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+
+  .correction-item {
+    flex: 1;
+    min-width: 300px;
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+  }
+
+  .correction-item-title {
+    margin: 0 0 15px 0;
+    color: #333;
+    font-size: 18px;
+    font-weight: 600;
+  }
+
+  .correction-image {
+    width: 100%;
+    max-width: 300px;
+    height: auto;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+
+  .correction-info {
+    font-size: 14px;
+    color: #666;
+    line-height: 1.6;
+    text-align: left;
+  }
+
+  .pose-data {
+    background: #e8f5e8;
+    border: 1px solid #4caf50;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 10px;
+  }
+
+  .improvement-data {
+    background: #fff3cd;
+    border: 1px solid #ffc107;
+    border-radius: 6px;
+    padding: 12px;
+  }
+
+  .pose-data strong,
+  .improvement-data strong {
+    color: #333;
+    font-weight: 600;
+  }
+
+  /* モバイル対応 */
+  @media (max-width: 768px) {
+    .correction-results-container {
+      padding: 15px;
+    }
+
+    .correction-comparison {
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .correction-item {
+      min-width: auto;
+    }
+
+    .correction-title {
+      font-size: 20px;
+    }
+
+    .correction-subtitle {
+      font-size: 14px;
     }
   }
 </style>

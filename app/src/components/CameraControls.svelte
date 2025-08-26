@@ -15,9 +15,15 @@
 
   // Event handlers
   export let onStartBeforeCapture: () => void = () => {};
+  export let onPerformCorrection: () => void = () => {};
   export let onStartAfterCapture: () => void = () => {};
   export let onToggleMesh: () => void = () => {};
   export let onToggleMirror: () => void = () => {};
+
+  // Correction state
+  export let hasBeforeImage: boolean = false;
+  export let correctionResult: any = null;
+  export let isProcessingCorrection: boolean = false;
 </script>
 
 <div class="controls-container">
@@ -59,8 +65,15 @@
 
     <Button
       variant="secondary"
-      disabled={currentMode === CaptureMode.IDLE ||
-        capturedImages.length < CAPTURE_COUNT}
+      disabled={!hasBeforeImage || isProcessingCorrection}
+      on:click={onPerformCorrection}
+    >
+      {isProcessingCorrection ? '補正処理中...' : '2. 2D補正実行'}
+    </Button>
+
+    <Button
+      variant="secondary"
+      disabled={!correctionResult}
       on:click={onStartAfterCapture}
     >
       3. アフター撮影開始
