@@ -21,6 +21,13 @@
   onMount(() => {
     console.log('📱 Camera-only app started');
     console.log('⚙️ External config:', $externalConfig);
+
+    // カメラ専用画面は確認画面から開始
+    // PHPから直接確認画面に遷移するためのイベントを発行
+    setTimeout(() => {
+      console.log('📋 Starting with confirmation screen');
+      window.dispatchEvent(new Event('cameraStartRequested'));
+    }, 100);
   });
 </script>
 
