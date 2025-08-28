@@ -633,11 +633,11 @@
 
     // 姿勢に基づいて矢印の方向を決定
     if (Math.abs(pose.roll) >= THRESHOLDS.roll) {
-      return pose.roll > 0 ? 'tilt-left' : 'tilt-right';
+      return pose.roll > 0 ? 'tilt-right' : 'tilt-left';
     } else if (Math.abs(pose.pitch) >= THRESHOLDS.pitch) {
-      return pose.pitch > 0 ? 'look-up' : 'look-down';
+      return pose.pitch > 0 ? 'look-down' : 'look-up';
     } else if (Math.abs(pose.yaw) >= THRESHOLDS.yaw) {
-      return pose.yaw > 0 ? 'turn-left' : 'turn-right';
+      return pose.yaw > 0 ? 'turn-right' : 'turn-left';
     }
     return null;
   }
