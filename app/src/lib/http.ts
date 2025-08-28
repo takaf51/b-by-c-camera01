@@ -185,3 +185,20 @@ export function createHttpClient(
 
   return new HttpClient(config);
 }
+
+// 外部設定対応版HTTPクライアント作成関数
+export function createHttpClientWithExternalConfig(
+  getToken?: () => string | null,
+  getProgramCode?: () => string | null,
+  getPlanCode?: () => string | null,
+  externalApiEndpoint?: string
+): HttpClient {
+  const config: HttpConfig = {
+    baseUrl: externalApiEndpoint || import.meta.env.VITE_API_BASE_URL || '',
+    getToken,
+    getProgramCode,
+    getPlanCode,
+  };
+
+  return new HttpClient(config);
+}
