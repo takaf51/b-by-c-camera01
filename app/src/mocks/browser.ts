@@ -37,6 +37,7 @@ export async function startMocking() {
       // API関連パス以外は警告（認証パスは除く）
       if (
         !url.includes('/api/') &&
+        !url.includes('/plan/') &&
         !url.includes('/login/') &&
         !url.includes('/register/')
       ) {

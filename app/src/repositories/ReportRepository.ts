@@ -41,9 +41,9 @@ export class HttpReportRepository implements ReportRepository {
       formData.append('kind', request.image.kind);
       formData.append('image', blob, `${request.image.kind}_${Date.now()}.jpg`);
 
-      // report_idがある場合は追加（更新の場合）
+      // plan_report_idがある場合は追加（更新の場合）
       if (request.reportId) {
-        formData.append('report_id', request.reportId.toString());
+        formData.append('plan_report_id', request.reportId.toString());
       }
 
       // 顔の座標情報を追加（利用可能な場合）
@@ -53,7 +53,7 @@ export class HttpReportRepository implements ReportRepository {
 
       // HTTPクライアント経由でAPI呼び出し
       const result = await this.httpClient.post<ReportCreateResponse>(
-        '/api/plan/report/send',
+        '/plan/report/send',
         formData,
         {
           headers: {

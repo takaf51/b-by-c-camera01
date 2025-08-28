@@ -6,7 +6,7 @@
 import { writable } from 'svelte/store';
 import { createReportUseCase } from '../usecases/ReportUseCase';
 import { createReportRepository } from '../repositories/ReportRepository';
-import { createHttpClient } from '../lib/http';
+import { createHttpClientWithExternalConfig } from '../lib/http';
 import type { ReportImage, FacePoints, ReportError } from '../domain/report';
 
 // =============================================================================
@@ -48,11 +48,12 @@ const initialState: ReportStoreState = {
 function createReportStore() {
   const { subscribe, set, update } = writable<ReportStoreState>(initialState);
 
-  // UseCase インスタンス
-  const httpClient = createHttpClient(
-    () => 'mock-token-12345', // TODO: 実際のトークン取得ロジックに置き換え
+  // UseCase インスタンス（外部設定対応）
+  const httpClient = createHttpClientWithExternalConfig(
+    () => window.CameraSettings?.API_TOKEN || null,
     () => import.meta.env.VITE_PROGRAM_CODE,
-    () => 'MOCK_PLAN_CODE'
+    () => window.CameraSettings?.PLAN_CODE || 'MOCK_PLAN_CODE',
+    window.CameraSettings?.API_ENDPOINT
   );
   const reportRepository = createReportRepository(httpClient);
   const reportUseCase = createReportUseCase(reportRepository);

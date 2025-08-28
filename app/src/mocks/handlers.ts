@@ -384,7 +384,8 @@ export const planHandlers = [
 // カメラ関連のAPIハンドラ（Face Matrix API仕様に準拠）
 export const cameraHandlers = [
   // 画像アップロード - Face Matrix API仕様に準拠
-  http.post('/api/plan/report/send', async ({ request }) => {
+  http.post('/plan/report/send', async ({ request }) => {
+    console.log('🚀 MSW: /plan/report/send endpoint hit!');
     console.log('MSW: Face Matrix API - Image upload request received');
 
     // ヘッダーチェック
@@ -400,12 +401,9 @@ export const cameraHandlers = [
         : contentType,
     });
 
-    // 認証チェック
-    if (!authorization?.startsWith('Bearer ')) {
-      return HttpResponse.json(
-        { error: 'Authorization header is required' },
-        { status: 401 }
-      );
+    // 認証チェック（モック環境では緩和）
+    if (!authorization?.startsWith('Bearer ') && authorization !== null) {
+      console.warn('MSW: Invalid authorization format, but allowing in mock mode');
     }
 
     // プランコードチェック
@@ -420,7 +418,7 @@ export const cameraHandlers = [
       const formData = await request.formData();
       const image = formData.get('image') as File;
       const kind = formData.get('kind') as string; // 'before' or 'after'
-      const reportIdParam = formData.get('report_id') as string;
+      const reportIdParam = formData.get('plan_report_id') as string;
       const pointsParam = formData.get('points') as string;
 
       console.log('MSW: Form data -', {
@@ -457,7 +455,7 @@ export const cameraHandlers = [
         }
       }
 
-      // report_idを決定（新規作成 or 更新）
+      // plan_report_idを決定（新規作成 or 更新）
       const reportId = reportIdParam
         ? parseInt(reportIdParam)
         : Math.floor(Math.random() * 1000) + 100;
