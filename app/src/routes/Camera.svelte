@@ -15,12 +15,13 @@
     reportError,
     currentReportId,
   } from '../stores/report';
+  import { externalConfig } from '../stores/externalConfig';
 
   // ルートパラメータ
   export let params: { programId: string } = { programId: '' };
 
-  // プログラムIDを取得
-  $: programId = params.programId;
+  // プログラムIDを取得（外部設定からも取得可能）
+  $: programId = params.programId || $externalConfig.planCode || '';
 
   // DOM要素への参照
   let videoElement: HTMLVideoElement;

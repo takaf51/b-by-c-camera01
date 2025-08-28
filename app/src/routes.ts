@@ -20,6 +20,7 @@ export const routes = {
 
   // カメラ機能
   '/camera/:programId': Camera,
+  '/camera': Camera, // カメラ直接アクセス用（プログラムID不要）
 
   // 404
   '*': NotFound,
