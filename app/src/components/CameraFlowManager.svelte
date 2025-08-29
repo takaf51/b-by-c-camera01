@@ -32,8 +32,6 @@
   function initializeFlow() {
     if (isInitialized) return;
 
-    console.log('🏁 Initializing flow with:', { planReportId, kind, flow });
-
     if (planReportId) {
       // チュートリアル受講済み
       flow = 'skipTutorial';
@@ -50,7 +48,6 @@
       // Start camera automatically for skip flows after component mount
       setTimeout(() => {
         if (pureCamera && typeof pureCamera.startCamera === 'function') {
-          console.log('✅ Auto-starting camera for skip flow');
           pureCamera.startCamera();
         }
       }, 300);
@@ -68,29 +65,22 @@
 
   // Flow navigation
   function handleConfirmationConfirm() {
-    console.log('✅ Confirmation completed, moving to guide');
     currentStep = 'guide';
   }
 
   function handleGuideStartCapture() {
-    console.log('🎬 Guide completed, starting camera');
     currentStep = 'camera';
 
     // Start camera after a brief delay to ensure component is mounted
     setTimeout(() => {
-      console.log('🔍 Attempting to start camera, pureCamera:', pureCamera);
       if (pureCamera && typeof pureCamera.startCamera === 'function') {
-        console.log('✅ Starting camera');
         pureCamera.startCamera();
       } else {
-        console.warn('⚠️ PureCamera component not ready, retrying...');
         // Retry after another delay
         setTimeout(() => {
           if (pureCamera && typeof pureCamera.startCamera === 'function') {
-            console.log('✅ Starting camera (retry)');
             pureCamera.startCamera();
           } else {
-            console.error('❌ PureCamera component still not ready');
           }
         }, 500);
       }
@@ -98,8 +88,6 @@
   }
 
   function handleCameraCapture(result: CameraCaptureResult) {
-    console.log('📸 Camera capture completed:', result);
-
     if (result.mode === 'before') {
       // After before capture, determine next step
       if (flow === 'tutorial') {
@@ -119,8 +107,6 @@
   }
 
   function handleCancel() {
-    console.log('❌ Flow cancelled');
-
     // Clean up camera if active
     if (pureCamera && currentStep === 'camera') {
       pureCamera.stopCamera();
@@ -137,8 +123,6 @@
   }
 
   function handleUploadComplete(action: 'watch-later' | 'watch-now') {
-    console.log('🎉 Upload complete action:', action);
-
     showUploadModal = false;
 
     // Clean up camera
@@ -149,7 +133,6 @@
     // Navigate or complete flow
     if (action === 'watch-now') {
       // TODO: Navigate to video viewing
-      console.log('📺 Navigate to video viewing (not implemented yet)');
     }
 
     // Always go back to program detail for now
@@ -163,7 +146,6 @@
   }
 
   function handleCameraError(error: Error) {
-    console.error('❌ Camera error:', error);
     dispatch('error', { error });
   }
 
@@ -172,18 +154,6 @@
     if (pureCamera) {
       pureCamera.stopCamera();
     }
-  }
-
-  // Log flow changes for debugging
-  $: {
-    console.log('🔄 Flow state changed:', {
-      currentStep,
-      currentMode,
-      flow,
-      planReportId,
-      kind,
-      isInitialized,
-    });
   }
 </script>
 

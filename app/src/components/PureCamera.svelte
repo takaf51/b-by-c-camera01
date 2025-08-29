@@ -3,11 +3,16 @@
   import FaceDetection from './FaceDetection.svelte';
   import ImageCapture from './ImageCapture.svelte';
   import CameraDisplay from './CameraDisplay.svelte';
+  import { AffineCorrection } from '../lib/AffineCorrection';
 
   const dispatch = createEventDispatcher();
 
   // Import types to avoid module scope issues
-  import type { CameraCaptureResult, CameraConfig } from '../types/camera';
+  import type {
+    CameraCaptureResult,
+    CameraConfig,
+    PoseGuidanceDirection,
+  } from '../types/camera';
 
   // Props
   export let config: CameraConfig;
@@ -23,6 +28,7 @@
   let faceDetection: any;
   let imageCapture: any;
   let cameraDisplay: any;
+  let affineCorrection: AffineCorrection;
 
   // Camera state
   let isReady = false;
@@ -34,7 +40,7 @@
   let showPoseGuidance = false;
   let poseGuidanceMessage = '';
   let poseGuidanceType = '';
-  let guidanceDirection: string | null = null;
+  let guidanceDirection: PoseGuidanceDirection | null = null;
   let nosePosition: { x: number; y: number } | null = null;
 
   // Apply default config
@@ -51,15 +57,7 @@
     let attempts = 0;
 
     while (attempts < maxAttempts) {
-      console.log(`🔍 DOM check (${attempts + 1}/${maxAttempts}):`, {
-        hasVideoElement: !!videoElement,
-        hasCanvasElement: !!canvasElement,
-        videoElement: videoElement,
-        canvasElement: canvasElement,
-      });
-
       if (videoElement && canvasElement) {
-        console.log('✅ DOM elements ready:', { videoElement, canvasElement });
         return true;
       }
 
@@ -67,16 +65,13 @@
       attempts++;
     }
 
-    console.error('❌ DOM elements not ready after timeout');
     return false;
   }
 
   // Public methods
   export async function startCamera(): Promise<void> {
-    console.log('🚀 PureCamera: Starting camera with config:', finalConfig);
     try {
       // First wait for DOM elements to be ready
-      console.log('🔍 Checking DOM elements:', { videoElement, canvasElement });
       const domReady = await waitForDOMElements();
 
       if (!domReady) {
@@ -88,19 +83,16 @@
 
       // Then check FaceDetection component
       if (faceDetection && typeof faceDetection.startCamera === 'function') {
-        console.log('🎬 Starting FaceDetection camera...');
         await faceDetection.startCamera();
         isReady = true;
         dispatch('camera:ready');
       } else {
-        console.warn('⚠️ FaceDetection component not ready, retrying...');
         // Wait a bit and try again
         setTimeout(async () => {
           if (
             faceDetection &&
             typeof faceDetection.startCamera === 'function'
           ) {
-            console.log('🎬 Starting FaceDetection camera (retry)...');
             await faceDetection.startCamera();
             isReady = true;
             dispatch('camera:ready');
@@ -112,7 +104,6 @@
         }, 500);
       }
     } catch (error) {
-      console.error('❌ PureCamera: Failed to start camera:', error);
       const err = error instanceof Error ? error : new Error(String(error));
       onError(err);
       dispatch('camera:error', { error: err });
@@ -120,7 +111,6 @@
   }
 
   export function stopCamera(): void {
-    console.log('🛑 PureCamera: Stopping camera');
     if (faceDetection) {
       faceDetection.cleanup();
     }
@@ -129,8 +119,7 @@
     dispatch('camera:stopped');
   }
 
-  export function captureManually(): CameraCaptureResult | null {
-    console.log('📸 PureCamera: Manual capture requested');
+  export async function captureManually(): Promise<CameraCaptureResult | null> {
     if (!isReady || !imageCapture) {
       return null;
     }
@@ -140,19 +129,37 @@
       return null;
     }
 
-    const result: CameraCaptureResult = {
-      imageData,
-      landmarks: currentFaceLandmarks,
-      pose: currentPose,
-      timestamp: Date.now(),
-      mode: finalConfig.mode,
-    };
+    try {
+      // 自動補正を適用
+      const correctionResult = await affineCorrection.correctImage(
+        imageData,
+        currentPose,
+        currentFaceLandmarks
+      );
 
-    return result;
+      // 補正済み画像で結果を作成
+      const result: CameraCaptureResult = {
+        imageData: correctionResult.correctedImageUrl, // 補正済み画像を使用
+        landmarks: currentFaceLandmarks,
+        pose: currentPose,
+        timestamp: Date.now(),
+        mode: finalConfig.mode,
+      };
+
+      previewImage = correctionResult.correctedImageUrl; // プレビューも補正済み画像
+
+      return result;
+    } catch (error) {
+      onError(
+        new Error(
+          `Manual capture auto correction failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      );
+      return null;
+    }
   }
 
   export function reset(): void {
-    console.log('🔄 PureCamera: Resetting camera state');
     if (faceDetection) {
       faceDetection.resetDetectionState();
     }
@@ -163,7 +170,6 @@
 
   // Internal event handlers
   function handleCameraStarted() {
-    console.log('✅ PureCamera: Camera started successfully');
     isReady = true;
     dispatch('camera:ready');
   }
@@ -191,10 +197,9 @@
     });
   }
 
-  function handleAutoCapture(event: CustomEvent) {
+  async function handleAutoCapture(event: CustomEvent) {
     if (!finalConfig.autoCapture) return;
 
-    console.log('🎯 PureCamera: Auto capture triggered');
     const { landmarks } = event.detail;
 
     if (!imageCapture) return;
@@ -205,17 +210,33 @@
       return;
     }
 
-    const result: CameraCaptureResult = {
-      imageData,
-      landmarks,
-      pose: currentPose,
-      timestamp: Date.now(),
-      mode: finalConfig.mode,
-    };
+    try {
+      // 自動補正を適用
+      const correctionResult = await affineCorrection.correctImage(
+        imageData,
+        currentPose,
+        landmarks
+      );
 
-    previewImage = imageData;
-    onCapture(result);
-    dispatch('capture:success', { result });
+      // 補正済み画像で結果を作成
+      const result: CameraCaptureResult = {
+        imageData: correctionResult.correctedImageUrl, // 補正済み画像を使用
+        landmarks,
+        pose: currentPose,
+        timestamp: Date.now(),
+        mode: finalConfig.mode,
+      };
+
+      previewImage = correctionResult.correctedImageUrl; // プレビューも補正済み画像
+      onCapture(result);
+      dispatch('capture:success', { result });
+    } catch (error) {
+      onError(
+        new Error(
+          `Auto correction failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+        )
+      );
+    }
   }
 
   function handleFaceDetectionError(event: CustomEvent) {
@@ -230,12 +251,13 @@
   }
 
   onMount(() => {
-    console.log('🏗️ PureCamera: Component mounted');
+    // Initialize auto correction
+    affineCorrection = new AffineCorrection();
+
     // Camera will be started externally via startCamera() method
   });
 
   onDestroy(() => {
-    console.log('🗑️ PureCamera: Component destroying');
     stopCamera();
   });
 </script>

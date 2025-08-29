@@ -78,13 +78,9 @@
   // syncInterval変数は削除
 
   onMount(async () => {
-    console.log('🚀 FaceDetection component mounted');
-
     try {
       await initializeMediaPipe();
-      console.log('✅ MediaPipe initialized, ready for camera start');
     } catch (error) {
-      console.error('❌ Face detection initialization failed:', error);
       dispatch('error', {
         message:
           'Face detection initialization failed: ' +
@@ -95,8 +91,6 @@
 
   // Public method to reset detection state
   export function resetDetectionState() {
-    console.log('🔄 Resetting face detection state');
-
     // Reset all detection-related variables
     stablePosition = false;
     stableFrameCount = 0;
@@ -104,8 +98,6 @@
     showPoseGuidance = false;
     poseGuidanceMessage = '';
     poseGuidanceType = '';
-
-    console.log('✅ Face detection state reset completed');
   }
 
   onDestroy(() => {
@@ -118,8 +110,6 @@
   // $: if (currentMode) { console.log('📱 Mode changed:', currentMode); }
 
   async function initializeMediaPipe() {
-    console.log('🔧 Initializing MediaPipe FaceMesh...');
-
     faceMesh = new FaceMesh({
       locateFile: (file: string) => {
         return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -137,50 +127,27 @@
     });
 
     faceMesh.onResults(onResults);
-    console.log('✅ MediaPipe FaceMesh initialized');
   }
 
   // キャンバス同期機能は削除
 
   async function startCamera() {
-    console.log('🔍 FaceDetection: Starting camera check:', {
-      hasVideoElement: !!videoElement,
-      hasFaceMesh: !!faceMesh,
-      videoElement: videoElement,
-      faceMesh: faceMesh,
-    });
-
     if (!videoElement || !faceMesh) {
-      console.warn('⚠️ Cannot start camera: missing videoElement or faceMesh', {
-        videoElement: !!videoElement,
-        faceMesh: !!faceMesh,
-      });
       return;
     }
 
     if (isStartingCamera) {
-      console.log('⏳ Camera is already starting, skipping...');
       return;
     }
 
     isStartingCamera = true;
     try {
-      console.log('📹 Starting camera...');
-      console.log('📊 Video element state:', {
-        readyState: videoElement.readyState,
-        hasStream: !!videoElement.srcObject,
-        videoWidth: videoElement.videoWidth,
-        videoHeight: videoElement.videoHeight,
-      });
-
       camera = new MediaPipeCamera(videoElement, {
         onFrame: async () => {
           if (faceMesh && videoElement) {
             try {
               await faceMesh.send({ image: videoElement });
-            } catch (error) {
-              console.warn('MediaPipe processing error:', error);
-            }
+            } catch (error) {}
           }
         },
         width: 640,
@@ -188,28 +155,12 @@
       });
 
       await camera.start();
-      console.log('✅ Camera started successfully');
-      console.log('📊 Video element after start:', {
-        readyState: videoElement.readyState,
-        hasStream: !!videoElement.srcObject,
-        videoWidth: videoElement.videoWidth,
-        videoHeight: videoElement.videoHeight,
-        currentSrc: videoElement.currentSrc,
-        srcObject: videoElement.srcObject ? 'MediaStream' : 'null',
-      });
 
       // Wait for video to be ready
       if (videoElement.readyState < 2) {
-        console.log('⏳ Waiting for video to be ready...');
         await new Promise(resolve => {
           const checkReady = () => {
             if (videoElement.readyState >= 2) {
-              console.log('✅ Video is now ready:', {
-                readyState: videoElement.readyState,
-                videoWidth: videoElement.videoWidth,
-                videoHeight: videoElement.videoHeight,
-              });
-
               resolve(true);
             } else {
               setTimeout(checkReady, 50);
@@ -229,7 +180,6 @@
 
       dispatch('cameraStarted');
     } catch (error) {
-      console.error('❌ Camera startup failed:', error);
       dispatch('error', {
         message:
           'Camera startup failed: ' +
@@ -261,17 +211,6 @@
     currentVideoWidth = videoWidth;
     currentVideoHeight = videoHeight;
 
-    // Debug: Log video dimensions when they change
-    if (Math.random() < 0.01) {
-      // 1% chance to avoid spam
-      console.log('📊 Video dimensions saved:', {
-        videoWidth: currentVideoWidth,
-        videoHeight: currentVideoHeight,
-        canvasWidth,
-        canvasHeight,
-      });
-    }
-
     // Calculate scaling to fit video into canvas while maintaining aspect ratio
     const videoAspect = videoWidth / videoHeight;
     const canvasAspect = canvasWidth / canvasHeight;
@@ -297,15 +236,6 @@
     // Debug: Log drawing dimensions (only occasionally to avoid spam)
     if (Math.random() < 0.01) {
       // 1% chance to log
-      console.log('🎨 Canvas drawing debug:', {
-        video: { width: videoWidth, height: videoHeight, aspect: videoAspect },
-        canvas: {
-          width: canvasWidth,
-          height: canvasHeight,
-          aspect: canvasAspect,
-        },
-        draw: { x: drawX, y: drawY, width: drawWidth, height: drawHeight },
-      });
     }
 
     const hasFace =
@@ -336,10 +266,7 @@
 
         if (currentMode !== CaptureMode?.CAMERA_STARTUP) {
           faceDetectionStartTime = performance.now();
-          console.log(
-            '👤 Face detection started at:',
-            new Date().toLocaleTimeString()
-          );
+
           // デザインにないためメッセージ送信しない
         }
       }
@@ -463,7 +390,6 @@
 
       return faceSize;
     } catch (error) {
-      console.warn('Face size calculation error:', error);
       return 0;
     }
   }
@@ -547,7 +473,6 @@
 
       return result;
     } catch (error) {
-      console.warn('Pose calculation error:', error);
       return {
         roll: 0,
         pitch: 0,
@@ -580,7 +505,6 @@
         showPoseGuidance = true;
         poseGuidanceMessage = '良い姿勢です！保持してください';
         poseGuidanceType = 'success';
-        console.log('✅ Stable position achieved!');
 
         // 成功メッセージは2秒後に非表示にする
         setTimeout(() => {
@@ -596,12 +520,10 @@
         progress = Math.min((elapsed / FACE_DETECTION_DELAY) * 100, 100);
 
         if (progress >= 100) {
-          console.log('🎉 Auto capture countdown completed!');
         }
       }
     } else {
       if (stablePosition) {
-        console.log('❌ Lost stable position');
       }
       stablePosition = false;
       stableStartTime = null;
@@ -657,12 +579,6 @@
       // Debug: Log why getNosePosition is returning null
       if (Math.random() < 0.1) {
         // 10% chance to avoid spam
-        console.log('🔍 getNosePosition returning null:', {
-          hasLandmarks: !!landmarks,
-          hasCanvasElement: !!canvasElement,
-          currentVideoWidth,
-          currentVideoHeight,
-        });
       }
       return null;
     }
@@ -711,14 +627,6 @@
     // Debug: Log successful nose position calculation
     if (Math.random() < 0.05) {
       // 5% chance to avoid spam
-      console.log('🎯 Nose position calculated:', {
-        nose: { x: nose.x, y: nose.y },
-        videoAspect: videoAspect.toFixed(2),
-        canvasAspect: canvasAspect.toFixed(2),
-        drawRegion: { drawX, drawY, drawWidth, drawHeight },
-        canvasCoords: { noseX, noseY },
-        displayCoords: { displayX, displayY },
-      });
     }
 
     return { x: displayX, y: displayY };
@@ -813,17 +721,8 @@
     // 姿勢が安定してからの経過時間を計算
     const elapsed = (performance.now() - stableStartTime) / 1000;
 
-    console.log('Auto capture check:', {
-      elapsed: elapsed.toFixed(2),
-      required: FACE_DETECTION_DELAY,
-      stablePosition,
-      progress: progress.toFixed(1),
-      currentMode,
-    });
-
     // 姿勢が安定してから3秒経過で撮影
     if (elapsed >= FACE_DETECTION_DELAY && stablePosition && progress >= 100) {
-      console.log('🎯 Auto capture triggered!');
       dispatch('autoCapture', { landmarks: faceLandmarks });
 
       // Reset detection to prevent multiple captures
@@ -873,8 +772,6 @@
   }
 
   function cleanup() {
-    console.log('🔄 Cleaning up camera and face detection resources');
-
     // Stop camera but don't destroy faceMesh (for reuse)
     if (camera) {
       camera.stop();
@@ -886,7 +783,6 @@
       const stream = videoElement.srcObject as MediaStream;
       stream.getTracks().forEach(track => {
         track.stop();
-        console.log('🛑 Stopped camera track:', track.kind);
       });
       videoElement.srcObject = null;
     }
@@ -899,13 +795,10 @@
     stableStartTime = null;
     progress = 0;
     isStartingCamera = false;
-
-    console.log('✅ Camera cleanup completed (faceMesh preserved for reuse)');
   }
 
   // Complete cleanup function for component destruction
   function completeCleanup() {
-    console.log('🗑️ Complete cleanup - destroying all resources');
     cleanup();
 
     if (faceMesh) {

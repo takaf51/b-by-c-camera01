@@ -98,9 +98,6 @@
       setTimeout(() => {
         if (videoElement) {
           if (videoElement.readyState === 0 && videoElement.srcObject) {
-            console.warn(
-              '⚠️ Video element has stream but readyState is 0, forcing reload...'
-            );
             videoElement.load();
           } else if (
             videoElement.readyState >= 2 &&
@@ -118,7 +115,6 @@
 
   // カメラ起動ボタンのハンドラー
   function handleCameraStart() {
-    console.log('📷 Camera start requested - going to confirmation screen');
     // 確認事項画面に遷移するイベントを発火
     const event = new CustomEvent('cameraStartRequested');
     window.dispatchEvent(event);
@@ -126,7 +122,6 @@
 
   // ファイル選択ボタンのハンドラー
   function handleFileSelect() {
-    console.log('📁 File select requested');
     const input = document.createElement('input');
     input.type = 'file';
     input.accept = 'image/*';
