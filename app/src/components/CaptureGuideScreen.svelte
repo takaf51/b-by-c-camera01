@@ -224,4 +224,49 @@
       font-size: 0.9rem;
     }
   }
+
+  /* 小さい画面への追加対応 */
+  @media (max-width: 480px) {
+    .guide-container {
+      height: 100vh;
+    }
+
+    .guide-header {
+      padding: 0.6rem;
+      font-size: 0.9rem;
+    }
+
+    .guide-bar {
+      padding: 0.6rem;
+      font-size: 0.8rem;
+    }
+
+    .guide-instructions {
+      padding: 0.8rem;
+    }
+
+    .instruction-text {
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+
+    .guide-image-section {
+      padding: 1rem;
+    }
+
+    .guide-example-image {
+      width: 200px;
+    }
+
+    .guide-buttons {
+      padding: 0.8rem;
+      gap: 0.6rem;
+    }
+
+    .cancel-btn,
+    .start-btn {
+      padding: 0.7rem;
+      font-size: 0.8rem;
+    }
+  }
 </style>

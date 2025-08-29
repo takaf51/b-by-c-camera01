@@ -226,15 +226,17 @@
   /* モバイル対応 */
   @media (max-width: 768px) {
     .confirmation-screen {
-      padding: 15px;
+      padding: 10px;
     }
 
     .confirmation-content {
-      padding: 25px 20px;
+      padding: 20px 15px;
+      max-height: 95vh;
     }
 
     .confirmation-title {
       font-size: 16px;
+      margin-bottom: 20px;
     }
 
     .warning-text p {
@@ -242,7 +244,7 @@
     }
 
     .guidelines-grid {
-      gap: 12px;
+      gap: 10px;
     }
 
     .guideline-text {
@@ -252,6 +254,45 @@
     .confirm-button {
       padding: 12px 16px;
       font-size: 15px;
+    }
+  }
+
+  /* 小さい画面への追加対応 */
+  @media (max-width: 480px) {
+    .confirmation-screen {
+      padding: 5px;
+    }
+
+    .confirmation-content {
+      padding: 15px 10px;
+      max-height: 98vh;
+      border-radius: 15px;
+    }
+
+    .confirmation-title {
+      font-size: 15px;
+      margin-bottom: 15px;
+    }
+
+    .warning-section {
+      padding: 12px;
+      margin-bottom: 20px;
+    }
+
+    .warning-text p {
+      font-size: 12px;
+    }
+
+    .guidelines-container {
+      margin-bottom: 20px;
+    }
+
+    .guidelines-grid {
+      gap: 8px;
+    }
+
+    .guideline-text {
+      font-size: 10px;
     }
   }
 </style>

@@ -92,7 +92,7 @@
                   stroke-width="2"
                   opacity="1"
                 />
-                <polygon points="12,50 14,53 14,47" fill="#D2294C" />
+                <polygon points="8,50 10,53 10,47" fill="#D2294C" />
               {:else if guidanceDirection === PoseGuidanceDirection.TURN_RIGHT}
                 <!-- 右向き矢印 -->
                 <path
@@ -102,7 +102,7 @@
                   stroke-width="2"
                   opacity="1"
                 />
-                <polygon points="88,50 86,53 86,47" fill="#D2294C" />
+                <polygon points="92,50 90,53 90,47" fill="#D2294C" />
               {:else if guidanceDirection === PoseGuidanceDirection.LOOK_UP}
                 <!-- 上向き矢印 -->
                 <path

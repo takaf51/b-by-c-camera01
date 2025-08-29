@@ -19,15 +19,8 @@
   };
 
   onMount(() => {
-    console.log('📱 Camera-only app started');
-    console.log('⚙️ External config:', $externalConfig);
-
-    // カメラ専用画面は確認画面から開始
-    // PHPから直接確認画面に遷移するためのイベントを発行
-    setTimeout(() => {
-      console.log('📋 Starting with confirmation screen');
-      window.dispatchEvent(new Event('cameraStartRequested'));
-    }, 100);
+    // カメラ専用アプリが開始されました
+    // PHPに埋め込まれる際は、確認事項画面から開始
   });
 </script>
 
@@ -35,11 +28,30 @@
 <Router {routes} />
 
 <style>
+  :global(html) {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
   :global(body) {
+    height: 100%;
     margin: 0;
     padding: 0;
     font-family:
       -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
       'Ubuntu', 'Cantarell', 'Open Sans', 'Helvetica Neue', sans-serif;
+    overflow-x: hidden;
+  }
+
+  :global(#app) {
+    height: 100%;
+    width: 100%;
+    overflow-x: hidden;
+  }
+
+  /* Ensure the camera app fits properly on mobile */
+  :global(*) {
+    box-sizing: border-box;
   }
 </style>

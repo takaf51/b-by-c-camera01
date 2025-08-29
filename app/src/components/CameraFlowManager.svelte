@@ -42,18 +42,9 @@
       currentMode = 'after';
     }
 
-    // Set initial step based on flow
-    if (flow === 'skipTutorial' || flow === 'afterOnly') {
-      currentStep = 'camera';
-      // Start camera automatically for skip flows after component mount
-      setTimeout(() => {
-        if (pureCamera && typeof pureCamera.startCamera === 'function') {
-          pureCamera.startCamera();
-        }
-      }, 300);
-    } else {
-      currentStep = 'confirmation';
-    }
+    // Always start from confirmation screen when embedded in PHP
+    // User will manually proceed through the flow
+    currentStep = 'confirmation';
 
     isInitialized = true;
   }
