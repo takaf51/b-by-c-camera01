@@ -71,33 +71,20 @@
 
   // syncInterval変数は削除
 
-  onMount(() => {
+  onMount(async () => {
     console.log('🚀 FaceDetection component mounted');
 
-    const init = async () => {
-      try {
-        await initializeMediaPipe();
-        if (videoElement) {
-          console.log('📹 Video element found, starting camera...');
-          await startCamera();
-        } else {
-          console.log('⏳ Video element not ready, waiting...');
-        }
-
-        // 定期同期チェック機能は削除
-      } catch (error) {
-        console.error('❌ Face detection initialization failed:', error);
-        dispatch('error', {
-          message:
-            'Face detection initialization failed: ' +
-            (error instanceof Error ? error.message : String(error)),
-        });
-      }
-    };
-
-    init();
-
-    // クリーンアップ関数は削除
+    try {
+      await initializeMediaPipe();
+      console.log('✅ MediaPipe initialized, ready for camera start');
+    } catch (error) {
+      console.error('❌ Face detection initialization failed:', error);
+      dispatch('error', {
+        message:
+          'Face detection initialization failed: ' +
+          (error instanceof Error ? error.message : String(error)),
+      });
+    }
   });
 
   // Public method to reset detection state
@@ -119,18 +106,7 @@
     completeCleanup();
   });
 
-  $: if (
-    videoElement &&
-    canvasElement &&
-    faceMesh &&
-    !camera &&
-    !isStartingCamera
-  ) {
-    console.log('🔄 Starting camera...');
-    startCamera().catch(error => {
-      console.error('❌ Camera start failed:', error);
-    });
-  }
+  // Remove automatic camera starting - now controlled externally
 
   // Watch for mode changes (debug disabled)
   // $: if (currentMode) { console.log('📱 Mode changed:', currentMode); }
@@ -161,8 +137,18 @@
   // キャンバス同期機能は削除
 
   async function startCamera() {
+    console.log('🔍 FaceDetection: Starting camera check:', {
+      hasVideoElement: !!videoElement,
+      hasFaceMesh: !!faceMesh,
+      videoElement: videoElement,
+      faceMesh: faceMesh,
+    });
+
     if (!videoElement || !faceMesh) {
-      console.warn('⚠️ Cannot start camera: missing videoElement or faceMesh');
+      console.warn('⚠️ Cannot start camera: missing videoElement or faceMesh', {
+        videoElement: !!videoElement,
+        faceMesh: !!faceMesh,
+      });
       return;
     }
 
@@ -938,6 +924,9 @@
   export function getCurrentFaceLandmarks() {
     return faceLandmarks;
   }
+
+  // Export startCamera function for external use
+  export { startCamera };
 
   // キャンバス同期機能は削除
 
