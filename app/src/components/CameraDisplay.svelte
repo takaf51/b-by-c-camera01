@@ -1,5 +1,6 @@
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
+  import { PoseGuidanceDirection, PoseGuidanceType } from '../types/camera';
 
   const dispatch = createEventDispatcher();
 
@@ -11,6 +12,13 @@
   export let mode: 'before' | 'after' = 'before';
   export let isReady: boolean = false;
 
+  // Pose guidance props
+  export let showPoseGuidance: boolean = false;
+  export let poseGuidanceMessage: string = '';
+  export let poseGuidanceType: PoseGuidanceType | string = '';
+  export let guidanceDirection: PoseGuidanceDirection | null = null;
+  export let nosePosition: { x: number; y: number } | null = null;
+
   // 画面サイズ取得
   let innerWidth = 0;
   let innerHeight = 0;
@@ -21,6 +29,15 @@
 </script>
 
 <svelte:window bind:innerWidth bind:innerHeight />
+
+<!-- 姿勢ガイダンスメッセージ -->
+{#if showPoseGuidance && isReady}
+  <div class="pose-guidance">
+    <div class="guidance-message {poseGuidanceType}">
+      {poseGuidanceMessage}
+    </div>
+  </div>
+{/if}
 
 <div class="camera-display">
   {#if previewImage}
@@ -61,6 +78,75 @@
 
         <!-- 円形マスク（中央を丸くくり抜く） -->
         <div class="face-circle-mask"></div>
+
+        <!-- SVG矢印ガイダンス -->
+        {#if guidanceDirection && showPoseGuidance}
+          <div class="dynamic-elements">
+            <svg class="arrow-svg" viewBox="0 0 100 100" style:opacity="1">
+              {#if guidanceDirection === PoseGuidanceDirection.TURN_LEFT}
+                <!-- 左向き矢印 -->
+                <path
+                  d="M 20 28.4 A 35 35 0 0 0 20 71.6"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="2"
+                  opacity="1"
+                />
+                <polygon points="12,50 14,53 14,47" fill="#D2294C" />
+              {:else if guidanceDirection === PoseGuidanceDirection.TURN_RIGHT}
+                <!-- 右向き矢印 -->
+                <path
+                  d="M 80 28.4 A 35 35 0 0 1 80 71.6"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="2"
+                  opacity="1"
+                />
+                <polygon points="88,50 86,53 86,47" fill="#D2294C" />
+              {:else if guidanceDirection === PoseGuidanceDirection.LOOK_UP}
+                <!-- 上向き矢印 -->
+                <path
+                  d="M 28.4 25 A 35 35 0 0 1 71.6 25"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="2"
+                  opacity="1"
+                />
+                <polygon points="50,13 53,15 47,15" fill="#D2294C" />
+              {:else if guidanceDirection === PoseGuidanceDirection.LOOK_DOWN}
+                <!-- 下向き矢印 -->
+                <path
+                  d="M 71.6 75 A 35 35 0 0 1 28.4 75"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="2"
+                  opacity="1"
+                />
+                <polygon points="50,87 47,85 53,85" fill="#D2294C" />
+              {:else if guidanceDirection === PoseGuidanceDirection.TILT_LEFT}
+                <!-- 左傾き矢印 -->
+                <path
+                  d="M 43 20 A 35 35 0 0 0 20 48"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="2"
+                  opacity="1"
+                />
+                <polygon points="22.5,47 18,46.5 20,50" fill="#D2294C" />
+              {:else if guidanceDirection === PoseGuidanceDirection.TILT_RIGHT}
+                <!-- 右傾き矢印 -->
+                <path
+                  d="M 57 20 A 35 35 0 0 1 80 48"
+                  fill="none"
+                  stroke="#D2294C"
+                  stroke-width="2"
+                  opacity="1"
+                />
+                <polygon points="77.5,47 82,46.5 80,50" fill="#D2294C" />
+              {/if}
+            </svg>
+          </div>
+        {/if}
       </div>
     {:else}
       <!-- カメラ準備中 -->
@@ -214,5 +300,106 @@
   .hidden {
     visibility: hidden;
     opacity: 0;
+  }
+
+  /* 姿勢ガイダンス */
+  .pose-guidance {
+    position: fixed;
+    top: 20px;
+    left: 0;
+    right: 0;
+    z-index: 2000;
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    padding: 0;
+  }
+
+  .guidance-message {
+    background: #d2294c;
+    color: white;
+    width: min(390px, 100vw);
+    height: 47px;
+    padding: 12px 16px;
+    border-radius: 0;
+    text-align: center;
+    font-size: 16px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    animation: messageSlideIn 0.3s ease-out;
+    box-sizing: border-box;
+    margin: 0;
+  }
+
+  .guidance-message.success {
+    background: linear-gradient(
+      135deg,
+      rgba(76, 175, 80, 0.95),
+      rgba(46, 125, 50, 0.95)
+    ) !important;
+  }
+
+  .guidance-message.warning {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 152, 0, 0.95),
+      rgba(255, 111, 0, 0.95)
+    ) !important;
+  }
+
+  .guidance-message.error {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 107, 107, 0.95),
+      rgba(255, 69, 58, 0.95)
+    ) !important;
+  }
+
+  @keyframes messageSlideIn {
+    from {
+      opacity: 0;
+      transform: translateY(-20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  /* SVG矢印スタイル */
+  .dynamic-elements {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 15;
+    pointer-events: none;
+  }
+
+  .arrow-svg {
+    width: 100%;
+    height: 100%;
+    animation: pulse 1.5s ease-in-out infinite;
+    filter: drop-shadow(2px 2px 4px rgba(0, 0, 0, 0.5));
+    transition:
+      opacity 0.3s ease,
+      transform 0.3s ease;
+  }
+
+  @keyframes pulse {
+    0%,
+    100% {
+      opacity: 0.7;
+      transform: scale(1);
+    }
+    50% {
+      opacity: 1;
+      transform: scale(1);
+    }
   }
 </style>

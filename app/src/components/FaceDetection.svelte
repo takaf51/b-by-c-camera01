@@ -10,6 +10,12 @@
     FACEMESH_FACE_OVAL,
     FACEMESH_LIPS,
   } from '@mediapipe/drawing_utils/drawing_utils';
+  import {
+    PoseGuidanceDirection,
+    PoseGuidanceType,
+    POSE_GUIDANCE_MAP,
+    type PoseGuidanceData,
+  } from '../types/camera';
 
   const dispatch = createEventDispatcher();
 
@@ -609,23 +615,35 @@
     }
   }
 
-  function getGuidanceDirection(pose: any) {
+  // 姿勢に基づいてガイダンスデータを取得（Enumベース）
+  function getPoseGuidanceData(pose: any): PoseGuidanceData | null {
     if (!pose) return null;
 
-    // 顔の品質が低い場合は矢印を表示しない
-    if (pose.quality < MIN_FACE_QUALITY) {
-      return null;
-    }
-
-    // 姿勢に基づいて矢印の方向を決定
-    if (Math.abs(pose.roll) >= THRESHOLDS.roll) {
-      return pose.roll > 0 ? 'tilt-right' : 'tilt-left';
+    // 優先順位に従って判定（PHP版と同じ順番）
+    if (pose.faceSize < MIN_FACE_SIZE) {
+      return POSE_GUIDANCE_MAP.tooFar;
+    } else if (pose.quality < MIN_FACE_QUALITY) {
+      return POSE_GUIDANCE_MAP.lowQuality;
+    } else if (Math.abs(pose.roll) >= THRESHOLDS.roll) {
+      return pose.roll > 0
+        ? POSE_GUIDANCE_MAP.rollPositive
+        : POSE_GUIDANCE_MAP.rollNegative;
     } else if (Math.abs(pose.pitch) >= THRESHOLDS.pitch) {
-      return pose.pitch > 0 ? 'look-down' : 'look-up';
+      return pose.pitch > 0
+        ? POSE_GUIDANCE_MAP.pitchPositive
+        : POSE_GUIDANCE_MAP.pitchNegative;
     } else if (Math.abs(pose.yaw) >= THRESHOLDS.yaw) {
-      return pose.yaw > 0 ? 'turn-right' : 'turn-left';
+      return pose.yaw > 0
+        ? POSE_GUIDANCE_MAP.yawPositive
+        : POSE_GUIDANCE_MAP.yawNegative;
+    } else {
+      return POSE_GUIDANCE_MAP.perfect;
     }
-    return null;
+  }
+
+  function getGuidanceDirection(pose: any): PoseGuidanceDirection | null {
+    const guidanceData = getPoseGuidanceData(pose);
+    return guidanceData?.direction || null;
   }
 
   // PHPと同じ鼻の位置計算（完全移植版）
@@ -712,33 +730,12 @@
       return;
     }
 
-    let message = '';
-    let type = 'warning';
+    // ガイダンスデータを取得（Enumベース）
+    const guidanceData = getPoseGuidanceData(pose);
 
-    // より詳細で親切なガイダンスメッセージ（PHP版と同じ優先順位）
-    if (pose.faceSize < MIN_FACE_SIZE) {
-      message = 'カメラに近づいてください（顔が小さすぎます）';
-      type = 'error';
-    } else if (pose.quality < MIN_FACE_QUALITY) {
-      message = '顔全体をカメラに向けてください';
-      type = 'error';
-    } else if (Math.abs(pose.roll) >= THRESHOLDS.roll) {
-      message =
-        pose.roll > 0
-          ? '頭を左に少し傾けてください'
-          : '頭を右に少し傾けてください';
-    } else if (Math.abs(pose.pitch) >= THRESHOLDS.pitch) {
-      message =
-        pose.pitch > 0
-          ? '顔を少し上に向けてください'
-          : '顔を少し下に向けてください';
-    } else if (Math.abs(pose.yaw) >= THRESHOLDS.yaw) {
-      message =
-        pose.yaw > 0 ? '顔を右に向けてください' : '顔を左に向けてください';
-    } else {
-      message = '完璧な姿勢です！この状態を保持してください';
-      type = 'success';
-    }
+    if (!guidanceData) return;
+
+    const { message, type, direction } = guidanceData;
 
     if (message) {
       poseGuidanceMessage = message;

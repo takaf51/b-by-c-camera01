@@ -30,6 +30,13 @@
   let currentPose: any = null;
   let previewImage: string | null = null;
 
+  // Pose guidance state
+  let showPoseGuidance = false;
+  let poseGuidanceMessage = '';
+  let poseGuidanceType = '';
+  let guidanceDirection: string | null = null;
+  let nosePosition: { x: number; y: number } | null = null;
+
   // Apply default config
   $: finalConfig = {
     mirrorMode: true,
@@ -166,6 +173,15 @@
     currentFaceLandmarks = landmarks;
     currentPose = pose;
 
+    // Update pose guidance state
+    if (guidance) {
+      showPoseGuidance = guidance.show;
+      poseGuidanceMessage = guidance.message;
+      poseGuidanceType = guidance.type;
+      guidanceDirection = guidance.direction;
+      nosePosition = guidance.nosePosition;
+    }
+
     dispatch('face:detected', {
       landmarks,
       pose,
@@ -260,6 +276,11 @@
     mirrorMode={finalConfig.mirrorMode}
     mode={finalConfig.mode}
     {isReady}
+    {showPoseGuidance}
+    {poseGuidanceMessage}
+    {poseGuidanceType}
+    {guidanceDirection}
+    {nosePosition}
     on:cancel={handleCancel}
   />
 
