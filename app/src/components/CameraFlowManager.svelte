@@ -5,6 +5,7 @@
   import CaptureGuideScreen from './CaptureGuideScreen.svelte';
   import PureCamera from './PureCamera.svelte';
   import UploadCompleteModal from './UploadCompleteModal.svelte';
+  import TutorialModal from './TutorialModal.svelte';
   import { PoseReference, type ReferenceData } from '../lib/PoseReference';
   import { PoseComparator, type PoseComparison } from '../lib/PoseComparator';
   import {
@@ -25,6 +26,14 @@
   export let flow: CameraFlowType = 'tutorial';
   export let planReportId: string | null = null;
   export let kind: 'before' | 'after' | null = null;
+
+  // Tutorial control props (外部から制御)
+  export let showTutorial: boolean = false;
+  export let tutorialMode: 'before' | 'after' = 'before';
+  export let enableTutorial: boolean = true; // チュートリアル機能の有効/無効
+
+  // Tutorial state
+  let showTutorialModal = false;
 
   // Flow state
   let currentStep: FlowStep = 'confirmation';
@@ -78,7 +87,40 @@
 
   // Flow navigation
   function handleConfirmationConfirm() {
+    // チュートリアルが有効で、表示条件を満たす場合はチュートリアルを表示
+    if (enableTutorial && shouldShowTutorial()) {
+      showTutorialModal = true;
+      tutorialMode = currentMode;
+    } else {
+      currentStep = 'guide';
+    }
+  }
+
+  // チュートリアル表示判定ロジック（外部から上書き可能）
+  function shouldShowTutorial(): boolean {
+    // デフォルトロジック - 一時的にtrueにして動作確認
+    // 実際の条件は外部から制御される予定
+    return true; // 一時的に常に表示
+  }
+
+  // チュートリアル完了時の処理
+  function handleTutorialComplete() {
+    showTutorialModal = false;
     currentStep = 'guide';
+    dispatch('tutorial:complete', { mode: tutorialMode });
+  }
+
+  // チュートリアルスキップ時の処理
+  function handleTutorialSkip() {
+    showTutorialModal = false;
+    currentStep = 'guide';
+    dispatch('tutorial:skip', { mode: tutorialMode });
+  }
+
+  // チュートリアル閉じる時の処理
+  function handleTutorialClose() {
+    showTutorialModal = false;
+    dispatch('tutorial:close', { mode: tutorialMode });
   }
 
   function handleGuideStartCapture() {
@@ -332,6 +374,16 @@
     on:watch-later={() => handleUploadComplete('watch-later')}
     on:watch-now={() => handleUploadComplete('watch-now')}
     on:close={() => handleUploadComplete('watch-later')}
+  />
+
+  <!-- Tutorial Modal -->
+  <TutorialModal
+    bind:show={showTutorialModal}
+    mode={tutorialMode}
+    autoStart={false}
+    on:complete={handleTutorialComplete}
+    on:skip={handleTutorialSkip}
+    on:close={handleTutorialClose}
   />
 </div>
 
