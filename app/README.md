@@ -39,3 +39,17 @@ npm run dev
 - 用途: プログラム画像、ユーザーアップロード画像
 
 この方針により、フロントエンドとバックエンドの責任が明確に分離され、スケーラブルな画像管理が実現されます。
+
+## API仕様メモ
+
+### Before撮影時の送信データ（pointsに格納される構造）
+
+```javascript
+{
+  pose: { roll: 1.2, pitch: -0.5, yaw: 0.3, distance: 1.0, quality: 0.85, faceSize: 0.123 },
+  image: "data:image/jpeg;base64,/9j/4AAQ...",
+  landmarks: [{x, y, z}, ...], // 468個の3D座標点
+  correctionResult: {...},
+  timestamp: "2024-01-15T10:30:00.000Z"
+}
+```

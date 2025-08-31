@@ -4,6 +4,8 @@
   import ImageCapture from './ImageCapture.svelte';
   import CameraDisplay from './CameraDisplay.svelte';
   import { AffineCorrection } from '../lib/AffineCorrection';
+  import type { ReferenceData } from '../lib/PoseReference';
+  import type { PoseComparison } from '../lib/PoseComparator';
 
   const dispatch = createEventDispatcher();
 
@@ -43,6 +45,11 @@
   let guidanceDirection: PoseGuidanceDirection | null = null;
   let nosePosition: { x: number; y: number } | null = null;
 
+  // After mode: Before reference comparison
+  let beforeReference: ReferenceData | null = null;
+  let currentComparison: PoseComparison | null = null;
+  let isAfterMode = false;
+
   // Apply default config
   $: finalConfig = {
     mirrorMode: true,
@@ -50,6 +57,12 @@
     autoCapture: true,
     ...config,
   };
+
+  // Extract Before reference and comparison function from config
+  $: {
+    beforeReference = config.beforeReference || null;
+    isAfterMode = config.mode === 'after' && !!config.onPoseCompare;
+  }
 
   // Wait for DOM elements to be ready
   async function waitForDOMElements(): Promise<boolean> {
@@ -168,6 +181,35 @@
     previewImage = null;
   }
 
+  // Generate guidance for After mode based on Before reference comparison
+  function generateReferenceGuidance(comparison: PoseComparison) {
+    if (!comparison || comparison.adjustments.length === 0) return null;
+
+    // Get primary adjustment (largest deviation)
+    const primaryAdjustment = comparison.adjustments.reduce((max, current) =>
+      current.amount > max.amount ? current : max
+    );
+
+    // Map adjustment to guidance direction
+    const directionMapping: Record<string, string> = {
+      'roll-left': 'TILT_LEFT',
+      'roll-right': 'TILT_RIGHT',
+      'pitch-up': 'LOOK_UP',
+      'pitch-down': 'LOOK_DOWN',
+      'yaw-left': 'TURN_LEFT',
+      'yaw-right': 'TURN_RIGHT',
+    };
+
+    const adjustmentKey = `${primaryAdjustment.axis}-${primaryAdjustment.direction}`;
+    const directionKey = directionMapping[adjustmentKey];
+
+    return {
+      message: `Before姿勢に合わせて${primaryAdjustment.direction === 'left' ? '左' : primaryAdjustment.direction === 'right' ? '右' : primaryAdjustment.direction === 'up' ? '上' : '下'}に調整 (差分: ${primaryAdjustment.amount.toFixed(1)}°)`,
+      type: comparison.overallMatch ? 'success' : 'reference',
+      direction: directionKey as PoseGuidanceDirection | null,
+    };
+  }
+
   // Internal event handlers
   function handleCameraStarted() {
     isReady = true;
@@ -179,13 +221,30 @@
     currentFaceLandmarks = landmarks;
     currentPose = pose;
 
-    // Update pose guidance state
-    if (guidance) {
-      showPoseGuidance = guidance.show;
-      poseGuidanceMessage = guidance.message;
-      poseGuidanceType = guidance.type;
-      guidanceDirection = guidance.direction;
-      nosePosition = guidance.nosePosition;
+    // After mode: compare with Before reference
+    if (isAfterMode && pose && config.onPoseCompare) {
+      currentComparison = config.onPoseCompare(pose);
+
+      // Override guidance with reference-based guidance if available
+      if (currentComparison) {
+        const comparatorGuidance = generateReferenceGuidance(currentComparison);
+        if (comparatorGuidance) {
+          showPoseGuidance = true;
+          poseGuidanceMessage = comparatorGuidance.message;
+          poseGuidanceType = comparatorGuidance.type;
+          guidanceDirection = comparatorGuidance.direction;
+          // Keep original nose position
+        }
+      }
+    } else {
+      // Before mode: use normal pose guidance
+      if (guidance) {
+        showPoseGuidance = guidance.show;
+        poseGuidanceMessage = guidance.message;
+        poseGuidanceType = guidance.type;
+        guidanceDirection = guidance.direction;
+        nosePosition = guidance.nosePosition;
+      }
     }
 
     dispatch('face:detected', {
@@ -194,6 +253,7 @@
       stable,
       progress,
       guidance,
+      comparison: currentComparison,
     });
   }
 
@@ -303,6 +363,9 @@
     {poseGuidanceType}
     {guidanceDirection}
     {nosePosition}
+    {beforeReference}
+    {currentComparison}
+    {isAfterMode}
     on:cancel={handleCancel}
   />
 

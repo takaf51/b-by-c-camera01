@@ -19,6 +19,11 @@
   export let guidanceDirection: PoseGuidanceDirection | null = null;
   export let nosePosition: { x: number; y: number } | null = null;
 
+  // Before reference props (for After mode)
+  export let beforeReference: any = null;
+  export let currentComparison: any = null;
+  export let isAfterMode: boolean = false;
+
   // 画面サイズ取得
   let innerWidth = 0;
   let innerHeight = 0;
@@ -36,6 +41,33 @@
     <div class="guidance-message {poseGuidanceType}">
       {poseGuidanceMessage}
     </div>
+  </div>
+{/if}
+
+<!-- Before参照情報表示（After撮影時のみ） -->
+{#if isAfterMode && isReady}
+  <div class="before-reference-info">
+    {#if beforeReference}
+      <div class="reference-status has-reference">
+        <div class="reference-icon">📋</div>
+        <div class="reference-text">
+          <div class="reference-title">Before姿勢参照中</div>
+          {#if currentComparison}
+            <div class="match-percentage">
+              マッチ度: {currentComparison.matchPercentage}%
+            </div>
+          {/if}
+        </div>
+      </div>
+    {:else}
+      <div class="reference-status no-reference">
+        <div class="reference-icon">⚠️</div>
+        <div class="reference-text">
+          <div class="reference-title">Before参照なし</div>
+          <div class="reference-subtitle">通常モードで撮影中</div>
+        </div>
+      </div>
+    {/if}
   </div>
 {/if}
 
@@ -400,6 +432,88 @@
     50% {
       opacity: 1;
       transform: scale(1);
+    }
+  }
+
+  /* Before参照情報表示 */
+  .before-reference-info {
+    position: fixed;
+    top: 80px;
+    left: 20px;
+    right: 20px;
+    z-index: 1100;
+    pointer-events: none;
+  }
+
+  .reference-status {
+    background: rgba(0, 0, 0, 0.8);
+    border-radius: 12px;
+    padding: 12px 16px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .reference-status.has-reference {
+    border-color: rgba(76, 175, 80, 0.5);
+  }
+
+  .reference-status.no-reference {
+    border-color: rgba(255, 152, 0, 0.5);
+  }
+
+  .reference-icon {
+    font-size: 18px;
+    line-height: 1;
+  }
+
+  .reference-text {
+    flex: 1;
+    color: white;
+    font-size: 14px;
+  }
+
+  .reference-title {
+    font-weight: 600;
+    margin-bottom: 2px;
+  }
+
+  .reference-subtitle {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+
+  .match-percentage {
+    font-size: 12px;
+    color: #4caf50;
+    font-weight: 500;
+  }
+
+  /* モバイル対応 */
+  @media (max-width: 480px) {
+    .before-reference-info {
+      top: 60px;
+      left: 10px;
+      right: 10px;
+    }
+
+    .reference-status {
+      padding: 10px 12px;
+    }
+
+    .reference-text {
+      font-size: 13px;
+    }
+
+    .reference-title {
+      font-size: 13px;
+    }
+
+    .reference-subtitle,
+    .match-percentage {
+      font-size: 11px;
     }
   }
 </style>

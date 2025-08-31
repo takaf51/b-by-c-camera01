@@ -14,6 +14,8 @@ export interface CameraConfig {
   showMesh?: boolean;
   autoCapture?: boolean;
   programId?: string;
+  beforeReference?: any; // ReferenceData from PoseReference
+  onPoseCompare?: (pose: { roll: number; pitch: number; yaw: number }) => any; // PoseComparison
 }
 
 export type CameraFlowType = 'tutorial' | 'skipTutorial' | 'afterOnly';
