@@ -655,7 +655,7 @@
     }
   }
 
-  // PHPと同じピノキオ棒（青い軸）描画機能
+  // PHPと同じピノキオ棒（ピンク軸）描画機能
   function drawPoseAxes(landmarks: any) {
     if (!canvasCtx || !canvasElement) return;
 
@@ -669,12 +669,12 @@
     const nose = landmarks[1];
     const scale = 0.2; // 軸の長さ
 
-    // 座標軸の描画（鼻から伸びる青い軸）
+    // 座標軸の描画（鼻から伸びるピンク軸）
     // ミラーリング時の座標に変換
     const noseX = (1 - nose.x) * canvasElement.width;
     const noseY = nose.y * canvasElement.height;
 
-    // Z軸（青）- ヨー（顔の向き）に応じて方向が変わる
+    // Z軸（ピンク）- ヨー（顔の向き）に応じて方向が変わる
     const zAxisX =
       noseX +
       Math.sin((pose.yaw * Math.PI) / 180) * scale * canvasElement.width;
@@ -689,8 +689,8 @@
       zAxisX,
       noseY
     );
-    gradient.addColorStop(0, 'rgba(0, 0, 255, 1)'); // 濃い青（始点）
-    gradient.addColorStop(1, 'rgba(100, 100, 255, 1)'); // 明るい青（終点）
+    gradient.addColorStop(0, '#E05179'); // ピンク色（始点）
+    gradient.addColorStop(1, 'rgba(224, 81, 121, 0.8)'); // 明るいピンク色（終点）
 
     // 円柱の本体を描画
     canvasCtx.beginPath();
@@ -705,13 +705,13 @@
     // 終点の円を描画
     canvasCtx.beginPath();
     canvasCtx.arc(zAxisX, noseY, cylinderWidth / 2, 0, Math.PI * 2);
-    canvasCtx.fillStyle = 'rgba(100, 100, 255, 1)';
+    canvasCtx.fillStyle = 'rgba(224, 81, 121, 0.8)';
     canvasCtx.fill();
 
     // 始点の円を描画
     canvasCtx.beginPath();
     canvasCtx.arc(noseX, noseY, cylinderWidth / 2, 0, Math.PI * 2);
-    canvasCtx.fillStyle = 'rgba(0, 0, 255, 1)';
+    canvasCtx.fillStyle = '#E05179';
     canvasCtx.fill();
   }
 
@@ -762,7 +762,7 @@
       canvasCtx.stroke();
     }
 
-    // ピノキオ棒（青い軸）の描画 - PHPと同じ実装
+    // ピノキオ棒（ピンク軸）の描画 - PHPと同じ実装
     if (faceLandmarks && faceDetected) {
       drawPoseAxes(faceLandmarks);
     }
