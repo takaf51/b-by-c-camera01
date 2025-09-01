@@ -238,7 +238,7 @@
   /* 姿勢ガイダンス */
   .pose-guidance {
     position: fixed;
-    top: 20px;
+    bottom: 100px;
     left: 0;
     right: 0;
     z-index: 2000;
@@ -249,12 +249,12 @@
   }
 
   .guidance-message {
-    background: #d2294c;
-    color: white;
+    background: #ffffff;
+    color: #d2294c;
     width: min(390px, 100vw);
     height: 47px;
     padding: 12px 16px;
-    border-radius: 0;
+    border-radius: 8px;
     text-align: center;
     font-size: 16px;
     font-weight: bold;
@@ -262,40 +262,35 @@
     align-items: center;
     justify-content: center;
     gap: 4px;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    border: 1px solid #d2294c;
     animation: messageSlideIn 0.3s ease-out;
     box-sizing: border-box;
     margin: 0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
   }
 
   .guidance-message.success {
-    background: linear-gradient(
-      135deg,
-      rgba(76, 175, 80, 0.95),
-      rgba(46, 125, 50, 0.95)
-    ) !important;
+    background: #ffffff !important;
+    color: #d2294c !important;
+    border-color: #d2294c !important;
   }
 
   .guidance-message.warning {
-    background: linear-gradient(
-      135deg,
-      rgba(255, 152, 0, 0.95),
-      rgba(255, 111, 0, 0.95)
-    ) !important;
+    background: #ffffff !important;
+    color: #d2294c !important;
+    border-color: #d2294c !important;
   }
 
   .guidance-message.error {
-    background: linear-gradient(
-      135deg,
-      rgba(255, 107, 107, 0.95),
-      rgba(255, 69, 58, 0.95)
-    ) !important;
+    background: #ffffff !important;
+    color: #d2294c !important;
+    border-color: #d2294c !important;
   }
 
   @keyframes messageSlideIn {
     from {
       opacity: 0;
-      transform: translateY(-20px);
+      transform: translateY(20px);
     }
     to {
       opacity: 1;
