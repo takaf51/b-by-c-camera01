@@ -2,7 +2,6 @@
   import { createEventDispatcher, onMount } from 'svelte';
   import { push } from 'svelte-spa-router';
   import ConfirmationScreen from './ConfirmationScreen.svelte';
-  import CaptureGuideScreen from './CaptureGuideScreen.svelte';
   import BeforeCamera from './BeforeCamera.svelte';
   import AfterCamera from './AfterCamera.svelte';
   import UploadCompleteModal from './UploadCompleteModal.svelte';
@@ -72,7 +71,8 @@
       showTutorialModal = true;
       tutorialMode = currentMode;
     } else {
-      currentStep = 'guide';
+      // チュートリアルがない場合は確認画面から直接カメラ起動
+      startCameraDirectly();
     }
   }
 
@@ -83,17 +83,19 @@
     return true; // 一時的に常に表示
   }
 
-  // チュートリアル完了時の処理
+  // チュートリアル完了時の処理（撮影するボタンクリック時）
   function handleTutorialComplete() {
     showTutorialModal = false;
-    currentStep = 'guide';
+    // チュートリアル完了後はguideステップをスキップして直接カメラ起動
+    startCameraDirectly();
     dispatch('tutorial:complete', { mode: tutorialMode });
   }
 
   // チュートリアルスキップ時の処理
   function handleTutorialSkip() {
     showTutorialModal = false;
-    currentStep = 'guide';
+    // チュートリアルスキップ時も直接カメラ起動
+    startCameraDirectly();
     dispatch('tutorial:skip', { mode: tutorialMode });
   }
 
@@ -103,7 +105,7 @@
     dispatch('tutorial:close', { mode: tutorialMode });
   }
 
-  function handleGuideStartCapture() {
+  function startCameraDirectly() {
     currentStep = 'camera';
 
     // Start camera after a brief delay to ensure component is mounted
@@ -118,8 +120,6 @@
             typeof currentCamera.startCamera === 'function'
           ) {
             currentCamera.startCamera();
-          } else {
-            console.warn('Camera component not available after retry');
           }
         }, 500);
       }
@@ -130,16 +130,16 @@
     if (result.mode === 'before') {
       // After before capture, determine next step
       if (flow === 'tutorial') {
-        // Show guide for after capture
+        // Switch to after mode and start camera directly
         currentMode = 'after';
-        currentStep = 'guide';
+        startCameraDirectly();
       } else {
-        // Show upload complete modal
-        showUploadModal = true;
+        // Before capture only - go back directly
+        handleDirectComplete();
       }
     } else {
-      // After after capture, show completion
-      showUploadModal = true;
+      // After capture - go back directly without modal
+      handleDirectComplete();
     }
 
     dispatch('capture', { result });
@@ -159,6 +159,22 @@
     }
 
     dispatch('cancel');
+  }
+
+  function handleDirectComplete() {
+    // Clean up camera
+    if (currentCamera) {
+      currentCamera.stopCamera();
+    }
+
+    // Navigate back to program detail
+    if (programId) {
+      push(`/plan/detail/${programId}`);
+    } else {
+      push('/plan/list');
+    }
+
+    dispatch('complete');
   }
 
   function handleUploadComplete(action: 'watch-later' | 'watch-now') {
@@ -200,12 +216,6 @@
   {#if currentStep === 'confirmation'}
     <ConfirmationScreen
       on:confirm={handleConfirmationConfirm}
-      on:cancel={handleCancel}
-    />
-  {:else if currentStep === 'guide'}
-    <CaptureGuideScreen
-      mode={currentMode}
-      on:start-capture={handleGuideStartCapture}
       on:cancel={handleCancel}
     />
   {:else if currentStep === 'camera'}
