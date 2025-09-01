@@ -15,7 +15,6 @@ async function initializeMocks() {
   if (import.meta.env.DEV || apiProfile === 'mock') {
     const { startMocking } = await import('./mocks/browser');
     await startMocking();
-    console.log('🔧 MSW started for camera-only app');
   }
 }
 

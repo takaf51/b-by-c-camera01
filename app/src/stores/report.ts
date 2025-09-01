@@ -50,10 +50,10 @@ function createReportStore() {
 
   // UseCase インスタンス（外部設定対応）
   const httpClient = createHttpClientWithExternalConfig(
-    () => window.CameraSettings?.API_TOKEN || null,
+    () => (window as any).CameraSettings?.API_TOKEN || null,
     () => import.meta.env.VITE_PROGRAM_CODE,
-    () => window.CameraSettings?.PLAN_CODE || 'MOCK_PLAN_CODE',
-    window.CameraSettings?.API_ENDPOINT
+    () => (window as any).CameraSettings?.PLAN_CODE || 'MOCK_PLAN_CODE',
+    (window as any).CameraSettings?.API_ENDPOINT
   );
   const reportRepository = createReportRepository(httpClient);
   const reportUseCase = createReportUseCase(reportRepository);

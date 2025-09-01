@@ -4,6 +4,7 @@
  */
 
 import type { ReferenceData } from './PoseReference';
+import type { HttpClient } from './http';
 
 export interface BeforeInfoResponse {
   success: boolean;
@@ -27,7 +28,34 @@ export interface ActualAPIResponse {
 }
 
 /**
- * 新しいAPI仕様でBefore情報を取得
+ * 新しいAPI仕様でBefore情報を取得（HttpClient使用版）
+ */
+export async function fetchBeforePointsWithHttpClient(
+  planCode: string,
+  httpClient: HttpClient
+): Promise<ReferenceData | null> {
+  try {
+    const result: ActualAPIResponse = await httpClient.get('/plan/report/getPoints', {
+      headers: {
+        'X-Plan-Code': planCode,
+      },
+    });
+
+    if (!result.points) {
+      return null;
+    }
+
+    // points文字列をパースしてReferenceDataに変換
+    const parsedData = parsePointsString(result.points);
+    return parsedData;
+
+  } catch (error) {
+    return null;
+  }
+}
+
+/**
+ * 新しいAPI仕様でBefore情報を取得（旧fetch版 - 互換性のため）
  */
 export async function fetchBeforePoints(
   planCode: string,
@@ -40,12 +68,6 @@ export async function fetchBeforePoints(
       'https://dev-api.face-matrix.com';
 
     const url = `${endpoint}/plan/report/getPoints`;
-    
-    console.log('📡 Before Points取得API呼び出し:', {
-      url,
-      planCode,
-      endpoint
-    });
 
     const response = await fetch(url, {
       method: 'GET',
@@ -57,10 +79,7 @@ export async function fetchBeforePoints(
     });
 
     if (!response.ok) {
-      console.warn(`⚠️ Before Points取得失敗: ${response.status} ${response.statusText}`);
-      
       if (response.status === 404) {
-        console.log('📝 Before撮影が未完了または見つかりません');
         return null;
       }
       
@@ -70,21 +89,14 @@ export async function fetchBeforePoints(
     const result: ActualAPIResponse = await response.json();
     
     if (!result.points) {
-      console.warn('⚠️ Points データが空です:', result);
       return null;
     }
-
-    console.log('✅ Before Points取得成功:', {
-      pointsLength: result.points.length,
-      pointsPreview: result.points.substring(0, 100) + '...'
-    });
 
     // points文字列をパースしてReferenceDataに変換
     const parsedData = parsePointsString(result.points);
     return parsedData;
 
   } catch (error) {
-    console.error('❌ Before Points取得エラー:', error);
     return null;
   }
 }
@@ -95,11 +107,6 @@ export async function fetchBeforePoints(
  */
 function parsePointsString(pointsString: string): ReferenceData | null {
   try {
-    console.log('🔍 Points文字列をパース中:', {
-      length: pointsString.length,
-      preview: pointsString.substring(0, 200)
-    });
-
     // パターン1: JSON文字列の場合
     try {
       const jsonData = JSON.parse(pointsString);
@@ -113,7 +120,7 @@ function parsePointsString(pointsString: string): ReferenceData | null {
         };
       }
     } catch (jsonError) {
-      console.log('📝 JSON形式ではありません、他の形式を試行');
+      // 次のパターンを試行
     }
 
     // パターン2: Base64エンコードされたJSON
@@ -130,7 +137,7 @@ function parsePointsString(pointsString: string): ReferenceData | null {
         };
       }
     } catch (base64Error) {
-      console.log('📝 Base64 JSON形式でもありません');
+      // 次のパターンを試行
     }
 
     // パターン3: 送信データと同じ形式のJSON文字列（最も可能性が高い）
@@ -153,16 +160,14 @@ function parsePointsString(pointsString: string): ReferenceData | null {
         };
       }
     } catch (directJsonError) {
-      console.log('📝 直接JSON形式でもありません');
+      // 最後のパターンへ
     }
 
     // パターン4: カスタム区切り形式
     // TODO: 実際のpoints文字列の形式が判明したら実装
-    console.warn('⚠️ 未対応のpoints形式です:', pointsString.substring(0, 100));
     return null;
 
   } catch (error) {
-    console.error('❌ Points文字列パースエラー:', error);
     return null;
   }
 }
@@ -188,11 +193,7 @@ export async function fetchBeforeInfo(
 
     const url = `${endpoint}/api/plan-reports/${planReportId}/before-reference`;
     
-    console.log('📡 Before情報取得API呼び出し:', {
-      url,
-      planReportId,
-      endpoint
-    });
+
 
     const response = await fetch(url, {
       method: 'GET',
@@ -204,11 +205,8 @@ export async function fetchBeforeInfo(
     });
 
     if (!response.ok) {
-      console.warn(`⚠️ Before情報取得失敗: ${response.status} ${response.statusText}`);
-      
       // 404の場合はBefore撮影がまだ完了していない
       if (response.status === 404) {
-        console.log('📝 Before撮影が未完了または見つかりません');
         return null;
       }
       
@@ -218,16 +216,8 @@ export async function fetchBeforeInfo(
     const result: BeforeInfoResponse = await response.json();
     
     if (!result.success || !result.data) {
-      console.warn('⚠️ Before情報取得レスポンスが無効:', result);
       return null;
     }
-
-    console.log('✅ Before情報取得成功:', {
-      timestamp: result.data.timestamp,
-      hasPose: !!result.data.pose,
-      hasImage: !!result.data.image,
-      hasLandmarks: !!result.data.landmarks
-    });
 
     // API形式からReferenceData形式に変換
     return {
@@ -239,8 +229,6 @@ export async function fetchBeforeInfo(
     };
 
   } catch (error) {
-    console.error('❌ Before情報取得エラー:', error);
-    
     // ネットワークエラーやその他のエラーの場合はnullを返す
     // After撮影は可能だが、参照なしでの撮影になる
     return null;
@@ -280,20 +268,7 @@ export async function saveBeforeInfo(
       timestamp: new Date().toISOString()
     };
 
-    console.log('💾 Before情報保存API呼び出し:', {
-      url,
-      planReportId,
-      requestBody: {
-        pose: beforeData.pose,
-        poseType: typeof beforeData.pose,
-        poseKeys: beforeData.pose ? Object.keys(beforeData.pose) : null,
-        hasImage: !!beforeData.image,
-        imageLength: beforeData.image?.length || 0,
-        landmarksCount: beforeData.landmarks?.length || 0,
-        hasCorrectionResult: !!beforeData.correctionResult,
-        timestamp: requestBody.timestamp
-      }
-    });
+
 
     const response = await fetch(url, {
       method: 'POST',
@@ -312,99 +287,14 @@ export async function saveBeforeInfo(
     const result = await response.json();
     
     if (result.success) {
-      console.log('✅ Before情報保存成功');
       return true;
     } else {
-      console.warn('⚠️ Before情報保存失敗:', result.error);
       return false;
     }
 
   } catch (error) {
-    console.error('❌ Before情報保存エラー:', error);
     return false;
   }
 }
 
-/**
- * デバッグ用: APIレスポンスの形式を確認
- */
-export async function debugGetPoints(
-  planCode: string = '2025-07-29-trial',
-  apiEndpoint?: string
-): Promise<void> {
-  try {
-    const endpoint = apiEndpoint || 
-      (window as any).CameraSettings?.API_ENDPOINT || 
-      'https://dev-api.face-matrix.com';
 
-    const url = `${endpoint}/plan/report/getPoints`;
-    
-    console.log('🐛 DEBUG: API呼び出し開始:', {
-      url,
-      planCode,
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Plan-Code': planCode,
-        'Accept': 'application/json',
-      }
-    });
-
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-        'X-Plan-Code': planCode,
-        'Accept': 'application/json',
-      },
-    });
-
-    console.log('🐛 DEBUG: レスポンス情報:', {
-      status: response.status,
-      statusText: response.statusText,
-      headers: Object.fromEntries(response.headers.entries())
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.log('🐛 DEBUG: エラーレスポンス:', errorText);
-      return;
-    }
-
-    const result = await response.json();
-    
-    console.log('🐛 DEBUG: レスポンスデータ:', {
-      fullResponse: result,
-      pointsType: typeof result.points,
-      pointsLength: result.points?.length,
-      pointsPreview: result.points?.substring(0, 200),
-      isValidJSON: (() => {
-        try {
-          JSON.parse(result.points);
-          return true;
-        } catch {
-          return false;
-        }
-      })(),
-      isBase64: (() => {
-        try {
-          atob(result.points);
-          return true;
-        } catch {
-          return false;
-        }
-      })()
-    });
-
-    // パース試行
-    const parsedData = parsePointsString(result.points);
-    console.log('🐛 DEBUG: パース結果:', parsedData);
-
-  } catch (error) {
-    console.error('🐛 DEBUG: エラー:', error);
-  }
-}
-
-// デバッグ用にwindowオブジェクトに関数を追加
-if (typeof window !== 'undefined') {
-  (window as any).debugGetPoints = debugGetPoints;
-}

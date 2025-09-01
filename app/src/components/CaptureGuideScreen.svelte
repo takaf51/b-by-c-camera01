@@ -227,10 +227,6 @@
 
   /* 小さい画面への追加対応 */
   @media (max-width: 480px) {
-    .guide-container {
-      height: 100vh;
-    }
-
     .guide-header {
       padding: 0.6rem;
       font-size: 0.9rem;

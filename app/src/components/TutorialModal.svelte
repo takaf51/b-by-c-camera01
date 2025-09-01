@@ -224,11 +224,12 @@
         <!-- Page indicator -->
         <div class="page-indicator">
           {#each Array(totalPages) as _, index}
-            <div
+            <button
               class="page-dot"
               class:active={index === currentPage}
               on:click={() => (currentPage = index)}
-            ></div>
+              aria-label="Page {index + 1}"
+            ></button>
           {/each}
         </div>
 
@@ -357,6 +358,8 @@
     background: #dee2e6;
     cursor: pointer;
     transition: background 0.2s;
+    border: none;
+    padding: 0;
   }
 
   .page-dot.active {

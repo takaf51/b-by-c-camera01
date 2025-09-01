@@ -48,7 +48,8 @@ export class HttpReportRepository implements ReportRepository {
 
       // 顔の座標情報を追加（利用可能な場合）
       if (request.image.points) {
-        formData.append('points', JSON.stringify(request.image.points));
+        const pointsJson = JSON.stringify(request.image.points);
+        formData.append('points', pointsJson);
       }
 
       // HTTPクライアント経由でAPI呼び出し

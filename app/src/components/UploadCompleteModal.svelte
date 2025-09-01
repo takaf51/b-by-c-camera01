@@ -23,7 +23,13 @@
 </script>
 
 {#if show}
-  <div class="modal-overlay" role="dialog" tabindex="-1" on:click={handleClose}>
+  <div
+    class="modal-overlay"
+    role="dialog"
+    tabindex="-1"
+    on:click={handleClose}
+    on:keydown={handleClose}
+  >
     <div
       class="modal-content"
       role="dialog"

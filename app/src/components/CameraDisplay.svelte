@@ -9,7 +9,7 @@
   export let canvasElement: HTMLCanvasElement | undefined = undefined;
   export let previewImage: string | null = null;
   export let mirrorMode: boolean = true;
-  export let mode: 'before' | 'after' = 'before';
+  export const mode: 'before' | 'after' = 'before';
   export let isReady: boolean = false;
 
   // Pose guidance props
@@ -17,7 +17,7 @@
   export let poseGuidanceMessage: string = '';
   export let poseGuidanceType: PoseGuidanceType | string = '';
   export let guidanceDirection: PoseGuidanceDirection | null = null;
-  export let nosePosition: { x: number; y: number } | null = null;
+  export const nosePosition: { x: number; y: number } | null = null;
 
   // Before reference props (for After mode)
   export let beforeReference: any = null;

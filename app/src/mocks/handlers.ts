@@ -111,14 +111,7 @@ export const programHandlers = [
     const limit = parseInt(url.searchParams.get('limit') || '20');
     const status = url.searchParams.get('status');
 
-    console.log(
-      'MSW: Program list request - page:',
-      page,
-      'limit:',
-      limit,
-      'status:',
-      status
-    );
+
 
     // モックプログラムデータ
     const allPrograms = [
@@ -196,7 +189,7 @@ export const programHandlers = [
   http.get('/api/plan/detail/:id', ({ params }) => {
     const id = parseInt(params.id as string);
 
-    console.log('MSW: Program detail request for ID:', id);
+
 
     // モックプログラム詳細データベース
     const programDetailData: Record<number, unknown> = {
@@ -383,27 +376,64 @@ export const planHandlers = [
 // 全ハンドラをエクスポート
 // カメラ関連のAPIハンドラ（Face Matrix API仕様に準拠）
 export const cameraHandlers = [
+  // Before参照座標取得 - Face Matrix API仕様に準拠
+  http.get('/plan/report/getPoints', ({ request }) => {
+    const planCode = request.headers.get('X-Plan-Code');
+
+    // プランコードチェック
+    if (!planCode) {
+      return HttpResponse.json(
+        { error: 'X-Plan-Code header is required' },
+        { status: 400 }
+      );
+    }
+
+    // モックのBefore参照データ（座標付き）
+    const mockBeforeData = {
+      pose: { 
+        roll: 1.2, 
+        pitch: -0.5, 
+        yaw: 0.3,
+        distance: 1.0,
+        quality: 0.85,
+        faceSize: 0.123
+      },
+      image: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/mock-base64-image-data",
+      landmarks: [
+        { x: 0.5, y: 0.4, z: 0.1 },
+        { x: 0.52, y: 0.42, z: 0.11 },
+        // 実際には468個のランドマークポイント
+      ],
+      timestamp: new Date().toISOString(),
+      correctionResult: { 
+        correctedImageUrl: "data:image/jpeg;base64,/9j/corrected-mock-image",
+        transformMatrix: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+      }
+    };
+
+    // points文字列としてJSON形式で返す
+    const pointsJson = JSON.stringify(mockBeforeData);
+
+    return HttpResponse.json({
+      points: pointsJson
+    }, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+  }),
+
   // 画像アップロード - Face Matrix API仕様に準拠
   http.post('/plan/report/send', async ({ request }) => {
-    console.log('🚀 MSW: /plan/report/send endpoint hit!');
-    console.log('MSW: Face Matrix API - Image upload request received');
-
     // ヘッダーチェック
     const authorization = request.headers.get('Authorization');
     const planCode = request.headers.get('X-Plan-Code');
     const contentType = request.headers.get('Content-Type');
 
-    console.log('MSW: Headers -', {
-      authorization: authorization ? 'Bearer ***' : 'Missing',
-      planCode,
-      contentType: contentType?.includes('multipart/form-data')
-        ? 'multipart/form-data'
-        : contentType,
-    });
-
     // 認証チェック（モック環境では緩和）
     if (!authorization?.startsWith('Bearer ') && authorization !== null) {
-      console.warn('MSW: Invalid authorization format, but allowing in mock mode');
+      // Invalid format but allowing in mock mode
     }
 
     // プランコードチェック
@@ -420,14 +450,6 @@ export const cameraHandlers = [
       const kind = formData.get('kind') as string; // 'before' or 'after'
       const reportIdParam = formData.get('plan_report_id') as string;
       const pointsParam = formData.get('points') as string;
-
-      console.log('MSW: Form data -', {
-        kind,
-        hasImage: !!image,
-        imageSize: image?.size || 0,
-        reportId: reportIdParam || 'new',
-        hasPoints: !!pointsParam,
-      });
 
       // バリデーション
       if (!kind || !['before', 'after'].includes(kind)) {
@@ -449,9 +471,8 @@ export const cameraHandlers = [
       if (pointsParam) {
         try {
           points = JSON.parse(pointsParam);
-          console.log('MSW: Parsed points -', points);
         } catch (error) {
-          console.warn('MSW: Failed to parse points -', error);
+          // Failed to parse points
         }
       }
 
@@ -481,19 +502,16 @@ export const cameraHandlers = [
             scenarios.success + scenarios.validationError + scenarios.timeout
           ) {
             // サーバーエラー
-            console.log('MSW: Simulating server error');
             return HttpResponse.json(
               { error: 'Internal server error occurred' },
               { status: 500 }
             );
           } else {
             // タイムアウト
-            console.log('MSW: Simulating timeout');
             await new Promise(resolve => setTimeout(resolve, 10000)); // 長い遅延
           }
         } else {
           // バリデーションエラー
-          console.log('MSW: Simulating validation error');
           return HttpResponse.json(
             { error: 'Invalid image format or size' },
             { status: 422 }
@@ -520,7 +538,7 @@ export const cameraHandlers = [
         },
       };
 
-      console.log('MSW: API response (SUCCESS) -', response);
+
 
       // リアルなAPI感のための遅延
       await new Promise(resolve =>
@@ -534,7 +552,6 @@ export const cameraHandlers = [
         },
       });
     } catch (error) {
-      console.error('MSW: Error processing request -', error);
       return HttpResponse.json(
         { error: 'Internal server error' },
         { status: 500 }
@@ -545,8 +562,6 @@ export const cameraHandlers = [
   // 画像処理ステータス取得（追加機能）
   http.get('/api/plan/report/status/:reportId', ({ params }) => {
     const reportId = params.reportId;
-
-    console.log('MSW: Report status request for ID:', reportId);
 
     return HttpResponse.json({
       report_id: parseInt(reportId as string),

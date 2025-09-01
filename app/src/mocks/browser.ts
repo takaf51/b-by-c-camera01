@@ -34,14 +34,13 @@ export async function startMocking() {
         return 'bypass';
       }
 
-      // API関連パス以外は警告（認証パスは除く）
+      // API関連パス以外はバイパス（認証パスは除く）
       if (
         !url.includes('/api/') &&
         !url.includes('/plan/') &&
         !url.includes('/login/') &&
         !url.includes('/register/')
       ) {
-        console.warn('[MSW] Unhandled non-API request:', url);
         return 'bypass';
       }
     },
@@ -50,7 +49,5 @@ export async function startMocking() {
     },
   });
 
-  console.log('🔧 MSW: Mocking enabled');
-  console.log('🔧 MSW: API_PROFILE =', import.meta.env.VITE_API_PROFILE);
-  console.log('🔧 MSW: API_BASE_URL =', import.meta.env.VITE_API_BASE_URL);
+
 }
