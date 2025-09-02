@@ -10,7 +10,7 @@
 export interface ReportImage {
   kind: 'before' | 'after';
   imageData: string; // base64 data URL
-  points?: BeforeCaptureData;
+  points?: BeforeCaptureData | FacePoints;
 }
 
 export interface FacePoints {

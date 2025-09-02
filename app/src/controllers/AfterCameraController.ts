@@ -6,6 +6,7 @@
 import type { CameraCaptureResult } from '../types/camera';
 import type { ReportUseCase } from '../usecases/ReportUseCase';
 import type { CameraFacePoints } from '../stores/report';
+import type { ReportCreateResponse } from '../domain/report';
 
 export class AfterCameraController {
   constructor(private reportUseCase: ReportUseCase) {}
@@ -16,16 +17,18 @@ export class AfterCameraController {
   async handleCapture(
     result: CameraCaptureResult,
     programId: string
-  ): Promise<void> {
+  ): Promise<ReportCreateResponse> {
     // 顔座標を抽出
     const points = this.extractFacePoints(result.landmarks);
 
-    // reportUseCaseを使って送信
-    await this.reportUseCase.submitReport(programId, {
+    // reportUseCaseを使って送信し、レスポンスを返す
+    const response = await this.reportUseCase.submitReport(programId, {
       kind: 'after',
       imageData: result.imageData,
       points,
     });
+
+    return response;
   }
 
   /**
