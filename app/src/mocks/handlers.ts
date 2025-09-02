@@ -519,23 +519,15 @@ export const cameraHandlers = [
         }
       }
 
-      // API仕様に準拠したレスポンス
+      // 新しいAPI仕様に準拠したレスポンス
       const response = {
         report_id: reportId,
-        image_status: {
-          before:
-            kind === 'before'
-              ? true
-              : reportIdParam
-                ? Math.random() > 0.3
-                : false,
-          after:
-            kind === 'after'
-              ? true
-              : reportIdParam
-                ? Math.random() > 0.3
-                : false,
-        },
+        kind: kind,
+        new_subscription: isNewReport, // 新規レポートの場合はtrue
+        last_image_uploaded: kind === 'after', // after撮影時は最後の画像
+        score_fix_immediately: Math.random() > 0.7, // 30%の確率でスコア即時確定
+        day: Math.floor(Math.random() * 30) + 1, // 1-30日のランダム
+        return_base_url: `https://api.face-matrix.com/mypage/plan/detail/${reportId}`
       };
 
 

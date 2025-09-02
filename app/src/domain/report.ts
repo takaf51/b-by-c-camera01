@@ -41,7 +41,12 @@ export interface ReportCreateRequest {
 
 export interface ReportCreateResponse {
   report_id: number;
-  message: string;
+  kind: 'before' | 'after';
+  new_subscription: boolean;
+  last_image_uploaded: boolean;
+  score_fix_immediately: boolean;
+  day: number;
+  return_base_url: string;
 }
 
 export interface ReportError extends Error {
