@@ -69,10 +69,16 @@
 
   async function handleCapture(result: CameraCaptureResult) {
     try {
-      // Controller経由で処理
-      await controller.handleCapture(result, programId);
+      // Controller経由で処理し、レスポンスを取得
+      const response = await controller.handleCapture(result, programId);
 
-      // 成功時はparentに通知
+      // Before撮影後は return_base_url にリダイレクト
+      if (response.return_base_url) {
+        window.location.href = response.return_base_url;
+        return; // リダイレクト後は処理を終了
+      }
+
+      // return_base_url がない場合は従来通りの処理
       onCapture(result);
       dispatch('capture', { result });
     } catch (error) {

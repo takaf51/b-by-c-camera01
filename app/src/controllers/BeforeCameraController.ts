@@ -5,7 +5,7 @@
 
 import type { CameraCaptureResult } from '../types/camera';
 import type { ReportUseCase } from '../usecases/ReportUseCase';
-import type { BeforeCaptureData } from '../domain/report';
+import type { BeforeCaptureData, ReportCreateResponse } from '../domain/report';
 
 export class BeforeCameraController {
   constructor(private reportUseCase: ReportUseCase) {}
@@ -16,16 +16,18 @@ export class BeforeCameraController {
   async handleCapture(
     result: CameraCaptureResult,
     programId: string
-  ): Promise<void> {
+  ): Promise<ReportCreateResponse> {
     // README.md構造に合わせたデータを作成
     const beforeCaptureData = this.createBeforeCaptureData(result);
 
-    // reportUseCaseを使って送信
-    await this.reportUseCase.submitReport(programId, {
+    // reportUseCaseを使って送信し、レスポンスを返す
+    const response = await this.reportUseCase.submitReport(programId, {
       kind: 'before',
       imageData: result.imageData,
       points: beforeCaptureData,
     });
+
+    return response;
   }
 
   /**
