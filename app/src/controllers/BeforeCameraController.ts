@@ -5,7 +5,7 @@
 
 import type { CameraCaptureResult } from '../types/camera';
 import type { ReportUseCase } from '../usecases/ReportUseCase';
-import type { CameraFacePoints } from '../stores/report';
+import type { BeforeCaptureData } from '../domain/report';
 
 export class BeforeCameraController {
   constructor(private reportUseCase: ReportUseCase) {}
@@ -17,57 +17,33 @@ export class BeforeCameraController {
     result: CameraCaptureResult,
     programId: string
   ): Promise<void> {
-    // 顔座標を抽出
-    const points = this.extractFacePoints(result.landmarks);
+    // README.md構造に合わせたデータを作成
+    const beforeCaptureData = this.createBeforeCaptureData(result);
 
     // reportUseCaseを使って送信
     await this.reportUseCase.submitReport(programId, {
       kind: 'before',
       imageData: result.imageData,
-      points,
+      points: beforeCaptureData,
     });
   }
 
   /**
-   * MediaPipeの顔座標からAPI用の座標情報を抽出
-   * @param landmarks - MediaPipeの顔座標データ
+   * CameraCaptureResultからBeforeCaptureDataを作成
+   * @param result - カメラ撮影結果
    */
-  private extractFacePoints(landmarks: any): CameraFacePoints | undefined {
-    if (!landmarks || !Array.isArray(landmarks)) {
-      return undefined;
-    }
-
-    try {
-      // MediaPipeの特定のランドマークポイントを使用
-      const leftEye = landmarks[33]; // 左目
-      const rightEye = landmarks[263]; // 右目
-      const noseTip = landmarks[1]; // 鼻先
-
-      if (!leftEye || !rightEye || !noseTip) {
-        return undefined;
-      }
-
-      // 0-1の正規化座標から実際のピクセル座標へ変換
-      // 固定解像度を使用（実際の実装では画像サイズを渡す必要がある）
-      const imageWidth = 640;
-      const imageHeight = 480;
-
-      return {
-        leftEye: {
-          x: Math.round(leftEye.x * imageWidth),
-          y: Math.round(leftEye.y * imageHeight),
-        },
-        rightEye: {
-          x: Math.round(rightEye.x * imageWidth),
-          y: Math.round(rightEye.y * imageHeight),
-        },
-        noseTip: {
-          x: Math.round(noseTip.x * imageWidth),
-          y: Math.round(noseTip.y * imageHeight),
-        },
-      };
-    } catch {
-      return undefined;
-    }
+  private createBeforeCaptureData(result: CameraCaptureResult): BeforeCaptureData {
+    return {
+      pose: {
+        roll: result.pose?.roll || 0,
+        pitch: result.pose?.pitch || 0,
+        yaw: result.pose?.yaw || 0,
+        distance: result.pose?.distance,
+        quality: result.pose?.quality,
+        faceSize: result.pose?.faceSize,
+      },
+      landmarks: Array.isArray(result.landmarks) ? result.landmarks : [],
+      correctionResult: result.correctionResult,
+    };
   }
 }

@@ -7,7 +7,7 @@ import { writable } from 'svelte/store';
 import { createReportUseCase } from '../usecases/ReportUseCase';
 import { createReportRepository } from '../repositories/ReportRepository';
 import { createHttpClientWithExternalConfig } from '../lib/http';
-import type { ReportImage, FacePoints, ReportError } from '../domain/report';
+import type { ReportImage, FacePoints, BeforeCaptureData, ReportError } from '../domain/report';
 
 // =============================================================================
 // Store Types (コンポーネント層用)
@@ -16,7 +16,7 @@ import type { ReportImage, FacePoints, ReportError } from '../domain/report';
 export interface CameraReportImage {
   kind: 'before' | 'after';
   imageData: string;
-  points?: CameraFacePoints;
+  points?: BeforeCaptureData | CameraFacePoints;
 }
 
 export interface CameraFacePoints {
@@ -75,13 +75,7 @@ function createReportStore() {
         const domainImage: ReportImage = {
           kind: image.kind,
           imageData: image.imageData,
-          points: image.points
-            ? {
-                leftEye: image.points.leftEye,
-                rightEye: image.points.rightEye,
-                noseTip: image.points.noseTip,
-              }
-            : undefined,
+          points: image.points,
         };
 
         const result = await reportUseCase.submitReport(

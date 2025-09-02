@@ -10,13 +10,27 @@
 export interface ReportImage {
   kind: 'before' | 'after';
   imageData: string; // base64 data URL
-  points?: FacePoints;
+  points?: BeforeCaptureData;
 }
 
 export interface FacePoints {
   leftEye: { x: number; y: number };
   rightEye: { x: number; y: number };
   noseTip: { x: number; y: number };
+}
+
+// README.md構造に合わせたBefore撮影データ
+export interface BeforeCaptureData {
+  pose: { 
+    roll: number; 
+    pitch: number; 
+    yaw: number; 
+    distance?: number; 
+    quality?: number; 
+    faceSize?: number; 
+  };
+  landmarks: Array<{x: number; y: number; z?: number}>; // 468個の座標点
+  correctionResult?: any; // AffineCorrection結果
 }
 
 export interface ReportCreateRequest {
@@ -77,6 +91,34 @@ export function validateFacePoints(points: FacePoints): {
     if (!point || typeof point.x !== 'number' || typeof point.y !== 'number') {
       errors.push(`${pointName}の座標が無効です`);
     }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+export function validateBeforeCaptureData(data: BeforeCaptureData): {
+  isValid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  // pose validation
+  if (!data.pose) {
+    errors.push('pose データが必要です');
+  } else {
+    if (typeof data.pose.roll !== 'number') errors.push('pose.roll が無効です');
+    if (typeof data.pose.pitch !== 'number') errors.push('pose.pitch が無効です');
+    if (typeof data.pose.yaw !== 'number') errors.push('pose.yaw が無効です');
+  }
+
+  // landmarks validation
+  if (!Array.isArray(data.landmarks)) {
+    errors.push('landmarks は配列である必要があります');
+  } else if (data.landmarks.length === 0) {
+    errors.push('landmarks データが空です');
   }
 
   return {

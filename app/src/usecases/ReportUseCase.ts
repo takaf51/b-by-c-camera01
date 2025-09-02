@@ -8,9 +8,10 @@ import type {
   ReportCreateResponse,
   ReportImage,
   FacePoints,
+  BeforeCaptureData,
   ReportError,
 } from '../domain/report';
-import { validateReportImage, validateFacePoints } from '../domain/report';
+import { validateReportImage, validateFacePoints, validateBeforeCaptureData } from '../domain/report';
 import type { ReportRepository } from '../repositories/ReportRepository';
 
 // =============================================================================
@@ -52,13 +53,27 @@ export class ReportUseCaseImpl implements ReportUseCase {
 
     // 顔座標のバリデーション（存在する場合）
     if (image.points) {
-      const pointsValidation = validateFacePoints(image.points);
-      if (!pointsValidation.isValid) {
-        const error: ReportError = new Error(
-          pointsValidation.errors[0]
-        ) as ReportError;
-        error.code = 'VALIDATION_ERROR';
-        throw error;
+      // BeforeCaptureDataかFacePointsかを判定してバリデーション
+      if ('pose' in image.points && 'landmarks' in image.points) {
+        // BeforeCaptureDataの場合
+        const pointsValidation = validateBeforeCaptureData(image.points as BeforeCaptureData);
+        if (!pointsValidation.isValid) {
+          const error: ReportError = new Error(
+            pointsValidation.errors[0]
+          ) as ReportError;
+          error.code = 'VALIDATION_ERROR';
+          throw error;
+        }
+      } else if ('leftEye' in image.points && 'rightEye' in image.points) {
+        // FacePointsの場合
+        const pointsValidation = validateFacePoints(image.points as FacePoints);
+        if (!pointsValidation.isValid) {
+          const error: ReportError = new Error(
+            pointsValidation.errors[0]
+          ) as ReportError;
+          error.code = 'VALIDATION_ERROR';
+          throw error;
+        }
       }
     }
 

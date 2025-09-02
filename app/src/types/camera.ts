@@ -6,6 +6,7 @@ export interface CameraCaptureResult {
   pose: any;
   timestamp: number;
   mode: 'before' | 'after';
+  correctionResult?: any; // AffineCorrection.CorrectionResult
 }
 
 export interface CameraConfig {

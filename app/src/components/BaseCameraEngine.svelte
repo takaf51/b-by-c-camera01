@@ -129,6 +129,7 @@
         pose: currentPose,
         timestamp: Date.now(),
         mode,
+        correctionResult,
       };
 
       previewImage = correctionResult.correctedImageUrl; // プレビューも補正済み画像
@@ -200,6 +201,7 @@
         pose: currentPose,
         timestamp: Date.now(),
         mode,
+        correctionResult, // correctionResultを追加
       };
 
       previewImage = correctionResult.correctedImageUrl; // プレビューも補正済み画像
