@@ -17,9 +17,15 @@
     <h2 class="confirmation-title">撮影の前にご確認ください</h2>
 
     <div class="warning-section">
-      <div class="warning-icon">⚠️</div>
+      <div class="warning-icon-line">
+        <img
+          src="/assets/images/icon/exclamation-mark.png"
+          alt="注意"
+          class="warning-icon"
+        />
+        <p>前後の比較はデータ分析されます。</p>
+      </div>
       <div class="warning-text">
-        <p><strong>前後の比較はデータ分析されます。</strong></p>
         <p>正確な結果を得るため、以下の通りご撮影ください。</p>
       </div>
     </div>
@@ -29,7 +35,7 @@
         <div class="guideline-item good">
           <div class="guideline-frame">
             <img
-              src="/assets/images/checklist-good.png"
+              src="/assets/images/confirm/checklist-good.png"
               alt="正しい撮影例"
               class="guideline-image"
             />
@@ -42,7 +48,7 @@
         <div class="guideline-item bad">
           <div class="guideline-frame">
             <img
-              src="/assets/images/checklist-bad-hair.png"
+              src="/assets/images/confirm/checklist-bad-hair.png"
               alt="髪で耳が隠れている例"
               class="guideline-image"
             />
@@ -55,7 +61,7 @@
         <div class="guideline-item bad">
           <div class="guideline-frame">
             <img
-              src="/assets/images/checklist-bad-shadow.png"
+              src="/assets/images/confirm/checklist-bad-shadow.png"
               alt="強い陰影がある例"
               class="guideline-image"
             />
@@ -68,7 +74,7 @@
         <div class="guideline-item bad">
           <div class="guideline-frame">
             <img
-              src="/assets/images/checklist-bad-background.png"
+              src="/assets/images/confirm/checklist-bad-background.png"
               alt="背景が無地以外の例"
               class="guideline-image"
             />
@@ -79,7 +85,6 @@
     </div>
 
     <button class="confirm-button" on:click={handleConfirm}>
-      <span class="confirm-icon">✓</span>
       確認しました
     </button>
   </div>
@@ -94,21 +99,25 @@
     height: 100%;
     background: #222222;
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     justify-content: center;
     z-index: 1000;
-    padding: 20px;
+    padding: 0;
   }
 
   .confirmation-content {
     background: white;
-    border-radius: 20px;
+    border-radius: 20px 20px 0 0;
     width: 100%;
     max-width: 500px;
-    max-height: 90vh;
+    height: auto;
     overflow-y: auto;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    padding: 30px 25px;
+    padding: 40px 24px 40px 24px;
+    margin-top: auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
   }
 
   .confirmation-title {
@@ -122,38 +131,43 @@
 
   .warning-section {
     display: flex;
-    align-items: flex-start;
-    gap: 12px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
     margin-bottom: 25px;
-    padding: 15px;
-    background: #fff3cd;
-    border-radius: 8px;
-    border-left: 4px solid #ffc107;
+  }
+
+  .warning-icon-line {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .warning-icon-line p {
+    margin: 0;
+    color: #d2294c;
   }
 
   .warning-icon {
-    font-size: 20px;
+    width: 18px;
+    height: 18px;
     flex-shrink: 0;
-    margin-top: 2px;
   }
 
   .warning-text {
-    flex: 1;
+    text-align: center;
   }
 
   .warning-text p {
     margin: 0 0 8px 0;
-    color: #856404;
+    color: #d2294c;
     font-size: 14px;
     line-height: 1.5;
   }
 
   .warning-text p:last-child {
     margin-bottom: 0;
-  }
-
-  .warning-text strong {
-    font-weight: 600;
   }
 
   .guidelines-container {
@@ -173,7 +187,7 @@
   .guideline-frame {
     position: relative;
     width: 100%;
-    aspect-ratio: 1;
+    aspect-ratio: 128/150;
     border-radius: 8px;
     margin-bottom: 10px;
     overflow: hidden;
@@ -185,7 +199,7 @@
   .guideline-image {
     width: 100%;
     height: 100%;
-    object-fit: cover;
+    object-fit: contain;
     border-radius: 8px;
   }
 
@@ -199,100 +213,22 @@
 
   .confirm-button {
     width: 100%;
-    background: linear-gradient(135deg, #e91e63, #ad1457);
+    background: #d6df22;
     border: none;
-    color: white;
+    color: black;
     padding: 15px 20px;
     font-size: 16px;
-    font-weight: 600;
+    font-weight: 400;
     border-radius: 25px;
     cursor: pointer;
     display: flex;
     align-items: center;
     justify-content: center;
-    gap: 8px;
     transition: all 0.2s ease;
   }
 
   .confirm-button:hover {
-    background: linear-gradient(135deg, #ad1457, #880e4f);
+    background: #c5ce1f;
     transform: translateY(-1px);
-  }
-
-  .confirm-icon {
-    font-size: 18px;
-  }
-
-  /* モバイル対応 */
-  @media (max-width: 768px) {
-    .confirmation-screen {
-      padding: 10px;
-    }
-
-    .confirmation-content {
-      padding: 20px 15px;
-      max-height: 95vh;
-    }
-
-    .confirmation-title {
-      font-size: 16px;
-      margin-bottom: 20px;
-    }
-
-    .warning-text p {
-      font-size: 13px;
-    }
-
-    .guidelines-grid {
-      gap: 10px;
-    }
-
-    .guideline-text {
-      font-size: 11px;
-    }
-
-    .confirm-button {
-      padding: 12px 16px;
-      font-size: 15px;
-    }
-  }
-
-  /* 小さい画面への追加対応 */
-  @media (max-width: 480px) {
-    .confirmation-screen {
-      padding: 5px;
-    }
-
-    .confirmation-content {
-      padding: 15px 10px;
-      max-height: 98vh;
-      border-radius: 15px;
-    }
-
-    .confirmation-title {
-      font-size: 15px;
-      margin-bottom: 15px;
-    }
-
-    .warning-section {
-      padding: 12px;
-      margin-bottom: 20px;
-    }
-
-    .warning-text p {
-      font-size: 12px;
-    }
-
-    .guidelines-container {
-      margin-bottom: 20px;
-    }
-
-    .guidelines-grid {
-      gap: 8px;
-    }
-
-    .guideline-text {
-      font-size: 10px;
-    }
   }
 </style>
