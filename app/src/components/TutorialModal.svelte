@@ -18,28 +18,45 @@
       {
         title: '撮影の流れ',
         content: [
-          '撮影の流れをご説明します。下記ステップで進めていきます。',
+          '撮影の流れをご紹介します。下記ステップにて撮影を進めていきます。',
           '',
-          '1. 撮影前の注意事項を確認後に撮影を開始する',
-          '2. ガイドに従って、顔の位置や角度を調整する',
-          '3. 撮影できるまで姿勢を保持する',
-          '4. 撮影後、解析結果を確認し画像をアップロードする',
+          '1. 撮影前の注意点を確認の上、撮影を始めるボタンを押す',
+          '2. ガイドに従って、顔の位置や向きを調整する',
+          '3. 調整ができると自動で撮影が始まりアップロードされます',
+          '4. 施術後、施術後画像も同様に撮影します。',
+          '',
+          '施術後画像撮影時には、施術前画像の撮影時の位置ガイドが表示されます。そこに合わせて撮影を行ってください。',
         ],
-        hasImage: false,
+        hasImage: true,
         imageAlt: '',
         imageSrc: '',
+        hasFlowNumbers: true,
         buttons: [{ text: '次へ', action: 'next', variant: 'primary' }],
       },
       {
         title: '顔の位置の調整',
         content: [
-          '顔をPROガイドに合わせてください。',
-          '赤い枠が表示されます。顔の位置や角度を調整して',
-          'ください。',
+          '正確な顔のデータ取得のため、<strong>撮影は背筋を伸ばして、顎を引いて真顔で</strong>おこなってください',
+        ],
+        hasImage: true,
+        imageAlt: '顔の位置調整のガイド画面',
+        imageSrc: '/assets/images/tutorial/tutorial-0.png',
+        hasFlowNumbers: false,
+        buttons: [
+          { text: '戻る', action: 'prev', variant: 'secondary' },
+          { text: '次へ', action: 'next', variant: 'primary' },
+        ],
+      },
+      {
+        title: '顔の位置の調整',
+        content: [
+          '顔を円のガイドの中に入れてください。',
+          '鼻から伸びる棒は、顔の向きや傾きのガイドです。',
         ],
         hasImage: true,
         imageAlt: '顔の位置調整のガイド画面',
         imageSrc: '/assets/images/tutorial/tutorial-1.png',
+        hasFlowNumbers: false,
         buttons: [
           { text: '戻る', action: 'prev', variant: 'secondary' },
           { text: '次へ', action: 'next', variant: 'primary' },
@@ -48,12 +65,12 @@
       {
         title: '顔の左右の向きの合わせ方',
         content: [
-          '左右ピンクの点が中央に来るように調整されています。左右の',
-          '方向を整えながら、顔の向きを調整してください。',
+          '左右にピンクの矢印が表示されています。矢印の方向を見ながら、顔の向きを調整してください。',
         ],
         hasImage: true,
         imageAlt: '左右の向き調整ガイド',
         imageSrc: '/assets/images/tutorial/tutorial-2.png',
+        hasFlowNumbers: false,
         buttons: [
           { text: '戻る', action: 'prev', variant: 'secondary' },
           { text: '次へ', action: 'next', variant: 'primary' },
@@ -62,12 +79,12 @@
       {
         title: '顔の上下の向きの合わせ方',
         content: [
-          '上下にピンクの点が中央に来るように調整されています。左右の',
-          '方向を整えながら、顔の向きを調整してください。',
+          '上下にピンクの矢印が表示されています。矢印の方向を見ながら、顔の向きを調整してください。',
         ],
         hasImage: true,
         imageAlt: '上下の向き調整ガイド',
         imageSrc: '/assets/images/tutorial/tutorial-3.png',
+        hasFlowNumbers: false,
         buttons: [
           { text: '戻る', action: 'prev', variant: 'secondary' },
           { text: '次へ', action: 'next', variant: 'primary' },
@@ -76,26 +93,26 @@
       {
         title: '顔の傾きの合わせ方',
         content: [
-          '左右耳の上にピンクの点が中央に来るように調整されています。',
-          '頭部の傾きを調整しながら、顔の向きを調整してください。',
+          '左右斜め上にピンクの矢印が表示されています。矢印の方向を見ながら、顔の傾きを調整してください。',
         ],
         hasImage: true,
         imageAlt: '傾き調整ガイド',
         imageSrc: '/assets/images/tutorial/tutorial-4.png',
+        hasFlowNumbers: false,
         buttons: [
           { text: '戻る', action: 'prev', variant: 'secondary' },
           { text: '次へ', action: 'next', variant: 'primary' },
         ],
       },
       {
-        title: '撮影準備',
+        title: '顔の表情',
         content: [
-          '撮影準備が整いました。顔の位置を調整してから',
-          '真正面を向いてください。撮影が始まります。',
+          '位置調整が終わったら、顔の表情を笑顔ではなく真顔にしてください。撮影が始まります。',
         ],
         hasImage: true,
-        imageAlt: '撮影準備完了画面',
+        imageAlt: '顔の表情画面',
         imageSrc: '/assets/images/tutorial/tutorial-5.png',
+        hasFlowNumbers: false,
         buttons: [
           { text: '戻る', action: 'prev', variant: 'secondary' },
           { text: '撮影する', action: 'complete', variant: 'primary' },
@@ -113,6 +130,7 @@
         hasImage: false,
         imageAlt: '',
         imageSrc: '',
+        hasFlowNumbers: false,
         buttons: [{ text: '撮影開始', action: 'complete', variant: 'primary' }],
       },
     ],
@@ -194,44 +212,104 @@
       <div class="tutorial-content">
         <h2 class="tutorial-title">{currentPageData.title}</h2>
 
-        {#if currentPageData.hasImage && currentPageData.imageSrc}
-          <div class="tutorial-image-container">
-            <img
-              src={currentPageData.imageSrc}
-              alt={currentPageData.imageAlt}
-              class="tutorial-image"
-            />
+        {#if currentPageData.hasFlowNumbers}
+          <!-- Description text for flow page -->
+          <div class="tutorial-description">
+            <p>{currentPageData.content[0]}</p>
           </div>
-        {:else if currentPageData.hasImage}
-          <div class="tutorial-image-container">
-            <div class="tutorial-image-placeholder">
-              <div class="image-icon">📷</div>
-              <p class="image-alt">{currentPageData.imageAlt}</p>
+          <!-- Flow steps with images -->
+          <div class="flow-steps">
+            <div class="flow-item">
+              <img
+                src="/assets/images/tutorial/flow-number-1.png"
+                alt="1"
+                class="flow-number"
+              />
+              <p class="flow-text">
+                撮影前の注意点を確認の上、撮影を始めるボタンを押す
+              </p>
+            </div>
+            <img
+              src="/assets/images/tutorial/flow-under-arrow.png"
+              alt="arrow"
+              class="flow-arrow"
+            />
+
+            <div class="flow-item">
+              <img
+                src="/assets/images/tutorial/flow-number-2.png"
+                alt="2"
+                class="flow-number"
+              />
+              <p class="flow-text">ガイドに従って、顔の位置や向きを調整する</p>
+            </div>
+            <img
+              src="/assets/images/tutorial/flow-under-arrow.png"
+              alt="arrow"
+              class="flow-arrow"
+            />
+
+            <div class="flow-item">
+              <img
+                src="/assets/images/tutorial/flow-number-3.png"
+                alt="3"
+                class="flow-number"
+              />
+              <p class="flow-text">
+                調整ができると自動で撮影が始まりアップロードされます
+              </p>
+            </div>
+            <img
+              src="/assets/images/tutorial/flow-under-arrow.png"
+              alt="arrow"
+              class="flow-arrow"
+            />
+
+            <div class="flow-item">
+              <img
+                src="/assets/images/tutorial/flow-number-4.png"
+                alt="4"
+                class="flow-number"
+              />
+              <p class="flow-text">施術後、施術後画像も同様に撮影します。</p>
             </div>
           </div>
+
+          <!-- Bottom description -->
+          <div class="tutorial-bottom-description">
+            <p>
+              施術後画像撮影時には、施術前画像の撮影時の位置ガイドが表示されます。そこに合わせて撮影を行ってください。
+            </p>
+          </div>
+        {:else}
+          {#if currentPageData.hasImage && currentPageData.imageSrc}
+            <div class="tutorial-image-container">
+              <img
+                src={currentPageData.imageSrc}
+                alt={currentPageData.imageAlt}
+                class="tutorial-image"
+              />
+            </div>
+          {:else if currentPageData.hasImage}
+            <div class="tutorial-image-container">
+              <div class="tutorial-image-placeholder">
+                <div class="image-icon">📷</div>
+                <p class="image-alt">{currentPageData.imageAlt}</p>
+              </div>
+            </div>
+          {/if}
+
+          <!-- Description text below image -->
+          <div class="tutorial-text">
+            {#each currentPageData.content as line}
+              {#if line === ''}
+                <br />
+              {:else}
+                <p>{@html line}</p>
+              {/if}
+            {/each}
+          </div>
         {/if}
-
-        <div class="tutorial-text">
-          {#each currentPageData.content as line}
-            {#if line === ''}
-              <br />
-            {:else}
-              <p>{line}</p>
-            {/if}
-          {/each}
-        </div>
-
-        <!-- Page indicator -->
-        <div class="page-indicator">
-          {#each Array(totalPages) as _, index}
-            <button
-              class="page-dot"
-              class:active={index === currentPage}
-              on:click={() => (currentPage = index)}
-              aria-label="Page {index + 1}"
-            ></button>
-          {/each}
-        </div>
 
         <!-- Action buttons -->
         <div
@@ -245,6 +323,18 @@
             >
               {button.text}
             </button>
+          {/each}
+        </div>
+
+        <!-- Page indicator -->
+        <div class="page-indicator">
+          {#each Array(totalPages) as _, index}
+            <button
+              class="page-dot"
+              class:active={index === currentPage}
+              on:click={() => (currentPage = index)}
+              aria-label="Page {index + 1}"
+            ></button>
           {/each}
         </div>
       </div>
@@ -278,17 +368,21 @@
   }
 
   .tutorial-content {
-    padding: 20px;
+    padding: 24px;
     overflow-y: auto;
     max-height: 90vh;
     text-align: center;
   }
 
   .tutorial-title {
-    font-size: 16px;
-    font-weight: 600;
+    font-weight: 700;
+    font-style: bold;
+    font-size: 18px;
+    line-height: 150%;
+    letter-spacing: 0px;
+    text-align: center;
     color: #333;
-    margin: 0 0 15px 0;
+    margin: 0 0 30px 0;
   }
 
   .tutorial-image-container {
@@ -326,7 +420,11 @@
 
   .image-alt {
     color: #6c757d;
+    font-weight: 400;
+    font-style: regular;
     font-size: 12px;
+    line-height: 150%;
+    letter-spacing: 0px;
     margin: 0;
     text-align: center;
     padding: 0 10px;
@@ -334,21 +432,29 @@
 
   .tutorial-text {
     text-align: left;
-    line-height: 1.6;
+    line-height: 150%;
     color: #333;
     margin-bottom: 20px;
+    font-weight: 400;
+    font-style: regular;
     font-size: 14px;
+    letter-spacing: 0px;
   }
 
   .tutorial-text p {
     margin: 0 0 8px 0;
+    font-weight: 400;
+    font-style: regular;
+    font-size: 14px;
+    line-height: 150%;
+    letter-spacing: 0px;
   }
 
   .page-indicator {
     display: flex;
     justify-content: center;
     gap: 8px;
-    margin: 20px 0;
+    margin: 20px 0 0 0;
   }
 
   .page-dot {
@@ -388,11 +494,14 @@
   .tutorial-button {
     padding: 15px 20px;
     border-radius: 25px;
-    font-weight: 600;
+    font-weight: 700;
+    font-style: bold;
     cursor: pointer;
     transition: all 0.2s ease;
     border: none;
     font-size: 16px;
+    line-height: 150%;
+    letter-spacing: 0px;
     min-width: 100px;
   }
 
@@ -407,13 +516,80 @@
   }
 
   .tutorial-button.secondary {
-    background: #f8f9fa;
-    color: #6c757d;
+    background: #d6df22;
+    color: #333;
     border: 1px solid #dee2e6;
   }
 
   .tutorial-button.secondary:hover {
-    background: #e9ecef;
+    background: #c5ce1f;
     transform: translateY(-1px);
+  }
+
+  /* New styles for flow tutorial */
+  .tutorial-description {
+    margin-bottom: 24px;
+  }
+
+  .tutorial-description p {
+    font-weight: 400;
+    font-style: regular;
+    font-size: 14px;
+    line-height: 150%;
+    letter-spacing: 0px;
+    color: #333;
+    margin: 0;
+    text-align: left;
+  }
+
+  .flow-steps {
+    margin-bottom: 24px;
+  }
+
+  .flow-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
+  }
+
+  .flow-number {
+    width: 32px;
+    height: 32px;
+    transform: rotate(0deg);
+    flex-shrink: 0;
+  }
+
+  .flow-text {
+    font-weight: 700;
+    font-style: bold;
+    font-size: 14px;
+    line-height: 150%;
+    letter-spacing: 0px;
+    color: #333;
+    margin: 0;
+    text-align: left;
+  }
+
+  .flow-arrow {
+    width: 40px;
+    height: 16px;
+    margin: 8px auto;
+    display: block;
+  }
+
+  .tutorial-bottom-description {
+    margin-bottom: 24px;
+  }
+
+  .tutorial-bottom-description p {
+    font-weight: 400;
+    font-style: regular;
+    font-size: 14px;
+    line-height: 150%;
+    letter-spacing: 0px;
+    color: #333;
+    margin: 0;
+    text-align: left;
   }
 </style>
