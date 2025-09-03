@@ -35,6 +35,9 @@ export class BeforeCameraController {
    * @param result - カメラ撮影結果
    */
   private createBeforeCaptureData(result: CameraCaptureResult): BeforeCaptureData {
+    // correctionResultからcorrectedImageUrlを除外
+    const sanitizedCorrectionResult = this.sanitizeCorrectionResult(result.correctionResult);
+
     return {
       pose: {
         roll: result.pose?.roll || 0,
@@ -45,7 +48,20 @@ export class BeforeCameraController {
         faceSize: result.pose?.faceSize,
       },
       landmarks: Array.isArray(result.landmarks) ? result.landmarks : [],
-      correctionResult: result.correctionResult,
+      correctionResult: sanitizedCorrectionResult,
     };
+  }
+
+  /**
+   * correctionResultからcorrectedImageUrlを除外
+   * @param correctionResult - 元のcorrectionResult
+   */
+  private sanitizeCorrectionResult(correctionResult: any): any {
+    if (!correctionResult) return undefined;
+    
+    // correctedImageUrlを除外した新しいオブジェクトを作成
+    const { correctedImageUrl, ...sanitizedResult } = correctionResult;
+    
+    return sanitizedResult;
   }
 }

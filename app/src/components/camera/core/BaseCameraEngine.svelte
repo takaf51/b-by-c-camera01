@@ -122,7 +122,7 @@
         currentFaceLandmarks
       );
 
-      // 補正済み画像で結果を作成
+      // 補正済み画像をメインのimageDataとして使用
       const result: CameraCaptureResult = {
         imageData: correctionResult.correctedImageUrl, // 補正済み画像を使用
         landmarks: currentFaceLandmarks,
@@ -194,14 +194,14 @@
         landmarks
       );
 
-      // 補正済み画像で結果を作成
+      // 補正済み画像をメインのimageDataとして使用
       const result: CameraCaptureResult = {
         imageData: correctionResult.correctedImageUrl, // 補正済み画像を使用
         landmarks,
         pose: currentPose,
         timestamp: Date.now(),
         mode,
-        correctionResult, // correctionResultを追加
+        correctionResult,
       };
 
       previewImage = correctionResult.correctedImageUrl; // プレビューも補正済み画像

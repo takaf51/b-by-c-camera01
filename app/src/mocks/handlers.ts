@@ -406,8 +406,25 @@ export const cameraHandlers = [
       ],
       timestamp: new Date().toISOString(),
       correctionResult: { 
-        correctedImageUrl: "data:image/jpeg;base64,/9j/corrected-mock-image",
-        transformMatrix: [[1, 0, 0], [0, 1, 0], [0, 0, 1]]
+        transformMatrix: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
+        correctionInfo: {
+          scaleX: 1.0,
+          scaleY: 1.0,
+          skewX: 0.0,
+          skewY: 0.0,
+          translateX: 0.0,
+          translateY: 0.0
+        },
+        originalPose: {
+          roll: 1.2,
+          pitch: -0.5,
+          yaw: 0.3
+        },
+        estimatedCorrectedPose: {
+          roll: 0.0,
+          pitch: 0.0,
+          yaw: 0.0
+        }
       }
     };
 
@@ -446,6 +463,24 @@ export const cameraHandlers = [
 
     try {
       const formData = await request.formData();
+      
+      // FormDataの詳細ログを出力
+      console.log('=== FormData Debug Info ===');
+      console.log('FormData keys:', Array.from(formData.keys()));
+      for (const [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`${key}:`, {
+            name: value.name,
+            size: value.size,
+            type: value.type,
+            lastModified: value.lastModified
+          });
+        } else {
+          console.log(`${key}:`, value);
+        }
+      }
+      console.log('=== End FormData Debug ===');
+      
       const image = formData.get('image') as File;
       const kind = formData.get('kind') as string; // 'before' or 'after'
       const reportIdParam = formData.get('plan_report_id') as string;
