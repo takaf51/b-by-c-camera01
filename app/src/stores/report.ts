@@ -3,10 +3,11 @@
  * レポート関連の状態管理
  */
 
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import { createReportUseCase } from '../usecases/ReportUseCase';
 import { createReportRepository } from '../repositories/ReportRepository';
 import { createHttpClientWithExternalConfig } from '../lib/http';
+import { externalConfig } from './externalConfig';
 import type { ReportImage, FacePoints, BeforeCaptureData, ReportError } from '../domain/report';
 
 // =============================================================================
@@ -78,10 +79,14 @@ function createReportStore() {
           points: image.points,
         };
 
+        // 外部設定からplanReportIdを取得し、既存のreportIdより優先
+        const config = get(externalConfig);
+        const reportId = config.planReportId || initialState.reportId || undefined;
+        
         const result = await reportUseCase.submitReport(
           programId,
           domainImage,
-          initialState.reportId || undefined
+          reportId
         );
 
         update(state => ({

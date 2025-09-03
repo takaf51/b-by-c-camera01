@@ -13,6 +13,8 @@ import type {
 } from '../domain/report';
 import { validateReportImage, validateFacePoints, validateBeforeCaptureData } from '../domain/report';
 import type { ReportRepository } from '../repositories/ReportRepository';
+import { get } from 'svelte/store';
+import { externalConfig } from '../stores/externalConfig';
 
 // =============================================================================
 // UseCase Interface
@@ -87,10 +89,14 @@ export class ReportUseCaseImpl implements ReportUseCase {
     }
 
     try {
+      // 外部設定からplanReportIdを取得し、existingReportIdより優先
+      const config = get(externalConfig);
+      const reportId = config.planReportId || existingReportId;
+      
       const request: ReportCreateRequest = {
         programId: programId.trim(),
         image,
-        reportId: existingReportId,
+        reportId,
       };
 
       const result = await this.reportRepository.createReport(request);
