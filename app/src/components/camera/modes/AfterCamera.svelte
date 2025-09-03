@@ -19,6 +19,7 @@
   import type { CameraCaptureResult } from '../../../types/camera';
   import type { ReferenceData } from '../../../lib/PoseReference';
   import type { PoseComparison } from '../../../lib/PoseComparator';
+  import type { ReportCreateResponse } from '../../../domain/report';
 
   const dispatch = createEventDispatcher();
 
@@ -162,9 +163,10 @@
       // Controller経由で処理し、レスポンスを取得
       const response = await controller.handleCapture(result, programId);
 
-      // After撮影後は return_base_url にリダイレクト
+      // After撮影後はパラメータ付きで詳細ページURLにリダイレクト
       if (response.return_base_url) {
-        window.location.href = response.return_base_url;
+        const redirectUrl = buildRedirectUrl(response);
+        window.location.href = redirectUrl;
       }
     } catch (error) {
       // エラー時の処理
@@ -172,6 +174,28 @@
       onError(err);
       dispatch('error', { error: err });
     }
+  }
+
+  /**
+   * リダイレクトURLを組み立て
+   */
+  function buildRedirectUrl(response: ReportCreateResponse): string {
+    let url = response.return_base_url;
+
+    // 共通パラメータ追加
+    const separator = url.includes('?') ? '&' : '?';
+    url += `${separator}day=${response.day}`;
+
+    // 条件に応じてパラメータ追加
+    if (response.last_image_uploaded === true) {
+      url += '&last_image_uploaded=1';
+    }
+
+    if (response.score_fix_immediately === true) {
+      url += '&score_fix_immediately=1';
+    }
+
+    return url;
   }
 
   function handleFaceDetected(event: CustomEvent) {

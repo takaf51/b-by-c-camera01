@@ -5,11 +5,13 @@
   import { createEventDispatcher } from 'svelte';
   import BaseCameraEngine from '../core/BaseCameraEngine.svelte';
   import BeforePoseGuidance from '../guidance/BeforePoseGuidance.svelte';
+  import VideoRecommendationModal from '../../ui/modals/VideoRecommendationModal.svelte';
   import { BeforeCameraController } from '../../../controllers/BeforeCameraController';
   import { createReportUseCase } from '../../../usecases/ReportUseCase';
   import { createReportRepository } from '../../../repositories/ReportRepository';
   import { createHttpClientWithExternalConfig } from '../../../lib/http';
   import type { CameraCaptureResult } from '../../../types/camera';
+  import type { ReportCreateResponse } from '../../../domain/report';
 
   const dispatch = createEventDispatcher();
 
@@ -43,6 +45,10 @@
   // Face detection data
   let currentGuidance: any = null;
 
+  // Modal state
+  let showVideoRecommendationModal = false;
+  let pendingResponse: ReportCreateResponse | null = null;
+
   // Public methods
   export async function startCamera(): Promise<void> {
     if (baseCameraEngine) {
@@ -74,13 +80,70 @@
       // Controller経由で処理し、レスポンスを取得
       const response = await controller.handleCapture(result, programId);
 
-      // Before撮影後は return_base_url にリダイレクト
-      window.location.href = response.return_base_url;
+      // 仕様に基づく条件分岐
+      if (response.kind === 'before' && response.new_subscription === true) {
+        // 初回のBefore送信後なので「続けて動画を見て施術してみましょう」メッセージダイアログを表示
+        pendingResponse = response;
+        showVideoRecommendationModal = true;
+      } else {
+        // その他の場合はパラメータ付きで詳細ページURLにリダイレクト
+        const redirectUrl = buildRedirectUrl(response);
+        window.location.href = redirectUrl;
+      }
     } catch (error) {
       // エラー時の処理
       const err = error instanceof Error ? error : new Error(String(error));
       onError(err);
       dispatch('error', { error: err });
+    }
+  }
+
+  /**
+   * リダイレクトURLを組み立て
+   */
+  function buildRedirectUrl(response: ReportCreateResponse): string {
+    let url = response.return_base_url;
+
+    // 共通パラメータ追加
+    const separator = url.includes('?') ? '&' : '?';
+    url += `${separator}day=${response.day}`;
+
+    // 条件に応じてパラメータ追加
+    if (response.last_image_uploaded === true) {
+      url += '&last_image_uploaded=1';
+    }
+
+    if (response.score_fix_immediately === true) {
+      url += '&score_fix_immediately=1';
+    }
+
+    return url;
+  }
+
+  /**
+   * 動画推奨モーダルでの「後で見る」選択
+   */
+  function handleWatchLater() {
+    showVideoRecommendationModal = false;
+    if (pendingResponse) {
+      window.location.href = pendingResponse.return_base_url;
+      pendingResponse = null;
+    }
+  }
+
+  /**
+   * 動画推奨モーダルでの「視聴する」選択
+   */
+  function handleWatchNow(event: CustomEvent) {
+    showVideoRecommendationModal = false;
+    if (pendingResponse) {
+      const { day } = event.detail;
+      const separator = pendingResponse.return_base_url.includes('?')
+        ? '&'
+        : '?';
+      const url = `${pendingResponse.return_base_url}${separator}show_dialog=1&day=${day}`;
+      window.location.href = url;
+      pendingResponse = null;
     }
   }
 
@@ -129,3 +192,11 @@
     guidance={currentGuidance}
   />
 </BaseCameraEngine>
+
+<!-- 動画推奨モーダル -->
+<VideoRecommendationModal
+  isOpen={showVideoRecommendationModal}
+  day={pendingResponse?.day || 1}
+  on:watchLater={handleWatchLater}
+  on:watchNow={handleWatchNow}
+/>
