@@ -20,7 +20,7 @@
   export let autoCapture: boolean = true;
 
   // Event handlers
-  export let onCapture: (result: CameraCaptureResult) => void = () => {};
+
   export let onCancel: () => void = () => {};
   export let onError: (error: Error) => void = () => {};
 
@@ -73,14 +73,7 @@
       const response = await controller.handleCapture(result, programId);
 
       // Before撮影後は return_base_url にリダイレクト
-      if (response.return_base_url) {
-        window.location.href = response.return_base_url;
-        return; // リダイレクト後は処理を終了
-      }
-
-      // return_base_url がない場合は従来通りの処理
-      onCapture(result);
-      dispatch('capture', { result });
+      window.location.href = response.return_base_url;
     } catch (error) {
       // エラー時の処理
       const err = error instanceof Error ? error : new Error(String(error));
