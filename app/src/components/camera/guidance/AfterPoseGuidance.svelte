@@ -78,31 +78,6 @@
   }
 </script>
 
-<!-- Before参照情報表示（After撮影時のみ） -->
-<div class="before-reference-info">
-  {#if beforeReference}
-    <div class="reference-status has-reference">
-      <div class="reference-icon">📋</div>
-      <div class="reference-text">
-        <div class="reference-title">Before姿勢参照中</div>
-        {#if currentComparison}
-          <div class="match-percentage">
-            マッチ度: {currentComparison.matchPercentage}%
-          </div>
-        {/if}
-      </div>
-    </div>
-  {:else}
-    <div class="reference-status no-reference">
-      <div class="reference-icon">⚠️</div>
-      <div class="reference-text">
-        <div class="reference-title">Before参照なし</div>
-        <div class="reference-subtitle">通常モードで撮影中</div>
-      </div>
-    </div>
-  {/if}
-</div>
-
 <!-- 姿勢ガイダンスメッセージ -->
 {#if showPoseGuidance}
   <div class="pose-guidance">
