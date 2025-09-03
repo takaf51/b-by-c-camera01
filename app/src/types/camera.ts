@@ -19,7 +19,7 @@ export interface CameraConfig {
   onPoseCompare?: (pose: { roll: number; pitch: number; yaw: number }) => any; // PoseComparison
 }
 
-export type CameraFlowType = 'tutorial' | 'skipTutorial' | 'afterOnly';
+
 
 export type FlowStep = 'confirmation' | 'guide' | 'camera' | 'upload-complete';
 

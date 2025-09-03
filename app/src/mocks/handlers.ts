@@ -527,7 +527,7 @@ export const cameraHandlers = [
         last_image_uploaded: kind === 'after', // after撮影時は最後の画像
         score_fix_immediately: Math.random() > 0.7, // 30%の確率でスコア即時確定
         day: Math.floor(Math.random() * 30) + 1, // 1-30日のランダム
-        return_base_url: `#/plan/detail/${reportId}` // ローカルのProgramDetailページにリダイレクト
+        return_base_url: `http://localhost:3000/` // camera.htmlはシンプルなページなので、トップページに戻る
       };
 
 

@@ -24,12 +24,14 @@
   export let onCancel: () => void = () => {};
   export let onError: (error: Error) => void = () => {};
 
-  // Controller setup
+  // Controller setup - 環境変数を優先してエンドポイントを決定
   const httpClient = createHttpClientWithExternalConfig(
     () => (window as any).CameraSettings?.API_TOKEN || null,
     () => import.meta.env.VITE_PROGRAM_CODE,
     () => (window as any).CameraSettings?.PLAN_CODE || 'MOCK_PLAN_CODE',
-    (window as any).CameraSettings?.API_ENDPOINT
+    (window as any).CameraSettings?.API_ENDPOINT ||
+      import.meta.env.VITE_API_BASE_URL ||
+      ''
   );
   const reportRepository = createReportRepository(httpClient);
   const reportUseCase = createReportUseCase(reportRepository);

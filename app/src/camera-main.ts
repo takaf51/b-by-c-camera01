@@ -11,7 +11,7 @@ import { initializeExternalConfig } from './stores/externalConfig';
 async function initializeMocks() {
   const apiProfile = import.meta.env.VITE_API_PROFILE;
 
-  // 開発環境では常にMSWを有効にする
+  // 開発環境またはmockプロファイルでMSWを有効にする
   if (import.meta.env.DEV || apiProfile === 'mock') {
     const { startMocking } = await import('./mocks/browser');
     await startMocking();
@@ -26,14 +26,14 @@ async function initializeCameraApp() {
   // MSW初期化（必要に応じて）
   await initializeMocks();
   
-  console.log('📱 Camera-only app initializing...');
+
 
   // カメラ専用アプリのマウント
   const app = mount(CameraOnlyApp, {
     target: document.getElementById('app')!,
   });
 
-  console.log('✅ Camera-only app mounted successfully');
+
   return app;
 }
 

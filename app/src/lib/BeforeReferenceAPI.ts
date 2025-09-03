@@ -62,10 +62,11 @@ export async function fetchBeforePoints(
   apiEndpoint?: string
 ): Promise<ReferenceData | null> {
   try {
-    // APIエンドポイントの決定
+    // APIエンドポイントの決定（環境変数を優先）
     const endpoint = apiEndpoint || 
       (window as any).CameraSettings?.API_ENDPOINT || 
-      'https://dev-api.face-matrix.com';
+      import.meta.env.VITE_API_BASE_URL || 
+      '';
 
     const url = `${endpoint}/plan/report/getPoints`;
 
@@ -181,10 +182,11 @@ export async function fetchBeforeInfo(
   apiToken?: string
 ): Promise<ReferenceData | null> {
   try {
-    // APIエンドポイントの決定（優先順位: 引数 > window設定 > デフォルト）
+    // APIエンドポイントの決定（環境変数を優先）
     const endpoint = apiEndpoint || 
       (window as any).CameraSettings?.API_ENDPOINT || 
-      'https://dev-api.face-matrix.com';
+      import.meta.env.VITE_API_BASE_URL || 
+      '';
     
     // APIトークンの決定
     const token = apiToken || 
@@ -250,9 +252,11 @@ export async function saveBeforeInfo(
   apiToken?: string
 ): Promise<boolean> {
   try {
+    // APIエンドポイントの決定（環境変数を優先）
     const endpoint = apiEndpoint || 
       (window as any).CameraSettings?.API_ENDPOINT || 
-      'https://dev-api.face-matrix.com';
+      import.meta.env.VITE_API_BASE_URL || 
+      '';
     
     const token = apiToken || 
       (window as any).CameraSettings?.API_TOKEN || 

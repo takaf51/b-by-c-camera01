@@ -34,12 +34,14 @@
   export let onCancel: () => void = () => {};
   export let onError: (error: Error) => void = () => {};
 
-  // Controller setup
+  // Controller setup - 環境変数を優先してエンドポイントを決定
   const httpClient = createHttpClientWithExternalConfig(
     () => (window as any).CameraSettings?.API_TOKEN || null,
     () => import.meta.env.VITE_PROGRAM_CODE,
     () => (window as any).CameraSettings?.PLAN_CODE || 'MOCK_PLAN_CODE',
-    (window as any).CameraSettings?.API_ENDPOINT
+    (window as any).CameraSettings?.API_ENDPOINT ||
+      import.meta.env.VITE_API_BASE_URL ||
+      ''
   );
   const reportRepository = createReportRepository(httpClient);
   const reportUseCase = createReportUseCase(reportRepository);
@@ -89,15 +91,24 @@
       '2025-07-29-trial'; // デフォルト
 
     try {
-      // 新しいAPI仕様でBefore情報を取得（HttpClient使用）
-      let beforeInfo = await fetchBeforePointsWithHttpClient(
-        planCode,
-        httpClient
-      );
+      let beforeInfo = null;
 
-      // 新しいAPIで取得できない場合は旧APIを試行
-      if (!beforeInfo && planReportId) {
-        beforeInfo = await fetchBeforeInfo(planReportId);
+      // MSW環境では新しいAPI仕様を使用、本番環境では設定に応じて分岐
+      if (import.meta.env.VITE_API_PROFILE === 'mock') {
+        // MSW環境: HttpClientを使って新しいAPI仕様でBefore情報を取得
+        beforeInfo = await fetchBeforePointsWithHttpClient(
+          planCode,
+          httpClient
+        );
+      } else {
+        // 本番環境: 新しいAPIを試してから旧APIにフォールバック
+        beforeInfo = await fetchBeforePointsWithHttpClient(
+          planCode,
+          httpClient
+        );
+        if (!beforeInfo && planReportId) {
+          beforeInfo = await fetchBeforeInfo(planReportId);
+        }
       }
 
       if (beforeInfo) {
@@ -152,7 +163,9 @@
       const response = await controller.handleCapture(result, programId);
 
       // After撮影後は return_base_url にリダイレクト
-      window.location.href = response.return_base_url;
+      if (response.return_base_url) {
+        window.location.href = response.return_base_url;
+      }
     } catch (error) {
       // エラー時の処理
       const err = error instanceof Error ? error : new Error(String(error));

@@ -34,7 +34,7 @@ export async function startMocking() {
         return 'bypass';
       }
 
-      // API関連パス以外はバイパス（認証パスは除く）
+      // API関連パス以外はバイパス（認証パスとplan関連パスは除く）
       if (
         !url.includes('/api/') &&
         !url.includes('/plan/') &&

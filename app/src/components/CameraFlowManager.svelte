@@ -7,17 +7,12 @@
   import UploadCompleteModal from './ui/modals/UploadCompleteModal.svelte';
   import TutorialModal from './ui/modals/TutorialModal.svelte';
 
-  import type {
-    CameraCaptureResult,
-    CameraFlowType,
-    FlowStep,
-  } from '../types/camera';
+  import type { CameraCaptureResult, FlowStep } from '../types/camera';
 
   const dispatch = createEventDispatcher();
 
   // Props
   export let programId: string = '';
-  export let flow: CameraFlowType = 'tutorial';
   export let planReportId: string | null = null;
   export let kind: 'before' | 'after' | null = null;
 
@@ -42,13 +37,8 @@
   function initializeFlow() {
     if (isInitialized) return;
 
-    if (planReportId) {
-      // チュートリアル受講済み
-      flow = 'skipTutorial';
-    }
+    // After撮影の場合は現在のモードを設定
     if (kind === 'after') {
-      // アフター撮影のみ
-      flow = 'afterOnly';
       currentMode = 'after';
     }
 
@@ -76,11 +66,20 @@
     }
   }
 
-  // チュートリアル表示判定ロジック（外部から上書き可能）
+  // チュートリアル表示判定ロジック（シンプルで明確）
   function shouldShowTutorial(): boolean {
-    // デフォルトロジック - 一時的にtrueにして動作確認
-    // 実際の条件は外部から制御される予定
-    return true; // 一時的に常に表示
+    // After撮影時はチュートリアルをスキップ
+    if (kind === 'after') {
+      return false;
+    }
+
+    // Before撮影でも、チュートリアル受講済み（planReportIdあり）の場合はスキップ
+    if (planReportId) {
+      return false;
+    }
+
+    // その他の場合（初回Before撮影等）はチュートリアルを表示
+    return true;
   }
 
   // チュートリアル完了時の処理（撮影するボタンクリック時）
@@ -151,11 +150,18 @@
       currentCamera.stopCamera();
     }
 
-    // Navigate back
-    if (programId) {
-      push(`/plan/detail/${programId}`);
+    // カメラ画面からは確認画面に戻る
+    if (currentStep === 'camera') {
+      currentStep = 'confirmation';
     } else {
-      push('/plan/list');
+      // 確認画面から戻る場合は、アプリケーションの種類によって処理を分岐
+      // camera.htmlの場合（programIdがない、またはroute定義がない場合）はページリロード
+      if (!programId || window.location.pathname.includes('camera.html')) {
+        window.location.reload();
+      } else {
+        // 通常のSPAアプリケーションの場合
+        push(`/plan/detail/${programId}`);
+      }
     }
 
     dispatch('cancel');
