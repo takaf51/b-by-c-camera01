@@ -8,10 +8,10 @@
     type StoreProgram,
   } from '../stores/program';
   import { auth } from '../stores/auth';
-  import Header from '../components/Header.svelte';
-  import Button from '../components/Button.svelte';
-  import Loading from '../components/Loading.svelte';
-  import ErrorBanner from '../components/ErrorBanner.svelte';
+  import Header from '../components/ui/common/Header.svelte';
+  import Button from '../components/ui/common/Button.svelte';
+  import Loading from '../components/ui/common/Loading.svelte';
+  import ErrorBanner from '../components/ui/common/ErrorBanner.svelte';
 
   // Reactive store subscriptions
   $: programs = $programStore.programs;

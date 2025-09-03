@@ -6,8 +6,8 @@
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
   import FaceDetection from './FaceDetection.svelte';
   import ImageCapture from './ImageCapture.svelte';
-  import { AffineCorrection } from '../lib/AffineCorrection';
-  import type { CameraCaptureResult } from '../types/camera';
+  import { AffineCorrection } from '../../../lib/AffineCorrection';
+  import type { CameraCaptureResult } from '../../../types/camera';
 
   const dispatch = createEventDispatcher();
 

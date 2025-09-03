@@ -1,11 +1,11 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   import { push } from 'svelte-spa-router';
-  import ConfirmationScreen from './ConfirmationScreen.svelte';
-  import BeforeCamera from './BeforeCamera.svelte';
-  import AfterCamera from './AfterCamera.svelte';
-  import UploadCompleteModal from './UploadCompleteModal.svelte';
-  import TutorialModal from './TutorialModal.svelte';
+  import ConfirmationScreen from './ui/screens/ConfirmationScreen.svelte';
+  import BeforeCamera from './camera/modes/BeforeCamera.svelte';
+  import AfterCamera from './camera/modes/AfterCamera.svelte';
+  import UploadCompleteModal from './ui/modals/UploadCompleteModal.svelte';
+  import TutorialModal from './ui/modals/TutorialModal.svelte';
 
   import type {
     CameraCaptureResult,
@@ -226,7 +226,6 @@
         mirrorMode={true}
         showMesh={true}
         autoCapture={true}
-        onCapture={handleCameraCapture}
         onCancel={handleCancel}
         onError={handleCameraError}
       />
@@ -238,7 +237,6 @@
         mirrorMode={true}
         showMesh={true}
         autoCapture={true}
-        onCapture={handleCameraCapture}
         onCancel={handleCancel}
         onError={handleCameraError}
       />

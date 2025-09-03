@@ -4,7 +4,7 @@
     reportStore,
     type CameraReportImage,
     type CameraFacePoints,
-  } from '../stores/report';
+  } from '../../../stores/report';
 
   const dispatch = createEventDispatcher();
 

@@ -2,9 +2,12 @@
   AfterPoseGuidance - After撮影時のBefore参照型姿勢ガイダンスUI
 -->
 <script lang="ts">
-  import type { ReferenceData } from '../lib/PoseReference';
-  import type { PoseComparison } from '../lib/PoseComparator';
-  import { PoseGuidanceDirection, PoseGuidanceType } from '../types/camera';
+  import type { ReferenceData } from '../../../lib/PoseReference';
+  import type { PoseComparison } from '../../../lib/PoseComparator';
+  import {
+    PoseGuidanceDirection,
+    PoseGuidanceType,
+  } from '../../../types/camera';
 
   // Props
   export let pose: any = null;

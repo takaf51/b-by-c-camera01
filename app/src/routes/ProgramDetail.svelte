@@ -7,11 +7,11 @@
     programDetailError,
     currentProgramDetail,
   } from '../stores/program';
-  import Header from '../components/Header.svelte';
-  import Button from '../components/Button.svelte';
-  import Loading from '../components/Loading.svelte';
-  import ErrorBanner from '../components/ErrorBanner.svelte';
-  import Layout from '../components/Layout.svelte';
+  import Header from '../components/ui/common/Header.svelte';
+  import Button from '../components/ui/common/Button.svelte';
+  import Loading from '../components/ui/common/Loading.svelte';
+  import ErrorBanner from '../components/ui/common/ErrorBanner.svelte';
+  import Layout from '../components/ui/common/Layout.svelte';
 
   export let params: { id: string } = { id: '' };
 

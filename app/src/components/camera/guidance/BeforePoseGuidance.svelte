@@ -2,7 +2,10 @@
   BeforePoseGuidance - Before撮影時の姿勢ガイダンスUI
 -->
 <script lang="ts">
-  import { PoseGuidanceDirection, PoseGuidanceType } from '../types/camera';
+  import {
+    PoseGuidanceDirection,
+    PoseGuidanceType,
+  } from '../../../types/camera';
 
   // Props
   export const pose: any = null;

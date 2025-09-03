@@ -3,22 +3,22 @@
 -->
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
-  import BaseCameraEngine from './BaseCameraEngine.svelte';
-  import AfterPoseGuidance from './AfterPoseGuidance.svelte';
-  import { AfterCameraController } from '../controllers/AfterCameraController';
-  import { createReportUseCase } from '../usecases/ReportUseCase';
-  import { createReportRepository } from '../repositories/ReportRepository';
-  import { createHttpClientWithExternalConfig } from '../lib/http';
+  import BaseCameraEngine from '../core/BaseCameraEngine.svelte';
+  import AfterPoseGuidance from '../guidance/AfterPoseGuidance.svelte';
+  import { AfterCameraController } from '../../../controllers/AfterCameraController';
+  import { createReportUseCase } from '../../../usecases/ReportUseCase';
+  import { createReportRepository } from '../../../repositories/ReportRepository';
+  import { createHttpClientWithExternalConfig } from '../../../lib/http';
   import {
     fetchBeforePointsWithHttpClient,
     fetchBeforePoints,
     fetchBeforeInfo,
-  } from '../lib/BeforeReferenceAPI';
-  import { PoseReference } from '../lib/PoseReference';
-  import { PoseComparator } from '../lib/PoseComparator';
-  import type { CameraCaptureResult } from '../types/camera';
-  import type { ReferenceData } from '../lib/PoseReference';
-  import type { PoseComparison } from '../lib/PoseComparator';
+  } from '../../../lib/BeforeReferenceAPI';
+  import { PoseReference } from '../../../lib/PoseReference';
+  import { PoseComparator } from '../../../lib/PoseComparator';
+  import type { CameraCaptureResult } from '../../../types/camera';
+  import type { ReferenceData } from '../../../lib/PoseReference';
+  import type { PoseComparison } from '../../../lib/PoseComparator';
 
   const dispatch = createEventDispatcher();
 

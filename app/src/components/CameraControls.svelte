@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Button from './Button.svelte';
+  import Button from './ui/common/Button.svelte';
 
   // Props
   export let currentMode: string;

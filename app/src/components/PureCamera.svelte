@@ -1,7 +1,7 @@
 <script lang="ts">
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
-  import FaceDetection from './FaceDetection.svelte';
-  import ImageCapture from './ImageCapture.svelte';
+  import FaceDetection from './camera/core/FaceDetection.svelte';
+  import ImageCapture from './camera/core/ImageCapture.svelte';
   import CameraDisplay from './CameraDisplay.svelte';
   import { AffineCorrection } from '../lib/AffineCorrection';
   import type { ReferenceData } from '../lib/PoseReference';

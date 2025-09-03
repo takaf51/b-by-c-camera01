@@ -15,7 +15,7 @@
     PoseGuidanceType,
     POSE_GUIDANCE_MAP,
     type PoseGuidanceData,
-  } from '../types/camera';
+  } from '../../../types/camera';
 
   const dispatch = createEventDispatcher();
 

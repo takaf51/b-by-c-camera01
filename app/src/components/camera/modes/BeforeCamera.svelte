@@ -3,13 +3,13 @@
 -->
 <script lang="ts">
   import { createEventDispatcher } from 'svelte';
-  import BaseCameraEngine from './BaseCameraEngine.svelte';
-  import BeforePoseGuidance from './BeforePoseGuidance.svelte';
-  import { BeforeCameraController } from '../controllers/BeforeCameraController';
-  import { createReportUseCase } from '../usecases/ReportUseCase';
-  import { createReportRepository } from '../repositories/ReportRepository';
-  import { createHttpClientWithExternalConfig } from '../lib/http';
-  import type { CameraCaptureResult } from '../types/camera';
+  import BaseCameraEngine from '../core/BaseCameraEngine.svelte';
+  import BeforePoseGuidance from '../guidance/BeforePoseGuidance.svelte';
+  import { BeforeCameraController } from '../../../controllers/BeforeCameraController';
+  import { createReportUseCase } from '../../../usecases/ReportUseCase';
+  import { createReportRepository } from '../../../repositories/ReportRepository';
+  import { createHttpClientWithExternalConfig } from '../../../lib/http';
+  import type { CameraCaptureResult } from '../../../types/camera';
 
   const dispatch = createEventDispatcher();
 
