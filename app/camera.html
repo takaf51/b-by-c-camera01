@@ -3,26 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>カメラ機能</title>
     <script>
       // PHP側から設定を渡すためのグローバル変数
       // 使用例:
-      // window.CameraSettings = {
-      //   "API_ENDPOINT": "",
-      //   "PLAN_CODE": "plan-202508-plan1",
-      //   "PLAN_REPORT_ID": null,
-      //   "KIND": "before",
-      //   "API_TOKEN": "your-token-here"
-      // };
-      
-      window.CameraSettings = window.CameraSettings || {
-        "API_ENDPOINT": "", // 同一オリジンでアクセス（MSWが捕捉可能）
-        "PLAN_CODE": "2025-07-29-trial", 
-        "PLAN_REPORT_ID": 10,
-        "KIND": "after",
-        "API_TOKEN": "development-test-token"
+      window.CameraSettings = {
+        "API_ENDPOINT": "",
+        "PLAN_CODE": "plan-202508-plan1",
+        "PLAN_REPORT_ID": null,
+        "KIND": "before",
+        "API_TOKEN": "your-token-here"
       };
+      
+      // window.CameraSettings = window.CameraSettings || {
+      //   "API_ENDPOINT": "", // 同一オリジンでアクセス（MSWが捕捉可能）
+      //   "PLAN_CODE": "2025-07-29-trial", 
+      //   "PLAN_REPORT_ID": 10,
+      //   "KIND": "after",
+      //   "API_TOKEN": "development-test-token"
+      // };
     </script>
   </head>
   <body>

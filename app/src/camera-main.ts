@@ -18,8 +18,30 @@ async function initializeMocks() {
   }
 }
 
+// ビューポート高さの動的調整（古いブラウザ対応）
+function setupViewportHeight() {
+  // dvhサポートをチェック
+  if (!CSS.supports('height', '100dvh')) {
+    console.log('🔧 dvh not supported, using JavaScript fallback');
+    
+    function setCustomVH() {
+      const vh = window.innerHeight * 0.01;
+      document.documentElement.style.setProperty('--vh', `${vh}px`);
+    }
+    
+    setCustomVH();
+    window.addEventListener('resize', setCustomVH);
+    window.addEventListener('orientationchange', setCustomVH);
+  } else {
+    console.log('✅ dvh supported, using native CSS');
+  }
+}
+
 // アプリケーションの初期化
 async function initializeCameraApp() {
+  // ビューポート高さ設定（最初に実行）
+  setupViewportHeight();
+  
   // 外部設定の初期化
   initializeExternalConfig();
   

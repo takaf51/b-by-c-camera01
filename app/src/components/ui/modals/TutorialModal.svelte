@@ -363,6 +363,7 @@
     width: calc(100vw - 32px);
     max-width: none;
     max-height: calc(100vh - 32px);
+    max-height: calc(100dvh - 32px); /* iPhone Safari対応 */
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     display: flex;
@@ -387,6 +388,7 @@
     .tutorial-modal {
       width: calc(100vw - 16px);
       max-height: calc(100vh - 16px);
+      max-height: calc(100dvh - 16px); /* iPhone Safari対応 */
       border-radius: 16px;
     }
 
@@ -404,6 +406,7 @@
     .tutorial-modal {
       width: calc(100vw - 8px);
       max-height: calc(100vh - 8px);
+      max-height: calc(100dvh - 8px); /* iPhone Safari対応 */
       border-radius: 12px;
     }
 

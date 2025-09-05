@@ -97,6 +97,7 @@
     left: 0;
     width: 100%;
     height: 100%;
+    height: 100dvh;
     background: #222222;
     display: flex;
     align-items: flex-end;
@@ -111,6 +112,7 @@
     width: 100%;
     max-width: 500px;
     max-height: calc(100vh - 20px); /* 上部余白を除いた高さまで */
+    max-height: calc(100dvh - 20px); /* iPhone Safari対応 */
     min-height: auto; /* コンテンツに応じて高さを調整 */
     overflow-y: auto; /* スクロールを有効にする */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
@@ -262,6 +264,7 @@
 
     .confirmation-content {
       max-height: calc(100vh - 15px); /* より小さい画面では上部余白を縮小 */
+      max-height: calc(100dvh - 15px); /* iPhone Safari対応 */
       padding: 30px 20px 30px 20px; /* パディングを少し縮小 */
     }
 
@@ -288,6 +291,7 @@
       max-height: calc(
         100vh - 10px
       ); /* 非常に小さい画面では上部余白をさらに縮小 */
+      max-height: calc(100dvh - 10px); /* iPhone Safari対応 */
       padding: 25px 20px 25px 20px; /* さらにパディングを縮小 */
     }
 
@@ -321,6 +325,7 @@
 
     .confirmation-content {
       max-height: calc(100vh - 5px); /* ほぼ全画面を使用 */
+      max-height: calc(100dvh - 5px); /* iPhone Safari対応 */
       padding: 20px 16px 20px 16px; /* パディングを最小限に */
     }
 
