@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
+  import { createEventDispatcher, onMount } from 'svelte';
 
   const dispatch = createEventDispatcher();
 
@@ -10,83 +10,147 @@
   function handleCancel() {
     dispatch('cancel');
   }
+
+  // --- SCRIPT ---
+
+  // bind:this で実際のDOM要素を取得するための変数
+  let screenElement: HTMLDivElement; // 全画面を覆う親要素
+  let contentElement: HTMLDivElement; // 白い背景のコンテナ（高さが可変）
+  let scalerElement: HTMLDivElement; // 実際にスケールされるコンテンツのラッパー
+
+  // デザインデータ上のコンテンツの基準となる高さ (px)
+  // この値を基準に縮小率が計算されます。
+  const BASE_CONTENT_HEIGHT = 740;
+
+  /**
+   * 画面の高さに応じて、コンテンツのスケールとコンテナの高さを調整する関数
+   */
+  function adjustScale() {
+    // 要素がまだ描画されていない場合は何もしない
+    if (!scalerElement || !contentElement || !screenElement) return;
+
+    // 親要素の上部padding(20px)を考慮した、コンテンツが利用できる最大の高さを計算
+    const availableHeight = screenElement.clientHeight - 20;
+
+    // 利用可能な高さが、コンテンツの基準の高さより小さい場合に縮小処理を実行
+    if (availableHeight < BASE_CONTENT_HEIGHT) {
+      const scale = availableHeight / BASE_CONTENT_HEIGHT;
+      // 縮小後のコンテンツの実際の高さを計算
+      const scaledHeight = BASE_CONTENT_HEIGHT * scale;
+
+      // 1. 外側コンテナの高さを、スケール後のコンテンツの高さにピッタリ合わせる
+      //    これにより、画面下部の余白問題が解消されます。
+      contentElement.style.height = `${scaledHeight}px`;
+
+      // 2. 内側のコンテンツラッパーを、計算した比率で縮小する
+      scalerElement.style.transform = `scale(${scale})`;
+    } else {
+      // 画面サイズに十分な余裕がある場合は、元のサイズに戻す
+      contentElement.style.height = `${BASE_CONTENT_HEIGHT}px`;
+      scalerElement.style.transform = 'scale(1)';
+    }
+  }
+
+  // コンポーネントが最初に画面に表示された時に一度だけ実行
+  onMount(() => {
+    // 初回のサイズ調整を実行
+    adjustScale();
+
+    // ウィンドウサイズが変更された時にも追従して調整するようにイベントを設定
+    window.addEventListener('resize', adjustScale);
+
+    // コンポーネントが破棄される時に、不要になったイベントを削除する（メモリリーク防止）
+    return () => {
+      window.removeEventListener('resize', adjustScale);
+    };
+  });
 </script>
 
-<div class="confirmation-screen">
-  <div class="confirmation-content">
-    <h2 class="confirmation-title">撮影の前にご確認ください</h2>
+<div
+  class="confirmation-screen"
+  bind:this={screenElement}
+  on:click={handleCancel}
+>
+  <div
+    class="confirmation-content"
+    bind:this={contentElement}
+    on:click|stopPropagation
+  >
+    <div class="content-scaler" bind:this={scalerElement}>
+      <h2 class="confirmation-title">撮影の前にご確認ください</h2>
 
-    <div class="warning-section">
-      <div class="warning-icon-line">
-        <img
-          src="/assets/images/icon/exclamation-mark.png"
-          alt="注意"
-          class="warning-icon"
-        />
-        <p>前後の比較はデータ分析されます。</p>
+      <div class="warning-section">
+        <div class="warning-icon-line">
+          <img
+            src="/assets/images/icon/exclamation-mark.png"
+            alt="注意"
+            class="warning-icon"
+          />
+          <p>前後の比較はデータ分析されます。</p>
+        </div>
+        <div class="warning-text">
+          <p>正確な結果を得るため、以下の通りご撮影ください。</p>
+        </div>
       </div>
-      <div class="warning-text">
-        <p>正確な結果を得るため、以下の通りご撮影ください。</p>
+
+      <div class="guidelines-container">
+        <div class="guidelines-grid">
+          <div class="guideline-item good">
+            <div class="guideline-frame">
+              <img
+                src="/assets/images/confirm/checklist-good.png"
+                alt="正しい撮影例"
+                class="guideline-image"
+              />
+            </div>
+            <p class="guideline-text">
+              顔の輪郭が明確、<br />明るく無地の背景
+            </p>
+          </div>
+
+          <div class="guideline-item bad">
+            <div class="guideline-frame">
+              <img
+                src="/assets/images/confirm/checklist-bad-hair.png"
+                alt="髪で耳が隠れている例"
+                class="guideline-image"
+              />
+            </div>
+            <p class="guideline-text">
+              顔に髪がかかって<br />耳が隠れている
+            </p>
+          </div>
+
+          <div class="guideline-item bad">
+            <div class="guideline-frame">
+              <img
+                src="/assets/images/confirm/checklist-bad-shadow.png"
+                alt="強い陰影がある例"
+                class="guideline-image"
+              />
+            </div>
+            <p class="guideline-text">
+              顔に強い陰影が<br />ついている
+            </p>
+          </div>
+
+          <div class="guideline-item bad">
+            <div class="guideline-frame">
+              <img
+                src="/assets/images/confirm/checklist-bad-background.png"
+                alt="背景が無地以外の例"
+                class="guideline-image"
+              />
+            </div>
+            <p class="guideline-text">背景が<br />無地以外</p>
+          </div>
+        </div>
       </div>
+
+      <button class="confirm-button" on:click={handleConfirm}>
+        確認しました
+      </button>
     </div>
-
-    <div class="guidelines-container">
-      <div class="guidelines-grid">
-        <div class="guideline-item good">
-          <div class="guideline-frame">
-            <img
-              src="/assets/images/confirm/checklist-good.png"
-              alt="正しい撮影例"
-              class="guideline-image"
-            />
-          </div>
-          <p class="guideline-text">
-            顔の輪郭が明確、<br />明るく無地の背景
-          </p>
-        </div>
-
-        <div class="guideline-item bad">
-          <div class="guideline-frame">
-            <img
-              src="/assets/images/confirm/checklist-bad-hair.png"
-              alt="髪で耳が隠れている例"
-              class="guideline-image"
-            />
-          </div>
-          <p class="guideline-text">
-            顔に髪がかかって<br />耳が隠れている
-          </p>
-        </div>
-
-        <div class="guideline-item bad">
-          <div class="guideline-frame">
-            <img
-              src="/assets/images/confirm/checklist-bad-shadow.png"
-              alt="強い陰影がある例"
-              class="guideline-image"
-            />
-          </div>
-          <p class="guideline-text">
-            顔に強い陰影が<br />ついている
-          </p>
-        </div>
-
-        <div class="guideline-item bad">
-          <div class="guideline-frame">
-            <img
-              src="/assets/images/confirm/checklist-bad-background.png"
-              alt="背景が無地以外の例"
-              class="guideline-image"
-            />
-          </div>
-          <p class="guideline-text">背景が<br />無地以外</p>
-        </div>
-      </div>
-    </div>
-
-    <button class="confirm-button" on:click={handleConfirm}>
-      確認しました
-    </button>
   </div>
 </div>
 
@@ -97,51 +161,38 @@
     left: 0;
     width: 100%;
     height: 100%;
-    height: 100dvh;
-    background: #222222;
+    height: 100dvh; /* iOSのツールバーなどを考慮した高さ */
+    background: rgba(34, 34, 34, 0.8);
     display: flex;
     align-items: flex-end;
     justify-content: center;
     z-index: 1000;
-    padding: 20px 0 0 0; /* 上部に最小限の余白のみ */
+    padding: 20px 0 0 0;
+    box-sizing: border-box;
   }
 
   .confirmation-content {
     background: white;
     border-radius: 20px 20px 0 0;
     width: 100%;
-    max-width: 500px;
-    max-height: calc(100vh - 20px); /* 上部余白を除いた高さまで */
-    max-height: calc(100dvh - 20px); /* iPhone Safari対応 */
-    min-height: auto; /* コンテンツに応じて高さを調整 */
-    overflow-y: auto; /* スクロールを有効にする */
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
-    padding: 40px 24px 40px 24px;
-    margin-top: auto;
+    max-width: 400px;
+    box-shadow: 0 -5px 30px rgba(0, 0, 0, 0.2);
+    overflow: hidden;
+    will-change: height;
+  }
+
+  .content-scaler {
+    width: 100%;
+
+    padding: 40px 24px;
+    box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    justify-content: flex-start;
-    /* スクロールバーのスタイリング（WebKit系ブラウザ用） */
-    scrollbar-width: thin;
-    scrollbar-color: #d2294c transparent;
-  }
+    justify-content: space-between;
 
-  /* WebKit系ブラウザ用のスクロールバースタイル */
-  .confirmation-content::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  .confirmation-content::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .confirmation-content::-webkit-scrollbar-thumb {
-    background-color: #d2294c;
-    border-radius: 2px;
-  }
-
-  .confirmation-content::-webkit-scrollbar-thumb:hover {
-    background-color: #b8233c;
+    transform-origin: top;
+    transition: transform 0.2s ease-out;
+    will-change: transform;
   }
 
   .confirmation-title {
@@ -151,6 +202,7 @@
     font-size: 18px;
     font-weight: 600;
     line-height: 1.4;
+    flex-shrink: 0;
   }
 
   .warning-section {
@@ -159,6 +211,7 @@
     align-items: center;
     justify-content: center;
     margin-bottom: 25px;
+    flex-shrink: 0;
   }
 
   .warning-icon-line {
@@ -195,7 +248,11 @@
   }
 
   .guidelines-container {
-    margin-bottom: 30px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 0; /* flexアイテムの縮小を許可 */
   }
 
   .guidelines-grid {
@@ -249,110 +306,12 @@
     align-items: center;
     justify-content: center;
     transition: all 0.2s ease;
+    flex-shrink: 0;
+    margin-top: 12px;
   }
 
   .confirm-button:hover {
     background: #c5ce1f;
     transform: translateY(-1px);
-  }
-
-  /* モバイル対応のメディアクエリ */
-  @media (max-height: 700px) {
-    .confirmation-screen {
-      padding: 15px 0 0 0; /* 上部余白を少し縮小 */
-    }
-
-    .confirmation-content {
-      max-height: calc(100vh - 15px); /* より小さい画面では上部余白を縮小 */
-      max-height: calc(100dvh - 15px); /* iPhone Safari対応 */
-      padding: 30px 20px 30px 20px; /* パディングを少し縮小 */
-    }
-
-    .confirmation-title {
-      margin: 0 0 20px 0; /* マージンを縮小 */
-      font-size: 16px; /* フォントサイズを少し小さく */
-    }
-
-    .warning-section {
-      margin-bottom: 20px; /* マージンを縮小 */
-    }
-
-    .guidelines-container {
-      margin-bottom: 25px; /* マージンを縮小 */
-    }
-  }
-
-  @media (max-height: 600px) {
-    .confirmation-screen {
-      padding: 10px 0 0 0; /* 上部余白をさらに縮小 */
-    }
-
-    .confirmation-content {
-      max-height: calc(
-        100vh - 10px
-      ); /* 非常に小さい画面では上部余白をさらに縮小 */
-      max-height: calc(100dvh - 10px); /* iPhone Safari対応 */
-      padding: 25px 20px 25px 20px; /* さらにパディングを縮小 */
-    }
-
-    .confirmation-title {
-      margin: 0 0 15px 0;
-      font-size: 15px;
-    }
-
-    .warning-section {
-      margin-bottom: 15px;
-    }
-
-    .guidelines-container {
-      margin-bottom: 20px;
-    }
-
-    .guidelines-grid {
-      gap: 12px; /* グリッドのギャップを縮小 */
-    }
-
-    .guideline-text {
-      font-size: 11px; /* テキストサイズを縮小 */
-    }
-  }
-
-  /* 非常に小さい画面の場合 */
-  @media (max-height: 500px) {
-    .confirmation-screen {
-      padding: 5px 0 0 0; /* 最小限の上部余白 */
-    }
-
-    .confirmation-content {
-      max-height: calc(100vh - 5px); /* ほぼ全画面を使用 */
-      max-height: calc(100dvh - 5px); /* iPhone Safari対応 */
-      padding: 20px 16px 20px 16px; /* パディングを最小限に */
-    }
-
-    .confirmation-title {
-      margin: 0 0 12px 0;
-      font-size: 14px;
-    }
-
-    .warning-section {
-      margin-bottom: 12px;
-    }
-
-    .guidelines-container {
-      margin-bottom: 15px;
-    }
-
-    .guidelines-grid {
-      gap: 10px;
-    }
-
-    .guideline-text {
-      font-size: 10px;
-    }
-
-    .confirm-button {
-      padding: 12px 18px; /* ボタンパディングも縮小 */
-      font-size: 15px;
-    }
   }
 </style>
