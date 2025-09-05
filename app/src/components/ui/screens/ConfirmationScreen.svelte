@@ -102,7 +102,7 @@
     align-items: flex-end;
     justify-content: center;
     z-index: 1000;
-    padding: 0;
+    padding: 20px 0 0 0; /* 上部に最小限の余白のみ */
   }
 
   .confirmation-content {
@@ -110,14 +110,36 @@
     border-radius: 20px 20px 0 0;
     width: 100%;
     max-width: 500px;
-    height: auto;
-    overflow-y: auto;
+    max-height: calc(100vh - 20px); /* 上部余白を除いた高さまで */
+    min-height: auto; /* コンテンツに応じて高さを調整 */
+    overflow-y: auto; /* スクロールを有効にする */
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
     padding: 40px 24px 40px 24px;
     margin-top: auto;
     display: flex;
     flex-direction: column;
     justify-content: flex-start;
+    /* スクロールバーのスタイリング（WebKit系ブラウザ用） */
+    scrollbar-width: thin;
+    scrollbar-color: #d2294c transparent;
+  }
+
+  /* WebKit系ブラウザ用のスクロールバースタイル */
+  .confirmation-content::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  .confirmation-content::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .confirmation-content::-webkit-scrollbar-thumb {
+    background-color: #d2294c;
+    border-radius: 2px;
+  }
+
+  .confirmation-content::-webkit-scrollbar-thumb:hover {
+    background-color: #b8233c;
   }
 
   .confirmation-title {
@@ -230,5 +252,102 @@
   .confirm-button:hover {
     background: #c5ce1f;
     transform: translateY(-1px);
+  }
+
+  /* モバイル対応のメディアクエリ */
+  @media (max-height: 700px) {
+    .confirmation-screen {
+      padding: 15px 0 0 0; /* 上部余白を少し縮小 */
+    }
+
+    .confirmation-content {
+      max-height: calc(100vh - 15px); /* より小さい画面では上部余白を縮小 */
+      padding: 30px 20px 30px 20px; /* パディングを少し縮小 */
+    }
+
+    .confirmation-title {
+      margin: 0 0 20px 0; /* マージンを縮小 */
+      font-size: 16px; /* フォントサイズを少し小さく */
+    }
+
+    .warning-section {
+      margin-bottom: 20px; /* マージンを縮小 */
+    }
+
+    .guidelines-container {
+      margin-bottom: 25px; /* マージンを縮小 */
+    }
+  }
+
+  @media (max-height: 600px) {
+    .confirmation-screen {
+      padding: 10px 0 0 0; /* 上部余白をさらに縮小 */
+    }
+
+    .confirmation-content {
+      max-height: calc(
+        100vh - 10px
+      ); /* 非常に小さい画面では上部余白をさらに縮小 */
+      padding: 25px 20px 25px 20px; /* さらにパディングを縮小 */
+    }
+
+    .confirmation-title {
+      margin: 0 0 15px 0;
+      font-size: 15px;
+    }
+
+    .warning-section {
+      margin-bottom: 15px;
+    }
+
+    .guidelines-container {
+      margin-bottom: 20px;
+    }
+
+    .guidelines-grid {
+      gap: 12px; /* グリッドのギャップを縮小 */
+    }
+
+    .guideline-text {
+      font-size: 11px; /* テキストサイズを縮小 */
+    }
+  }
+
+  /* 非常に小さい画面の場合 */
+  @media (max-height: 500px) {
+    .confirmation-screen {
+      padding: 5px 0 0 0; /* 最小限の上部余白 */
+    }
+
+    .confirmation-content {
+      max-height: calc(100vh - 5px); /* ほぼ全画面を使用 */
+      padding: 20px 16px 20px 16px; /* パディングを最小限に */
+    }
+
+    .confirmation-title {
+      margin: 0 0 12px 0;
+      font-size: 14px;
+    }
+
+    .warning-section {
+      margin-bottom: 12px;
+    }
+
+    .guidelines-container {
+      margin-bottom: 15px;
+    }
+
+    .guidelines-grid {
+      gap: 10px;
+    }
+
+    .guideline-text {
+      font-size: 10px;
+    }
+
+    .confirm-button {
+      padding: 12px 18px; /* ボタンパディングも縮小 */
+      font-size: 15px;
+    }
   }
 </style>

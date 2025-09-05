@@ -354,24 +354,62 @@
     align-items: center;
     justify-content: center;
     z-index: 2000;
-    padding: 20px;
+    padding: 16px;
   }
 
   .tutorial-modal {
     background: white;
     border-radius: 20px;
-    width: calc(100vw - 40px);
+    width: calc(100vw - 32px);
     max-width: none;
-    max-height: 90vh;
+    max-height: calc(100vh - 32px);
     overflow: hidden;
     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
   }
 
   .tutorial-content {
-    padding: 24px;
+    padding: 20px;
     overflow-y: auto;
-    max-height: 90vh;
+    flex: 1;
     text-align: center;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* iPhone SEサイズ対応 (375px × 667px) */
+  @media (max-height: 667px) {
+    .tutorial-overlay {
+      padding: 8px;
+    }
+
+    .tutorial-modal {
+      width: calc(100vw - 16px);
+      max-height: calc(100vh - 16px);
+      border-radius: 16px;
+    }
+
+    .tutorial-content {
+      padding: 16px;
+    }
+  }
+
+  /* 非常に小さい画面対応 */
+  @media (max-height: 600px) {
+    .tutorial-overlay {
+      padding: 4px;
+    }
+
+    .tutorial-modal {
+      width: calc(100vw - 8px);
+      max-height: calc(100vh - 8px);
+      border-radius: 12px;
+    }
+
+    .tutorial-content {
+      padding: 12px;
+    }
   }
 
   .tutorial-title {
@@ -382,21 +420,56 @@
     letter-spacing: 0px;
     text-align: center;
     color: #333;
-    margin: 0 0 30px 0;
+    margin: 0 0 20px 0;
+    flex-shrink: 0;
   }
 
   .tutorial-image-container {
-    margin: 15px 0;
+    margin: 10px 0;
     display: flex;
     justify-content: center;
+    flex-shrink: 0;
   }
 
   .tutorial-image {
-    width: 220px;
-    height: 338px;
+    width: 180px;
+    height: 270px;
     object-fit: cover;
     border-radius: 12px;
     border: 2px solid #e9ecef;
+  }
+
+  /* 小画面での画像サイズ調整 */
+  @media (max-height: 667px) {
+    .tutorial-title {
+      margin: 0 0 16px 0;
+      font-size: 16px;
+    }
+
+    .tutorial-image-container {
+      margin: 8px 0;
+    }
+
+    .tutorial-image {
+      width: 150px;
+      height: 225px;
+    }
+  }
+
+  @media (max-height: 600px) {
+    .tutorial-title {
+      margin: 0 0 12px 0;
+      font-size: 15px;
+    }
+
+    .tutorial-image-container {
+      margin: 6px 0;
+    }
+
+    .tutorial-image {
+      width: 130px;
+      height: 195px;
+    }
   }
 
   .tutorial-image-placeholder {
@@ -434,15 +507,16 @@
     text-align: left;
     line-height: 150%;
     color: #333;
-    margin-bottom: 20px;
+    margin-bottom: 16px;
     font-weight: 400;
     font-style: regular;
     font-size: 14px;
     letter-spacing: 0px;
+    flex: 1;
   }
 
   .tutorial-text p {
-    margin: 0 0 8px 0;
+    margin: 0 0 6px 0;
     font-weight: 400;
     font-style: regular;
     font-size: 14px;
@@ -454,7 +528,41 @@
     display: flex;
     justify-content: center;
     gap: 8px;
-    margin: 20px 0 0 0;
+    margin: 16px 0 0 0;
+    flex-shrink: 0;
+  }
+
+  /* 小画面でのテキストとインジケーター調整 */
+  @media (max-height: 667px) {
+    .tutorial-text {
+      margin-bottom: 12px;
+      font-size: 13px;
+    }
+
+    .tutorial-text p {
+      margin: 0 0 4px 0;
+      font-size: 13px;
+    }
+
+    .page-indicator {
+      margin: 12px 0 0 0;
+    }
+  }
+
+  @media (max-height: 600px) {
+    .tutorial-text {
+      margin-bottom: 10px;
+      font-size: 12px;
+    }
+
+    .tutorial-text p {
+      margin: 0 0 3px 0;
+      font-size: 12px;
+    }
+
+    .page-indicator {
+      margin: 10px 0 0 0;
+    }
   }
 
   .page-dot {
@@ -482,9 +590,11 @@
 
   .tutorial-actions {
     display: flex;
-    gap: 15px;
+    gap: 12px;
     justify-content: space-between;
     align-items: center;
+    flex-shrink: 0;
+    margin-top: auto;
   }
 
   .tutorial-actions.single-button {
@@ -492,17 +602,42 @@
   }
 
   .tutorial-button {
-    padding: 15px 20px;
+    padding: 12px 18px;
     border-radius: 25px;
     font-weight: 700;
     font-style: bold;
     cursor: pointer;
     transition: all 0.2s ease;
     border: none;
-    font-size: 16px;
+    font-size: 15px;
     line-height: 150%;
     letter-spacing: 0px;
-    min-width: 100px;
+    min-width: 90px;
+  }
+
+  /* 小画面でのボタン調整 */
+  @media (max-height: 667px) {
+    .tutorial-actions {
+      gap: 10px;
+    }
+
+    .tutorial-button {
+      padding: 10px 16px;
+      font-size: 14px;
+      min-width: 80px;
+    }
+  }
+
+  @media (max-height: 600px) {
+    .tutorial-actions {
+      gap: 8px;
+    }
+
+    .tutorial-button {
+      padding: 8px 14px;
+      font-size: 13px;
+      min-width: 70px;
+    }
   }
 
   .tutorial-button.primary {
@@ -528,7 +663,7 @@
 
   /* New styles for flow tutorial */
   .tutorial-description {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
 
   .tutorial-description p {
@@ -543,19 +678,20 @@
   }
 
   .flow-steps {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
+    flex: 1;
   }
 
   .flow-item {
     display: flex;
     align-items: center;
     gap: 8px;
-    margin-bottom: 8px;
+    margin-bottom: 6px;
   }
 
   .flow-number {
-    width: 32px;
-    height: 32px;
+    width: 28px;
+    height: 28px;
     transform: rotate(0deg);
     flex-shrink: 0;
   }
@@ -563,7 +699,7 @@
   .flow-text {
     font-weight: 700;
     font-style: bold;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 150%;
     letter-spacing: 0px;
     color: #333;
@@ -572,24 +708,107 @@
   }
 
   .flow-arrow {
-    width: 40px;
-    height: 16px;
-    margin: 8px auto;
+    width: 32px;
+    height: 12px;
+    margin: 4px auto;
     display: block;
   }
 
   .tutorial-bottom-description {
-    margin-bottom: 24px;
+    margin-bottom: 16px;
   }
 
   .tutorial-bottom-description p {
     font-weight: 400;
     font-style: regular;
-    font-size: 14px;
+    font-size: 13px;
     line-height: 150%;
     letter-spacing: 0px;
     color: #333;
     margin: 0;
     text-align: left;
+  }
+
+  /* フロー画面の小画面対応 */
+  @media (max-height: 667px) {
+    .tutorial-description {
+      margin-bottom: 12px;
+    }
+
+    .tutorial-description p {
+      font-size: 13px;
+    }
+
+    .flow-steps {
+      margin-bottom: 12px;
+    }
+
+    .flow-item {
+      margin-bottom: 4px;
+    }
+
+    .flow-number {
+      width: 24px;
+      height: 24px;
+    }
+
+    .flow-text {
+      font-size: 12px;
+    }
+
+    .flow-arrow {
+      width: 28px;
+      height: 10px;
+      margin: 3px auto;
+    }
+
+    .tutorial-bottom-description {
+      margin-bottom: 12px;
+    }
+
+    .tutorial-bottom-description p {
+      font-size: 12px;
+    }
+  }
+
+  @media (max-height: 600px) {
+    .tutorial-description {
+      margin-bottom: 10px;
+    }
+
+    .tutorial-description p {
+      font-size: 12px;
+    }
+
+    .flow-steps {
+      margin-bottom: 10px;
+    }
+
+    .flow-item {
+      margin-bottom: 3px;
+    }
+
+    .flow-number {
+      width: 20px;
+      height: 20px;
+    }
+
+    .flow-text {
+      font-size: 11px;
+    }
+
+    .flow-arrow {
+      width: 24px;
+      height: 8px;
+      margin: 2px auto;
+    }
+
+    .tutorial-bottom-description {
+      margin-bottom: 10px;
+    }
+
+    .tutorial-bottom-description p {
+      font-size: 11px;
+    }
   }
 </style>
