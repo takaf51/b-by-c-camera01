@@ -14,6 +14,7 @@
   export const landmarks: any = null;
   export let beforeReference: ReferenceData | null = null;
   export let currentComparison: PoseComparison | null = null;
+  export let guidance: any = null;
   export let onPoseCompare:
     | ((pose: {
         roll: number;
@@ -61,19 +62,40 @@
     }
   }
 
-  // After mode: compare with Before reference
-  $: if (pose && onPoseCompare) {
-    const comparison = onPoseCompare(pose);
-    if (comparison) {
-      currentComparison = comparison;
-      // Override guidance with reference-based guidance if available
-      const comparatorGuidance = generateReferenceGuidance(comparison);
-      if (comparatorGuidance) {
-        showPoseGuidance = true;
-        poseGuidanceMessage = comparatorGuidance.message;
-        poseGuidanceType = comparatorGuidance.type;
-        guidanceDirection = comparatorGuidance.direction;
+  // After mode: prioritize Before reference guidance, fallback to basic guidance
+  $: {
+    let hasReferenceGuidance = false;
+
+    // First try Before reference guidance
+    if (pose && onPoseCompare) {
+      const comparison = onPoseCompare(pose);
+      if (comparison) {
+        currentComparison = comparison;
+        const comparatorGuidance = generateReferenceGuidance(comparison);
+        if (comparatorGuidance) {
+          showPoseGuidance = true;
+          poseGuidanceMessage = comparatorGuidance.message;
+          poseGuidanceType = comparatorGuidance.type;
+          guidanceDirection = comparatorGuidance.direction;
+          hasReferenceGuidance = true;
+        }
       }
+    }
+
+    // If no reference guidance, use basic guidance from FaceDetection
+    if (!hasReferenceGuidance && guidance) {
+      showPoseGuidance = guidance.show;
+      poseGuidanceMessage = guidance.message;
+      poseGuidanceType = guidance.type;
+      guidanceDirection = guidance.direction;
+    }
+
+    // If neither guidance is available, hide guidance
+    if (!hasReferenceGuidance && (!guidance || !guidance.show)) {
+      showPoseGuidance = false;
+      poseGuidanceMessage = '';
+      poseGuidanceType = '';
+      guidanceDirection = null;
     }
   }
 </script>

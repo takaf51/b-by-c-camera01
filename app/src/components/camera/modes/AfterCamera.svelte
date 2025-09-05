@@ -57,6 +57,9 @@
   let beforeReference: ReferenceData | null = null;
   let currentComparison: PoseComparison | null = null;
 
+  // Face detection data
+  let currentGuidance: any = null;
+
   // AfterCamera初期化時にBefore参照データを取得
   onMount(async () => {
     poseReference = new PoseReference();
@@ -199,6 +202,9 @@
   }
 
   function handleFaceDetected(event: CustomEvent) {
+    const { guidance } = event.detail;
+    currentGuidance = guidance;
+
     // イベントを上位に転送
     dispatch('face:detected', event.detail);
   }
@@ -239,6 +245,7 @@
     landmarks={currentFaceLandmarks}
     {beforeReference}
     {currentComparison}
+    guidance={currentGuidance}
     onPoseCompare={comparePose}
   />
 </BaseCameraEngine>
