@@ -285,8 +285,8 @@
         bind:this={canvasElement}
         class="output-canvas {mirrorMode ? 'mirror' : ''}"
         class:hidden={!isReady}
-        width="640"
-        height="480"
+        width="1280"
+        height="960"
       ></canvas>
 
       {#if isReady}
@@ -328,8 +328,8 @@
 
 <style>
   .base-camera-container {
-    width: 100%;
-    height: 100vh;
+    width: 100dvw;
+    height: 100dvh;
     position: relative;
     background: #222;
   }
@@ -345,12 +345,7 @@
   }
 
   .input-video {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    display: block;
-    max-width: 100vw;
-    max-height: 100vh;
+    display: none;
   }
 
   .input-video.mirror {
@@ -358,8 +353,8 @@
   }
 
   .preview-image {
-    width: 100%;
-    height: 100%;
+    width: 100dvw;
+    height: 70dvh;
     object-fit: contain;
     display: block;
   }
@@ -370,11 +365,11 @@
 
   .output-canvas {
     position: absolute;
-    top: 50%;
+    top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 100%;
-    height: 100%;
+    width: 100dvw;
+    height: 70dvh;
     max-width: 100vw;
     max-height: 100vh;
     object-fit: contain;
@@ -389,8 +384,8 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100dvw;
+    height: 80dvh;
     pointer-events: none;
     z-index: 10;
   }
@@ -410,13 +405,13 @@
   }
 
   .grid-line.horizontal {
-    width: 100%;
+    width: 100dvw;
     height: 1px;
   }
 
   .grid-line.vertical {
     width: 1px;
-    height: 100%;
+    height: 70dvh;
   }
 
   /* 円形マスク（中央を丸くくり抜く） */
@@ -424,21 +419,25 @@
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100dvw;
+    height: 100dvh;
     background: rgba(0, 0, 0, 0.6);
     z-index: 5;
     pointer-events: none;
-    mask: radial-gradient(circle at center, transparent 30%, black 31%);
-    -webkit-mask: radial-gradient(circle at center, transparent 30%, black 31%);
+    mask: radial-gradient(circle at center 50%, transparent 30%, black 31%);
+    -webkit-mask: radial-gradient(
+      circle at center 40%,
+      transparent 30%,
+      black 31%
+    );
   }
 
   .camera-loading {
     position: absolute;
     top: 0;
     left: 0;
-    width: 100%;
-    height: 100%;
+    width: 100dvw;
+    height: 70dvh;
     display: flex;
     flex-direction: column;
     align-items: center;

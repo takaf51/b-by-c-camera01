@@ -150,8 +150,6 @@
             } catch (error) {}
           }
         },
-        width: 640,
-        height: 480,
       });
 
       await camera.start();
@@ -437,14 +435,14 @@
       const screenWidth = window.innerWidth;
       let pitch;
       if (screenWidth <= 480) {
-        // iPhone: +30度
-        pitch = rawPitch - 65 + 30;
+        // iPhone: -8度
+        pitch = rawPitch - 65 - 8;
       } else if (screenWidth <= 1024) {
         // iPad: +10度（元の重要な調整）
         pitch = rawPitch - 65 + 10;
       } else {
         // PC: オフセットなし
-        pitch = rawPitch - 35;
+        pitch = rawPitch - 65;
       }
 
       // ヨー（Y軸回転）- 横方向の向き
