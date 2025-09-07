@@ -124,7 +124,7 @@
   .guidance-message {
     background: #ffffff;
     color: #d2294c;
-    width: min(390px, 100vw);
+    width: min(250px, 100dvw);
     height: 47px;
     padding: 12px 16px;
     border-radius: 8px;
