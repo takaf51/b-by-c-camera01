@@ -630,7 +630,7 @@
       let pitch;
       if (screenWidth <= 480) {
         // iPhone: -8度
-        pitch = rawPitch - 65 - 8;
+        pitch = rawPitch - 65 + 15;
       } else if (screenWidth <= 1024) {
         // iPad: +10度（元の重要な調整）
         pitch = rawPitch - 65 + 10;
