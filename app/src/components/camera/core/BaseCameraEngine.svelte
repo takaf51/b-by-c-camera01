@@ -285,8 +285,6 @@
         bind:this={canvasElement}
         class="output-canvas {mirrorMode ? 'mirror' : ''}"
         class:hidden={!isReady}
-        width="1280"
-        height="960"
       ></canvas>
 
       {#if isReady}
@@ -368,16 +366,26 @@
     top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
-    width: 100dvw;
-    height: 70dvh;
-    max-width: 100vw;
-    max-height: 100vh;
-    object-fit: contain;
+    /* 正方形カメラ（720x720）をスマホ縦画面で適切に表示 */
+    max-width: 100dvw;
+    max-height: 70dvh; /* スマホ縦画面で収まるサイズ */
+    width: auto;
+    height: auto;
   }
-
+  
   .output-canvas.mirror {
     transform: translate(-50%, -50%) scaleX(-1);
   }
+  
+  /* スマホ縦向きで正方形カメラの場合の特別な調整 */
+  @media (max-width: 768px) and (orientation: portrait) {
+    .output-canvas {
+      /* 正方形を縦画面で中央に配置し、適度なサイズに */
+      max-width: 85vw;
+      max-height: 60vh;
+    }
+  }
+
 
   /* 顔位置ガイド */
   .face-guide-overlay {

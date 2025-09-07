@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
   import { FaceMesh } from '@mediapipe/face_mesh/face_mesh';
-  import { Camera as MediaPipeCamera } from '@mediapipe/camera_utils/camera_utils';
   import {
     drawConnectors,
     FACEMESH_TESSELATION,
@@ -142,17 +141,211 @@
 
     isStartingCamera = true;
     try {
-      camera = new MediaPipeCamera(videoElement, {
-        onFrame: async () => {
-          if (faceMesh && videoElement) {
-            try {
-              await faceMesh.send({ image: videoElement });
-            } catch (error) {}
+      // MediaPipe Camera utilsを使わずに独自でカメラを制御
+      // スマホ向けに縦向きのカメラストリームを取得
+      const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
+      const isPortrait = window.innerHeight > window.innerWidth;
+      
+      let constraints: MediaStreamConstraints;
+      
+      // スマホ縦向きの場合、複数の解像度を試す
+      if (isMobile && isPortrait) {
+        // 利用可能な全解像度を取得して縦向きを探す
+        try {
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoDevices = devices.filter(device => device.kind === 'videoinput');
+          console.log('📱 Available video devices:', videoDevices.length);
+          
+          // まずは制約なしでカメラ能力を確認
+          const testStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' }
+          });
+          const testTrack = testStream.getVideoTracks()[0];
+          const capabilities = testTrack.getCapabilities();
+          testStream.getTracks().forEach(track => track.stop());
+          
+          console.log('📷 Camera capabilities:', capabilities);
+          
+          // 利用可能な解像度から縦向きを優先的に選択
+          const availableResolutions = [];
+          if (capabilities.width && capabilities.height) {
+            const maxWidth = capabilities.width.max || 1920;
+            const maxHeight = capabilities.height.max || 1080;
+            console.log(`📏 Max resolution: ${maxWidth}x${maxHeight}`);
+            
+            // 縦向き解像度のパターンを生成
+            if (maxHeight >= maxWidth) {
+              // すでに縦長の場合
+              availableResolutions.push({ width: maxWidth, height: maxHeight });
+            } else {
+              // 横長の場合、縦横を入れ替えて縦向きにする
+              availableResolutions.push({ width: maxHeight, height: maxWidth });
+              availableResolutions.push({ width: maxWidth, height: maxHeight });
+            }
           }
-        },
+        } catch (e) {
+          console.log('❌ Failed to get capabilities:', e);
+        }
+        
+        // より積極的な縦向き制約を試す
+        const resolutionPatterns = [
+          // より小さな縦向きから試す
+          { width: 540, height: 960, aspectRatio: 9/16 },
+          { width: 480, height: 854, aspectRatio: 9/16 },  
+          { width: 360, height: 640, aspectRatio: 9/16 },
+          // 標準的な縦向き
+          { width: 720, height: 1280, aspectRatio: 9/16 },
+          { width: 1080, height: 1920, aspectRatio: 9/16 },
+        ];
+        
+        let stream = null;
+        let successfulPattern = null;
+        
+        for (const pattern of resolutionPatterns) {
+          try {
+            constraints = {
+              video: {
+                facingMode: 'user',
+                width: { ideal: pattern.width, max: pattern.width },
+                height: { ideal: pattern.height, min: pattern.height },
+                aspectRatio: { ideal: pattern.aspectRatio, exact: pattern.aspectRatio }
+              },
+              audio: false
+            };
+            
+            console.log(`📱 Trying resolution: ${pattern.width}x${pattern.height}`);
+            stream = await navigator.mediaDevices.getUserMedia(constraints);
+            successfulPattern = pattern;
+            console.log(`✅ Successfully got stream with: ${pattern.width}x${pattern.height}`);
+            break;
+          } catch (e) {
+            console.log(`❌ Failed with ${pattern.width}x${pattern.height}:`, e.message);
+          }
+        }
+        
+        if (!stream) {
+          // 特定のデバイスIDを指定して試す
+          const devices = await navigator.mediaDevices.enumerateDevices();
+          const videoDevices = devices.filter(device => device.kind === 'videoinput');
+          console.log('📱 Trying specific camera devices:', videoDevices.length);
+          
+          for (const device of videoDevices) {
+            console.log(`📷 Trying device: ${device.label || device.deviceId}`);
+            for (const pattern of resolutionPatterns) {
+              try {
+                constraints = {
+                  video: {
+                    deviceId: { exact: device.deviceId },
+                    width: { ideal: pattern.width },
+                    height: { ideal: pattern.height },
+                    aspectRatio: { ideal: pattern.aspectRatio }
+                  },
+                  audio: false
+                };
+                
+                stream = await navigator.mediaDevices.getUserMedia(constraints);
+                successfulPattern = pattern;
+                console.log(`✅ Success with device ${device.label} at ${pattern.width}x${pattern.height}`);
+                break;
+              } catch (e) {
+                // 次のパターンを試す
+              }
+            }
+            if (stream) break;
+          }
+        }
+        
+        if (!stream) {
+          // 最後の手段：制約なしで取得
+          console.log('📱 All attempts failed, using fallback');
+          constraints = {
+            video: {
+              facingMode: 'user'
+            },
+            audio: false
+          };
+          stream = await navigator.mediaDevices.getUserMedia(constraints);
+        }
+        
+        var finalStream = stream;
+      } else if (isMobile && !isPortrait) {
+        // スマホ横向きの場合
+        constraints = {
+          video: {
+            facingMode: 'user',
+            width: { min: 640, ideal: 1280, max: 1920 },
+            height: { min: 480, ideal: 720, max: 1080 },
+            aspectRatio: { ideal: 1.777 } // 16:9 = 1.777
+          },
+          audio: false
+        };
+        var finalStream = await navigator.mediaDevices.getUserMedia(constraints);
+      } else {
+        // PCの場合
+        constraints = {
+          video: {
+            facingMode: 'user',
+            width: { ideal: 1280 },
+            height: { ideal: 720 },
+            aspectRatio: { ideal: 1.777 }
+          },
+          audio: false
+        };
+        var finalStream = await navigator.mediaDevices.getUserMedia(constraints);
+      }
+
+      console.log('📱 Final constraints used:', constraints);
+      
+      const stream = finalStream;
+      
+      // ストリームの実際の設定を確認
+      const videoTrack = stream.getVideoTracks()[0];
+      const settings = videoTrack.getSettings();
+      console.log('📷 Actual camera settings:', {
+        width: settings.width,
+        height: settings.height,
+        aspectRatio: settings.aspectRatio,
+        facingMode: settings.facingMode
+      });
+      
+      videoElement.srcObject = stream;
+      await videoElement.play();
+      
+      // ビデオの実際のサイズを確認
+      console.log('📺 Video element dimensions:', {
+        videoWidth: videoElement.videoWidth,
+        videoHeight: videoElement.videoHeight,
+        clientWidth: videoElement.clientWidth,
+        clientHeight: videoElement.clientHeight
       });
 
-      await camera.start();
+      // MediaPipeにフレームを送る処理を独自に実装
+      let animationId: number;
+      const sendFrame = async () => {
+        if (faceMesh && videoElement && videoElement.readyState >= 2) {
+          try {
+            await faceMesh.send({ image: videoElement });
+          } catch (error) {
+            console.error('Error sending frame to FaceMesh:', error);
+          }
+        }
+        animationId = requestAnimationFrame(sendFrame);
+      };
+      
+      // フレーム送信を開始
+      sendFrame();
+      
+      // カメラ停止時にアニメーションをクリーンアップするために保存
+      camera = {
+        stop: () => {
+          if (animationId) {
+            cancelAnimationFrame(animationId);
+          }
+          if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+          }
+        }
+      };
 
       // Wait for video to be ready
       if (videoElement.readyState < 2) {
@@ -193,43 +386,29 @@
       canvasCtx = canvasElement.getContext('2d')!;
     }
 
-    if (!canvasCtx) return;
+    if (!canvasCtx || !canvasElement) return;
+
+    // ビデオの実際のサイズを取得
+    const videoWidth = results.image.width || results.image.videoWidth || videoElement?.videoWidth || 720;
+    const videoHeight = results.image.height || results.image.videoHeight || videoElement?.videoHeight || 1280;
+    
+    // キャンバスサイズをビデオのサイズに完全に一致させる
+    if (canvasElement.width !== videoWidth || canvasElement.height !== videoHeight) {
+      canvasElement.width = videoWidth;
+      canvasElement.height = videoHeight;
+      console.log('📐 Canvas resized to match video:', { width: videoWidth, height: videoHeight });
+    }
 
     // Clear canvas
     canvasCtx.save();
-    canvasCtx.clearRect(0, 0, canvasElement!.width, canvasElement!.height);
-
-    // Draw video with proper aspect ratio handling
-    const videoWidth = results.image.width || results.image.videoWidth;
-    const videoHeight = results.image.height || results.image.videoHeight;
-    const canvasWidth = canvasElement!.width;
-    const canvasHeight = canvasElement!.height;
+    canvasCtx.clearRect(0, 0, canvasElement.width, canvasElement.height);
 
     // Save current video dimensions for coordinate transformation
     currentVideoWidth = videoWidth;
     currentVideoHeight = videoHeight;
 
-    // Calculate scaling to fit video into canvas while maintaining aspect ratio
-    const videoAspect = videoWidth / videoHeight;
-    const canvasAspect = canvasWidth / canvasHeight;
-
-    let drawWidth, drawHeight, drawX, drawY;
-
-    if (videoAspect > canvasAspect) {
-      // Video is wider - fit to canvas height
-      drawHeight = canvasHeight;
-      drawWidth = drawHeight * videoAspect;
-      drawX = (canvasWidth - drawWidth) / 2;
-      drawY = 0;
-    } else {
-      // Video is taller - fit to canvas width
-      drawWidth = canvasWidth;
-      drawHeight = drawWidth / videoAspect;
-      drawX = 0;
-      drawY = (canvasHeight - drawHeight) / 2;
-    }
-
-    canvasCtx.drawImage(results.image, drawX, drawY, drawWidth, drawHeight);
+    // ビデオをそのままのサイズで描画（スケーリングなし）
+    canvasCtx.drawImage(results.image, 0, 0, videoWidth, videoHeight);
 
     // Debug: Log drawing dimensions (only occasionally to avoid spam)
     if (Math.random() < 0.01) {
