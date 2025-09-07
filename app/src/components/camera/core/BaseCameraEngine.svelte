@@ -363,7 +363,7 @@
 
   .output-canvas {
     position: absolute;
-    top: 50%;
+    top: 40%;
     left: 50%;
     transform: translate(-50%, -50%);
     /* カメラの縦横比を保持し、画面に収まる最大サイズで表示 */
