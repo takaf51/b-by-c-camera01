@@ -187,16 +187,30 @@
           console.log('❌ Failed to get capabilities:', e);
         }
         
-        // より積極的な縦向き制約を試す
+        // 画面サイズから動的にresolutionPatternsを計算
+        const screenWidth = window.innerWidth;
+        const screenHeight = window.innerHeight;
+        const screenAspectRatio = screenWidth / screenHeight;
+        
+        console.log('📱 Screen info for resolution calculation:', { 
+          screenWidth, screenHeight, screenAspectRatio: screenAspectRatio.toFixed(3) 
+        });
+        
+        // スマホカメラに適した解像度パターンを生成（縦長でも横長解像度を使用）
         const resolutionPatterns = [
-          // より小さな縦向きから試す
-          { width: 540, height: 960, aspectRatio: 9/16 },
-          { width: 480, height: 854, aspectRatio: 9/16 },  
-          { width: 360, height: 640, aspectRatio: 9/16 },
-          // 標準的な縦向き
-          { width: 720, height: 1280, aspectRatio: 9/16 },
-          { width: 1080, height: 1920, aspectRatio: 9/16 },
+          // 高解像度（正方形に近い）
+          { width: 1080, height: 1080, aspectRatio: 1.0 },
+          { width: 960, height: 1280, aspectRatio: 0.75 }, // 3:4
+          { width: 720, height: 960, aspectRatio: 0.75 },  // 3:4
+          // 4:3（カメラの標準）
+          { width: 960, height: 720, aspectRatio: 4/3 },
+          { width: 640, height: 480, aspectRatio: 4/3 },
+          // フォールバック用
+          { width: 480, height: 640, aspectRatio: 0.75 },
+          { width: 360, height: 480, aspectRatio: 0.75 },
         ];
+        
+        console.log('📱 Generated resolution patterns:', resolutionPatterns);
         
         let stream = null;
         let successfulPattern = null;
@@ -206,9 +220,10 @@
             constraints = {
               video: {
                 facingMode: 'user',
-                width: { ideal: pattern.width, max: pattern.width },
-                height: { ideal: pattern.height, min: pattern.height },
-                aspectRatio: { ideal: pattern.aspectRatio, exact: pattern.aspectRatio }
+                width: { ideal: pattern.width },
+                height: { ideal: pattern.height },
+                aspectRatio: { ideal: pattern.aspectRatio }
+                // exactやmin/maxを削除して制約を緩和
               },
               audio: false
             };
@@ -219,7 +234,7 @@
             console.log(`✅ Successfully got stream with: ${pattern.width}x${pattern.height}`);
             break;
           } catch (e) {
-            console.log(`❌ Failed with ${pattern.width}x${pattern.height}:`, e.message);
+            console.log(`❌ Failed with ${pattern.width}x${pattern.height}:`, (e as Error).message);
           }
         }
         
@@ -294,7 +309,7 @@
         var finalStream = await navigator.mediaDevices.getUserMedia(constraints);
       }
 
-      console.log('📱 Final constraints used:', constraints);
+      console.log('📱 Final constraints used:', constraints || 'No constraints set');
       
       const stream = finalStream;
       
@@ -820,7 +835,7 @@
 
     if (!guidanceData) return;
 
-    const { message, type, direction } = guidanceData;
+    const { message, type } = guidanceData;
 
     if (message) {
       poseGuidanceMessage = message;

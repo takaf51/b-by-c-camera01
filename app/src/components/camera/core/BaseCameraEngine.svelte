@@ -352,7 +352,7 @@
 
   .preview-image {
     width: 100dvw;
-    height: 70dvh;
+    height: 100dvh;
     object-fit: contain;
     display: block;
   }
@@ -363,26 +363,30 @@
 
   .output-canvas {
     position: absolute;
-    top: 40%;
+    top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-    /* 正方形カメラ（720x720）をスマホ縦画面で適切に表示 */
-    max-width: 100dvw;
-    max-height: 70dvh; /* スマホ縦画面で収まるサイズ */
+    /* カメラの縦横比を保持し、画面に収まる最大サイズで表示 */
+    max-width: 100vw;
+    max-height: 100vh;
     width: auto;
     height: auto;
+    object-fit: contain; /* 縦横比を保持して画面に収める */
   }
   
   .output-canvas.mirror {
     transform: translate(-50%, -50%) scaleX(-1);
   }
   
-  /* スマホ縦向きで正方形カメラの場合の特別な調整 */
+  /* スマホ縦向け: カメラの縦横比を保持して最適表示 */
   @media (max-width: 768px) and (orientation: portrait) {
     .output-canvas {
-      /* 正方形を縦画面で中央に配置し、適度なサイズに */
-      max-width: 85vw;
-      max-height: 60vh;
+      /* 縦横比保持で画面に最適化 */
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      width: auto !important;
+      height: auto !important;
+      object-fit: contain !important; /* 縦横比保持を強制 */
     }
   }
 
@@ -393,7 +397,7 @@
     top: 0;
     left: 0;
     width: 100dvw;
-    height: 80dvh;
+    height: 100dvh;
     pointer-events: none;
     z-index: 10;
   }
@@ -419,7 +423,7 @@
 
   .grid-line.vertical {
     width: 1px;
-    height: 70dvh;
+    height: 100dvh;
   }
 
   /* 円形マスク（中央を丸くくり抜く） */
@@ -445,7 +449,7 @@
     top: 0;
     left: 0;
     width: 100dvw;
-    height: 70dvh;
+    height: 100dvh;
     display: flex;
     flex-direction: column;
     align-items: center;
