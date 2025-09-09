@@ -22,6 +22,63 @@ npm run dev
 
 `.env.example` をコピーして `.env` を作成し、必要に応じて値を調整してください。
 
+## External Configuration
+
+PHPアプリケーション側から設定を渡すための外部設定システムです。
+
+### 設定方法
+
+**camera.html または PHP側で設定:**
+
+```javascript
+window.CameraSettings = {
+  API_ENDPOINT: 'https://api.example.com',
+  PLAN_CODE: 'plan-202508-plan1',
+  PLAN_REPORT_ID: 123,
+  KIND: 'before',
+  API_TOKEN: 'your-api-token-here',
+  ENABLE_TUTORIAL: true,
+};
+```
+
+または
+
+```javascript
+window.AppSettings = {
+  // 同じ設定項目
+};
+```
+
+### 設定可能項目
+
+| 項目               | 型                    | 説明                                              | 例                            |
+| ----------------- | --------------------- | ------------------------------------------------ | ----------------------------- |
+| `API_ENDPOINT`    | `string`              | APIエンドポイントのURL                              | `"https://api.example.com"`   |
+| `PLAN_CODE`       | `string`              | プラン識別コード                                    | `"plan-202508-plan1"`         |
+| `PLAN_REPORT_ID`  | `number`              | プランレポートID（チュートリアル表示判定に使用）         | `123`                         |
+| `KIND`            | `"before" \| "after"` | 撮影種別                                          | `"before"` または `"after"`    |
+| `API_TOKEN`       | `string`              | API認証トークン                                    | `"your-api-token-here"`       |
+| `ENABLE_TUTORIAL` | `boolean`             | チュートリアル表示制御                              | `true`, `false`, または未設定    |
+
+### チュートリアル表示制御（ENABLE_TUTORIAL）
+
+**動作仕様:**
+
+- `true`: 常にチュートリアルを表示
+- `false`: 常にチュートリアルを非表示
+- 未設定（`undefined`）: 既存のロジックを維持
+  - After撮影時: チュートリアルをスキップ
+  - Before撮影でPLAN_REPORT_IDがある場合: チュートリアルをスキップ
+  - その他の場合（初回Before撮影等）: チュートリアルを表示
+
+### フォールバック動作
+
+各設定項目が未設定の場合、以下のフォールバック順序で値が決定されます：
+
+1. 外部設定（`window.CameraSettings` または `window.AppSettings`）
+2. 環境変数（`.env`ファイル）
+3. デフォルト値
+
 ## Image Management
 
 ### 画像管理方針

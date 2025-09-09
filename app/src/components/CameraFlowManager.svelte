@@ -19,7 +19,7 @@
   // Tutorial control props (外部から制御)
   export const showTutorial: boolean = false;
   export let tutorialMode: 'before' | 'after' = 'before';
-  export let enableTutorial: boolean = true; // チュートリアル機能の有効/無効
+  export let enableTutorial: boolean | undefined = undefined; // チュートリアル機能の有効/無効（未設定時はundefined）
 
   // Tutorial state
   let showTutorialModal = false;
@@ -68,6 +68,12 @@
 
   // チュートリアル表示判定ロジック（シンプルで明確）
   function shouldShowTutorial(): boolean {
+    // enableTutorialが明示的に設定されている場合は、その値に従う
+    if (enableTutorial !== undefined) {
+      return enableTutorial;
+    }
+
+    // enableTutorialが未設定の場合は、既存のロジックを維持
     // After撮影時はチュートリアルをスキップ
     if (kind === 'after') {
       return false;

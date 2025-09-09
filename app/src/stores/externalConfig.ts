@@ -11,6 +11,7 @@ interface ExternalConfig {
   planReportId?: number;
   kind?: 'before' | 'after';
   apiToken?: string;
+  enableTutorial?: boolean;
 }
 
 // デフォルト設定（既存の動作を維持）
@@ -20,6 +21,7 @@ const defaultConfig: ExternalConfig = {
   planReportId: undefined,
   kind: undefined,
   apiToken: undefined,
+  enableTutorial: undefined, // 未設定の場合は既存ロジックを使用
 };
 
 // 外部設定ストア
@@ -42,6 +44,7 @@ export function initializeExternalConfig(): void {
       planReportId: settings.PLAN_REPORT_ID,
       kind: settings.KIND,
       apiToken: settings.API_TOKEN,
+      enableTutorial: settings.ENABLE_TUTORIAL,
     });
   } else {
     console.log('📱 No external config found, using defaults');

@@ -13,6 +13,7 @@
     ? String($externalConfig.planReportId)
     : null;
   $: kind = $externalConfig.kind || null;
+  $: enableTutorial = $externalConfig.enableTutorial;
 
   // Event handlers
   function handleFlowCapture(event: CustomEvent) {
@@ -38,6 +39,7 @@
   {programId}
   {planReportId}
   {kind}
+  {enableTutorial}
   on:capture={handleFlowCapture}
   on:complete={handleFlowComplete}
   on:cancel={handleFlowCancel}

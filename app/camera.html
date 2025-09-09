@@ -8,21 +8,23 @@
     <script>
       // PHP側から設定を渡すためのグローバル変数
       // 使用例:
-      // window.CameraSettings = {
-      //   "API_ENDPOINT": "",
-      //   "PLAN_CODE": "plan-202508-plan1",
-      //   "PLAN_REPORT_ID": null,
-      //   "KIND": "before",
-      //   "API_TOKEN": "your-token-here"
-      // };
-      
-      window.CameraSettings = window.CameraSettings || {
-        "API_ENDPOINT": "https://localhost:3000", // 同一オリジンでアクセス（MSWが捕捉可能）
-        "PLAN_CODE": "2025-07-29-trial", 
-        "PLAN_REPORT_ID": 10,
-        "KIND": "after",
-        "API_TOKEN": "development-test-token"
+      window.CameraSettings = {
+        "API_ENDPOINT": "",
+        "PLAN_CODE": "plan-202508-plan1",
+        "PLAN_REPORT_ID": null,
+        "KIND": "before",
+        "API_TOKEN": "your-token-here",
+        "ENABLE_TUTORIAL": true  // チュートリアル機能の有効/無効（true: 常に表示, false: 常に非表示, 未設定: 既存ロジック）
       };
+      
+      // window.CameraSettings = window.CameraSettings || {
+      //   "API_ENDPOINT": "https://localhost:3000", // 同一オリジンでアクセス（MSWが捕捉可能）
+      //   "PLAN_CODE": "2025-07-29-trial", 
+      //   "PLAN_REPORT_ID": 10,
+      //   "KIND": "after",
+      //   "API_TOKEN": "development-test-token",
+      //   "ENABLE_TUTORIAL": false  // チュートリアルを無効にする例
+      // };
     </script>
   </head>
   <body>
