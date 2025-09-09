@@ -1,9 +1,11 @@
 // Camera component type definitions
+import type { ExpressionData } from '../lib/ExpressionAnalyzer';
 
 export interface CameraCaptureResult {
   imageData: string;
   landmarks: any;
   pose: any;
+  expression?: ExpressionData | null; // 表情データを追加（nullも許容）
   timestamp: number;
   mode: 'before' | 'after';
   correctionResult?: any; // AffineCorrection.CorrectionResult
@@ -99,5 +101,27 @@ export const POSE_GUIDANCE_MAP = {
     message: '顔全体をカメラに向けてください',
     direction: null,
     type: PoseGuidanceType.ERROR
+  } as PoseGuidanceData,
+  
+  // 表情ガイダンスを追加
+  smileTooMuch: {
+    message: '口角を少し下げて、自然な表情にしてください',
+    direction: null,
+    type: PoseGuidanceType.WARNING
+  } as PoseGuidanceData,
+  eyebrowRaised: {
+    message: '眉を少し下げて、リラックスしてください',
+    direction: null,
+    type: PoseGuidanceType.WARNING
+  } as PoseGuidanceData,
+  eyeTension: {
+    message: '目の力を抜いて、自然に開いてください',
+    direction: null,
+    type: PoseGuidanceType.WARNING
+  } as PoseGuidanceData,
+  expressionCalibrating: {
+    message: '表情を読み取り中...',
+    direction: null,
+    type: PoseGuidanceType.SUCCESS
   } as PoseGuidanceData
 } as const;

@@ -15,6 +15,10 @@
     POSE_GUIDANCE_MAP,
     type PoseGuidanceData,
   } from '../../../types/camera';
+  import {
+    ExpressionAnalyzer,
+    type ExpressionData,
+  } from '../../../lib/ExpressionAnalyzer';
 
   const dispatch = createEventDispatcher();
 
@@ -40,6 +44,10 @@
   let faceDetected = false;
   let faceDetectionStartTime: number | null = null;
   let faceLandmarks: any = null;
+
+  // Expression analysis
+  let expressionAnalyzer = new ExpressionAnalyzer();
+  let currentExpression: ExpressionData | null = null;
 
   // Video dimensions for accurate coordinate transformation
   let currentVideoWidth = 0;
@@ -97,6 +105,10 @@
     showPoseGuidance = false;
     poseGuidanceMessage = '';
     poseGuidanceType = '';
+
+    // Reset expression analysis
+    expressionAnalyzer.resetCalibration();
+    currentExpression = null;
   }
 
   onDestroy(() => {
@@ -145,34 +157,37 @@
       // スマホ向けに縦向きのカメラストリームを取得
       const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
       const isPortrait = window.innerHeight > window.innerWidth;
-      
-      let constraints: MediaStreamConstraints;
-      
+
+      let constraints: MediaStreamConstraints | undefined;
+      let finalStream: MediaStream;
+
       // スマホ縦向きの場合、複数の解像度を試す
       if (isMobile && isPortrait) {
         // 利用可能な全解像度を取得して縦向きを探す
         try {
           const devices = await navigator.mediaDevices.enumerateDevices();
-          const videoDevices = devices.filter(device => device.kind === 'videoinput');
+          const videoDevices = devices.filter(
+            device => device.kind === 'videoinput'
+          );
           console.log('📱 Available video devices:', videoDevices.length);
-          
+
           // まずは制約なしでカメラ能力を確認
           const testStream = await navigator.mediaDevices.getUserMedia({
-            video: { facingMode: 'user' }
+            video: { facingMode: 'user' },
           });
           const testTrack = testStream.getVideoTracks()[0];
           const capabilities = testTrack.getCapabilities();
           testStream.getTracks().forEach(track => track.stop());
-          
+
           console.log('📷 Camera capabilities:', capabilities);
-          
+
           // 利用可能な解像度から縦向きを優先的に選択
           const availableResolutions = [];
           if (capabilities.width && capabilities.height) {
             const maxWidth = capabilities.width.max || 1920;
             const maxHeight = capabilities.height.max || 1080;
             console.log(`📏 Max resolution: ${maxWidth}x${maxHeight}`);
-            
+
             // 縦向き解像度のパターンを生成
             if (maxHeight >= maxWidth) {
               // すでに縦長の場合
@@ -186,35 +201,37 @@
         } catch (e) {
           console.log('❌ Failed to get capabilities:', e);
         }
-        
+
         // 画面サイズから動的にresolutionPatternsを計算
         const screenWidth = window.innerWidth;
         const screenHeight = window.innerHeight;
         const screenAspectRatio = screenWidth / screenHeight;
-        
-        console.log('📱 Screen info for resolution calculation:', { 
-          screenWidth, screenHeight, screenAspectRatio: screenAspectRatio.toFixed(3) 
+
+        console.log('📱 Screen info for resolution calculation:', {
+          screenWidth,
+          screenHeight,
+          screenAspectRatio: screenAspectRatio.toFixed(3),
         });
-        
+
         // スマホカメラに適した解像度パターンを生成（縦長でも横長解像度を使用）
         const resolutionPatterns = [
           // 高解像度（正方形に近い）
           { width: 1080, height: 1080, aspectRatio: 1.0 },
           { width: 960, height: 1280, aspectRatio: 0.75 }, // 3:4
-          { width: 720, height: 960, aspectRatio: 0.75 },  // 3:4
+          { width: 720, height: 960, aspectRatio: 0.75 }, // 3:4
           // 4:3（カメラの標準）
-          { width: 960, height: 720, aspectRatio: 4/3 },
-          { width: 640, height: 480, aspectRatio: 4/3 },
+          { width: 960, height: 720, aspectRatio: 4 / 3 },
+          { width: 640, height: 480, aspectRatio: 4 / 3 },
           // フォールバック用
           { width: 480, height: 640, aspectRatio: 0.75 },
           { width: 360, height: 480, aspectRatio: 0.75 },
         ];
-        
+
         console.log('📱 Generated resolution patterns:', resolutionPatterns);
-        
+
         let stream = null;
         let successfulPattern = null;
-        
+
         for (const pattern of resolutionPatterns) {
           try {
             constraints = {
@@ -222,28 +239,40 @@
                 facingMode: 'user',
                 width: { ideal: pattern.width },
                 height: { ideal: pattern.height },
-                aspectRatio: { ideal: pattern.aspectRatio }
+                aspectRatio: { ideal: pattern.aspectRatio },
                 // exactやmin/maxを削除して制約を緩和
               },
-              audio: false
+              audio: false,
             };
-            
-            console.log(`📱 Trying resolution: ${pattern.width}x${pattern.height}`);
+
+            console.log(
+              `📱 Trying resolution: ${pattern.width}x${pattern.height}`
+            );
             stream = await navigator.mediaDevices.getUserMedia(constraints);
             successfulPattern = pattern;
-            console.log(`✅ Successfully got stream with: ${pattern.width}x${pattern.height}`);
+            console.log(
+              `✅ Successfully got stream with: ${pattern.width}x${pattern.height}`
+            );
             break;
           } catch (e) {
-            console.log(`❌ Failed with ${pattern.width}x${pattern.height}:`, (e as Error).message);
+            console.log(
+              `❌ Failed with ${pattern.width}x${pattern.height}:`,
+              (e as Error).message
+            );
           }
         }
-        
+
         if (!stream) {
           // 特定のデバイスIDを指定して試す
           const devices = await navigator.mediaDevices.enumerateDevices();
-          const videoDevices = devices.filter(device => device.kind === 'videoinput');
-          console.log('📱 Trying specific camera devices:', videoDevices.length);
-          
+          const videoDevices = devices.filter(
+            device => device.kind === 'videoinput'
+          );
+          console.log(
+            '📱 Trying specific camera devices:',
+            videoDevices.length
+          );
+
           for (const device of videoDevices) {
             console.log(`📷 Trying device: ${device.label || device.deviceId}`);
             for (const pattern of resolutionPatterns) {
@@ -253,14 +282,16 @@
                     deviceId: { exact: device.deviceId },
                     width: { ideal: pattern.width },
                     height: { ideal: pattern.height },
-                    aspectRatio: { ideal: pattern.aspectRatio }
+                    aspectRatio: { ideal: pattern.aspectRatio },
                   },
-                  audio: false
+                  audio: false,
                 };
-                
+
                 stream = await navigator.mediaDevices.getUserMedia(constraints);
                 successfulPattern = pattern;
-                console.log(`✅ Success with device ${device.label} at ${pattern.width}x${pattern.height}`);
+                console.log(
+                  `✅ Success with device ${device.label} at ${pattern.width}x${pattern.height}`
+                );
                 break;
               } catch (e) {
                 // 次のパターンを試す
@@ -269,20 +300,20 @@
             if (stream) break;
           }
         }
-        
+
         if (!stream) {
           // 最後の手段：制約なしで取得
           console.log('📱 All attempts failed, using fallback');
           constraints = {
             video: {
-              facingMode: 'user'
+              facingMode: 'user',
             },
-            audio: false
+            audio: false,
           };
           stream = await navigator.mediaDevices.getUserMedia(constraints);
         }
-        
-        var finalStream = stream;
+
+        finalStream = stream;
       } else if (isMobile && !isPortrait) {
         // スマホ横向きの場合
         constraints = {
@@ -290,11 +321,11 @@
             facingMode: 'user',
             width: { min: 640, ideal: 1280, max: 1920 },
             height: { min: 480, ideal: 720, max: 1080 },
-            aspectRatio: { ideal: 1.777 } // 16:9 = 1.777
+            aspectRatio: { ideal: 1.777 }, // 16:9 = 1.777
           },
-          audio: false
+          audio: false,
         };
-        var finalStream = await navigator.mediaDevices.getUserMedia(constraints);
+        finalStream = await navigator.mediaDevices.getUserMedia(constraints);
       } else {
         // PCの場合
         constraints = {
@@ -302,17 +333,20 @@
             facingMode: 'user',
             width: { ideal: 1280 },
             height: { ideal: 720 },
-            aspectRatio: { ideal: 1.777 }
+            aspectRatio: { ideal: 1.777 },
           },
-          audio: false
+          audio: false,
         };
-        var finalStream = await navigator.mediaDevices.getUserMedia(constraints);
+        finalStream = await navigator.mediaDevices.getUserMedia(constraints);
       }
 
-      console.log('📱 Final constraints used:', constraints || 'No constraints set');
-      
+      console.log(
+        '📱 Final constraints used:',
+        typeof constraints !== 'undefined' ? constraints : 'No constraints set'
+      );
+
       const stream = finalStream;
-      
+
       // ストリームの実際の設定を確認
       const videoTrack = stream.getVideoTracks()[0];
       const settings = videoTrack.getSettings();
@@ -320,18 +354,18 @@
         width: settings.width,
         height: settings.height,
         aspectRatio: settings.aspectRatio,
-        facingMode: settings.facingMode
+        facingMode: settings.facingMode,
       });
-      
+
       videoElement.srcObject = stream;
       await videoElement.play();
-      
+
       // ビデオの実際のサイズを確認
       console.log('📺 Video element dimensions:', {
         videoWidth: videoElement.videoWidth,
         videoHeight: videoElement.videoHeight,
         clientWidth: videoElement.clientWidth,
-        clientHeight: videoElement.clientHeight
+        clientHeight: videoElement.clientHeight,
       });
 
       // MediaPipeにフレームを送る処理を独自に実装
@@ -346,10 +380,10 @@
         }
         animationId = requestAnimationFrame(sendFrame);
       };
-      
+
       // フレーム送信を開始
       sendFrame();
-      
+
       // カメラ停止時にアニメーションをクリーンアップするために保存
       camera = {
         stop: () => {
@@ -359,7 +393,7 @@
           if (stream) {
             stream.getTracks().forEach(track => track.stop());
           }
-        }
+        },
       };
 
       // Wait for video to be ready
@@ -404,14 +438,28 @@
     if (!canvasCtx || !canvasElement) return;
 
     // ビデオの実際のサイズを取得
-    const videoWidth = results.image.width || results.image.videoWidth || videoElement?.videoWidth || 720;
-    const videoHeight = results.image.height || results.image.videoHeight || videoElement?.videoHeight || 1280;
-    
+    const videoWidth =
+      results.image.width ||
+      results.image.videoWidth ||
+      videoElement?.videoWidth ||
+      720;
+    const videoHeight =
+      results.image.height ||
+      results.image.videoHeight ||
+      videoElement?.videoHeight ||
+      1280;
+
     // キャンバスサイズをビデオのサイズに完全に一致させる
-    if (canvasElement.width !== videoWidth || canvasElement.height !== videoHeight) {
+    if (
+      canvasElement.width !== videoWidth ||
+      canvasElement.height !== videoHeight
+    ) {
       canvasElement.width = videoWidth;
       canvasElement.height = videoHeight;
-      console.log('📐 Canvas resized to match video:', { width: videoWidth, height: videoHeight });
+      console.log('📐 Canvas resized to match video:', {
+        width: videoWidth,
+        height: videoHeight,
+      });
     }
 
     // Clear canvas
@@ -444,6 +492,9 @@
       // 姿勢計算のログは削除（必要時のみ有効化）
       // console.log('📐 Calculated pose:', pose);
 
+      // Analyze expression
+      currentExpression = expressionAnalyzer.analyzeExpression(landmarks);
+
       updateStability(pose);
 
       if (showMesh) {
@@ -472,17 +523,17 @@
         checkAutoCapture();
       }
 
-      const guidanceInfo = {
-        show: showPoseGuidance,
-        message: poseGuidanceMessage,
-        type: poseGuidanceType,
-        direction: getGuidanceDirection(pose),
-        nosePosition: getNosePosition(landmarks),
-      };
+      // 統合ガイダンス判定（姿勢優先、表情は姿勢OKの場合のみ）
+      const guidanceInfo = determineGuidance(
+        pose,
+        currentExpression,
+        landmarks
+      );
 
       dispatch('faceDetected', {
         landmarks,
         pose,
+        expression: currentExpression, // 表情データを追加
         stable: stablePosition,
         progress,
         guidance: guidanceInfo,
@@ -1014,6 +1065,75 @@
 
   // Export guidance state
   export { showPoseGuidance, poseGuidanceMessage, poseGuidanceType };
+
+  // 姿勢と表情を統合したガイダンス判定
+  function determineGuidance(
+    pose: any,
+    expression: ExpressionData | null,
+    landmarks: any[]
+  ) {
+    // 1. まず姿勢をチェック（既存ロジック）
+    const poseGuidance = getPoseGuidanceData(pose);
+
+    // 姿勢に問題がある場合は姿勢ガイダンスを優先
+    if (poseGuidance?.type !== PoseGuidanceType.SUCCESS) {
+      return {
+        show: showPoseGuidance,
+        message: poseGuidanceMessage,
+        type: poseGuidanceType,
+        direction: getGuidanceDirection(pose),
+        nosePosition: getNosePosition(landmarks),
+        source: 'pose',
+      };
+    }
+
+    // 2. 姿勢OKの場合、表情をチェック
+    if (expression) {
+      const expressionGuidance = getExpressionGuidanceData(expression);
+      if (expressionGuidance) {
+        return {
+          show: true,
+          message: expressionGuidance.message,
+          type: expressionGuidance.type,
+          direction: expressionGuidance.direction,
+          nosePosition: getNosePosition(landmarks),
+          source: 'expression',
+        };
+      }
+    }
+
+    // すべてOKの場合
+    return {
+      show: true,
+      message: POSE_GUIDANCE_MAP.perfect.message,
+      type: POSE_GUIDANCE_MAP.perfect.type,
+      direction: null,
+      nosePosition: getNosePosition(landmarks),
+      source: 'success',
+    };
+  }
+
+  // 表情問題の優先順位付きチェック
+  function getExpressionGuidanceData(
+    expression: ExpressionData
+  ): PoseGuidanceData | null {
+    if (!expression.isCalibrated) {
+      return POSE_GUIDANCE_MAP.expressionCalibrating;
+    }
+
+    // 優先順位：笑顔 > 眉 > 目の力み
+    if (expression.mouthSmile >= 0.3) {
+      return POSE_GUIDANCE_MAP.smileTooMuch;
+    }
+    if (expression.eyebrowRaise >= 0.25) {
+      return POSE_GUIDANCE_MAP.eyebrowRaised;
+    }
+    if (expression.eyeTension >= 0.3) {
+      return POSE_GUIDANCE_MAP.eyeTension;
+    }
+
+    return null; // 表情に問題なし
+  }
 </script>
 
 <!-- This component doesn't render anything directly -->

@@ -7,6 +7,10 @@
   import FaceDetection from './FaceDetection.svelte';
   import ImageCapture from './ImageCapture.svelte';
   import { AffineCorrection } from '../../../lib/AffineCorrection';
+  import {
+    ExpressionAnalyzer,
+    type ExpressionData,
+  } from '../../../lib/ExpressionAnalyzer';
   import type { CameraCaptureResult } from '../../../types/camera';
 
   const dispatch = createEventDispatcher();
@@ -35,7 +39,11 @@
   let isReady = false;
   let currentFaceLandmarks: any = null;
   let currentPose: any = null;
+  let currentExpression: ExpressionData | null = null;
   let previewImage: string | null = null;
+
+  // Expression analyzer instance
+  let expressionAnalyzer = new ExpressionAnalyzer();
 
   // Wait for DOM elements to be ready
   async function waitForDOMElements(): Promise<boolean> {
@@ -134,6 +142,7 @@
           imageData: correctionResult.correctedImageUrl, // 補正済み画像を使用
           landmarks: currentFaceLandmarks,
           pose: currentPose,
+          expression: currentExpression, // 表情データを追加
           timestamp: Date.now(),
           mode,
           correctionResult,
@@ -146,6 +155,7 @@
           imageData: imageData, // 元の画像を使用
           landmarks: currentFaceLandmarks,
           pose: currentPose,
+          expression: currentExpression, // 表情データを追加
           timestamp: Date.now(),
           mode,
           correctionResult: null, // 補正なし
@@ -180,23 +190,59 @@
   }
 
   function handleFaceDetected(event: CustomEvent) {
-    const { landmarks, pose, stable, progress, guidance } = event.detail;
+    const { landmarks, pose, expression, stable, progress, guidance } =
+      event.detail;
     currentFaceLandmarks = landmarks;
     currentPose = pose;
+    currentExpression = expression;
 
     dispatch('face:detected', {
       landmarks,
       pose,
+      expression,
       stable,
       progress,
       guidance,
     });
   }
 
+  // 撮影可能条件をチェック（姿勢 + 表情）
+  function canCapture(): boolean {
+    if (!currentPose || !currentExpression) return false;
+
+    // 姿勢チェック（既存ロジック）
+    const poseOk = isReasonablyFrontFacing(currentPose);
+
+    // 表情チェック
+    const expressionOk = currentExpression
+      ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
+      : true;
+
+    return poseOk && expressionOk;
+  }
+
+  // 姿勢が許容範囲内かチェック（既存の判定ロジック）
+  function isReasonablyFrontFacing(pose: any): boolean {
+    const rollThreshold = 10.0;
+    const pitchThreshold = 10.0;
+    const yawThreshold = 10.0;
+
+    return (
+      Math.abs(pose.roll) < rollThreshold &&
+      Math.abs(pose.pitch) < pitchThreshold &&
+      Math.abs(pose.yaw) < yawThreshold
+    );
+  }
+
   async function handleAutoCapture(event: CustomEvent) {
     if (!autoCapture) return;
 
     const { landmarks } = event.detail;
+
+    // 撮影可能条件をチェック
+    if (!canCapture()) {
+      return; // 姿勢または表情に問題がある場合は撮影しない
+    }
 
     if (!imageCapture) return;
 
@@ -225,6 +271,7 @@
           imageData: correctionResult.correctedImageUrl, // 補正済み画像を使用
           landmarks,
           pose: currentPose,
+          expression: currentExpression, // 表情データを追加
           timestamp: Date.now(),
           mode,
           correctionResult,
@@ -237,6 +284,7 @@
           imageData: imageData, // 元の画像を使用
           landmarks,
           pose: currentPose,
+          expression: currentExpression, // 表情データを追加
           timestamp: Date.now(),
           mode,
           correctionResult: null, // 補正なし
