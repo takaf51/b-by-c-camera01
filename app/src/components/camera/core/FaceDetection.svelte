@@ -738,10 +738,18 @@
       pose.quality >= MIN_FACE_QUALITY &&
       pose.faceSize >= MIN_FACE_SIZE;
 
-    // 姿勢安定性チェックのログは削除（必要時のみ有効化）
-    // console.log('🎯 Pose stability check:', { roll: pose.roll.toFixed(1), pitch: pose.pitch.toFixed(1), yaw: pose.yaw.toFixed(1), isGoodPose, progress: progress.toFixed(1) });
+    // 表情チェック - 表情に問題がある場合は安定状態にしない
+    const isGoodExpression = currentExpression
+      ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
+      : true;
 
-    if (isGoodPose) {
+    // 姿勢と表情の両方が良好な場合のみ安定状態とする
+    const isStable = isGoodPose && isGoodExpression;
+
+    // 姿勢安定性チェックのログは削除（必要時のみ有効化）
+    // console.log('🎯 Pose stability check:', { roll: pose.roll.toFixed(1), pitch: pose.pitch.toFixed(1), yaw: pose.yaw.toFixed(1), isGoodPose, isGoodExpression, isStable, progress: progress.toFixed(1) });
+
+    if (isStable) {
       if (!stablePosition) {
         stablePosition = true;
         stableStartTime = now;
@@ -766,14 +774,15 @@
         }
       }
     } else {
+      // 姿勢または表情に問題がある場合はリセット
       if (stablePosition) {
       }
       stablePosition = false;
       stableStartTime = null;
       progress = 0;
 
-      // Guidance messages
-      if (now - lastGuidanceUpdate > GUIDANCE_UPDATE_INTERVAL) {
+      // Guidance messages - 姿勢のガイダンスのみ更新（表情は統合ガイダンスで処理）
+      if (now - lastGuidanceUpdate > GUIDANCE_UPDATE_INTERVAL && !isGoodPose) {
         updatePoseGuidance(pose);
         lastGuidanceUpdate = now;
       }
@@ -964,8 +973,18 @@
     // 姿勢が安定してからの経過時間を計算
     const elapsed = (performance.now() - stableStartTime) / 1000;
 
-    // 姿勢が安定してから3秒経過で撮影
-    if (elapsed >= FACE_DETECTION_DELAY && stablePosition && progress >= 100) {
+    // 表情チェック - 表情に問題がある場合は撮影しない
+    const expressionOk = currentExpression
+      ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
+      : true;
+
+    // 姿勢が安定してから3秒経過 + 表情も良好な場合に撮影
+    if (
+      elapsed >= FACE_DETECTION_DELAY &&
+      stablePosition &&
+      progress >= 100 &&
+      expressionOk
+    ) {
       dispatch('autoCapture', { landmarks: faceLandmarks });
 
       // Reset detection to prevent multiple captures
@@ -1121,14 +1140,18 @@
       return POSE_GUIDANCE_MAP.expressionCalibrating;
     }
 
+    // ExpressionAnalyzerの設定値を使用して一貫性を保つ
+    const settings = expressionAnalyzer.getSettings();
+
     // 優先順位：笑顔 > 眉 > 目の力み
-    if (expression.mouthSmile >= 0.3) {
+    // ExpressionAnalyzerと同じ条件を使用（>= から < への否定で一致させる）
+    if (expression.mouthSmile >= settings.smileThreshold) {
       return POSE_GUIDANCE_MAP.smileTooMuch;
     }
-    if (expression.eyebrowRaise >= 0.25) {
+    if (expression.eyebrowRaise >= settings.eyebrowThreshold) {
       return POSE_GUIDANCE_MAP.eyebrowRaised;
     }
-    if (expression.eyeTension >= 0.3) {
+    if (expression.eyeTension >= settings.eyeTensionThreshold) {
       return POSE_GUIDANCE_MAP.eyeTension;
     }
 

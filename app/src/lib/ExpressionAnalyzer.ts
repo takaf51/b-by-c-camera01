@@ -93,9 +93,7 @@ export class ExpressionAnalyzer {
     chinCenter: 175,         // 顎中央
   };
 
-  constructor() {
-    console.log('ExpressionAnalyzer initialized with improved landmarks');
-  }
+  constructor() {}
 
   /**
    * 表情を分析
@@ -207,8 +205,6 @@ export class ExpressionAnalyzer {
       eyeOpenness: median(eyeOpennesses),
       faceHeight: median(faceHeights)
     };
-
-    console.log('Calibration complete. Median baseline:', this.baselineData);
   }
 
   /**
@@ -410,7 +406,6 @@ export class ExpressionAnalyzer {
     this.baselineData = null;
     this.calibrationFrames = [];
     this.calibrationComplete = false;
-    console.log('Expression calibration reset');
   }
 
   /**
