@@ -157,19 +157,7 @@
       currentCamera.stopCamera();
     }
 
-    // カメラ画面からは確認画面に戻る
-    if (currentStep === 'camera') {
-      currentStep = 'confirmation';
-    } else {
-      // 確認画面から戻る場合は、アプリケーションの種類によって処理を分岐
-      // camera.htmlの場合（programIdがない、またはroute定義がない場合）はページリロード
-      if (!programId || window.location.pathname.includes('camera.html')) {
-        window.location.reload();
-      } else {
-        // 通常のSPAアプリケーションの場合
-        push(`/plan/detail/${programId}`);
-      }
-    }
+    window.location.href = '/';
 
     dispatch('cancel');
   }
