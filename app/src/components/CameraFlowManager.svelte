@@ -20,7 +20,6 @@
   export const showTutorial: boolean = false;
   export let tutorialMode: 'before' | 'after' = 'before';
   export let enableTutorial: boolean | undefined = undefined; // チュートリアル機能の有効/無効（未設定時はundefined）
-  export let enableAutoCorrection: boolean | undefined = undefined; // 自動補正機能の有効/無効（未設定時はundefined）
 
   // Tutorial state
   let showTutorialModal = false;
@@ -135,7 +134,7 @@
   function handleCameraCapture(result: CameraCaptureResult) {
     if (result.mode === 'before') {
       // After before capture, determine next step
-      if (flow === 'tutorial') {
+      if (kind === 'before') {
         // Switch to after mode and start camera directly
         currentMode = 'after';
         startCameraDirectly();
@@ -224,7 +223,6 @@
       <BeforeCamera
         bind:this={currentCamera}
         {programId}
-        {enableAutoCorrection}
         mirrorMode={true}
         showMesh={true}
         autoCapture={true}
@@ -236,7 +234,6 @@
         bind:this={currentCamera}
         {programId}
         {planReportId}
-        {enableAutoCorrection}
         mirrorMode={true}
         showMesh={true}
         autoCapture={true}

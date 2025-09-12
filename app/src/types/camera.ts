@@ -8,7 +8,6 @@ export interface CameraCaptureResult {
   expression?: ExpressionData | null; // 表情データを追加（nullも許容）
   timestamp: number;
   mode: 'before' | 'after';
-  correctionResult?: any; // AffineCorrection.CorrectionResult
 }
 
 export interface CameraConfig {

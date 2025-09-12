@@ -6,7 +6,6 @@
   import { onMount, onDestroy, createEventDispatcher } from 'svelte';
   import FaceDetection from './FaceDetection.svelte';
   import ImageCapture from './ImageCapture.svelte';
-  import { AffineCorrection } from '../../../lib/AffineCorrection';
   import {
     ExpressionAnalyzer,
     type ExpressionData,
@@ -21,7 +20,6 @@
   export let mirrorMode: boolean = true;
   export let showMesh: boolean = true;
   export let autoCapture: boolean = true;
-  export let enableAutoCorrection: boolean | undefined = undefined;
 
   // Event handlers
   export let onCapture: (result: CameraCaptureResult) => void = () => {};
@@ -33,7 +31,6 @@
   let canvasElement: HTMLCanvasElement;
   let faceDetection: any;
   let imageCapture: any;
-  let affineCorrection: AffineCorrection;
 
   // Camera state
   let isReady = false;
@@ -123,52 +120,22 @@
       return null;
     }
 
-    // 自動補正設定を確認（未設定の場合は有効）
-    const shouldCorrect = enableAutoCorrection !== false;
-
     try {
-      let result: CameraCaptureResult;
+      const result: CameraCaptureResult = {
+        imageData: imageData,
+        landmarks: currentFaceLandmarks,
+        pose: currentPose,
+        expression: currentExpression,
+        timestamp: Date.now(),
+        mode,
+      };
 
-      if (shouldCorrect) {
-        // 自動補正を適用
-        const correctionResult = await affineCorrection.correctImage(
-          imageData,
-          currentPose,
-          currentFaceLandmarks
-        );
-
-        // 補正済み画像をメインのimageDataとして使用
-        result = {
-          imageData: correctionResult.correctedImageUrl, // 補正済み画像を使用
-          landmarks: currentFaceLandmarks,
-          pose: currentPose,
-          expression: currentExpression, // 表情データを追加
-          timestamp: Date.now(),
-          mode,
-          correctionResult,
-        };
-
-        previewImage = correctionResult.correctedImageUrl; // プレビューも補正済み画像
-      } else {
-        // 自動補正なし - 元の画像をそのまま使用
-        result = {
-          imageData: imageData, // 元の画像を使用
-          landmarks: currentFaceLandmarks,
-          pose: currentPose,
-          expression: currentExpression, // 表情データを追加
-          timestamp: Date.now(),
-          mode,
-          correctionResult: null, // 補正なし
-        };
-
-        previewImage = imageData; // プレビューも元の画像
-      }
-
+      previewImage = imageData;
       return result;
     } catch (error) {
       onError(
         new Error(
-          `Manual capture ${shouldCorrect ? 'auto correction' : 'processing'} failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Manual capture processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
         )
       );
       return null;
@@ -252,53 +219,23 @@
       return;
     }
 
-    // 自動補正設定を確認（未設定の場合は有効）
-    const shouldCorrect = enableAutoCorrection !== false;
-
     try {
-      let result: CameraCaptureResult;
+      const result: CameraCaptureResult = {
+        imageData: imageData,
+        landmarks,
+        pose: currentPose,
+        expression: currentExpression,
+        timestamp: Date.now(),
+        mode,
+      };
 
-      if (shouldCorrect) {
-        // 自動補正を適用
-        const correctionResult = await affineCorrection.correctImage(
-          imageData,
-          currentPose,
-          landmarks
-        );
-
-        // 補正済み画像をメインのimageDataとして使用
-        result = {
-          imageData: correctionResult.correctedImageUrl, // 補正済み画像を使用
-          landmarks,
-          pose: currentPose,
-          expression: currentExpression, // 表情データを追加
-          timestamp: Date.now(),
-          mode,
-          correctionResult,
-        };
-
-        previewImage = correctionResult.correctedImageUrl; // プレビューも補正済み画像
-      } else {
-        // 自動補正なし - 元の画像をそのまま使用
-        result = {
-          imageData: imageData, // 元の画像を使用
-          landmarks,
-          pose: currentPose,
-          expression: currentExpression, // 表情データを追加
-          timestamp: Date.now(),
-          mode,
-          correctionResult: null, // 補正なし
-        };
-
-        previewImage = imageData; // プレビューも元の画像
-      }
-
+      previewImage = imageData;
       onCapture(result);
       dispatch('capture:success', { result });
     } catch (error) {
       onError(
         new Error(
-          `Auto capture ${shouldCorrect ? 'correction' : 'processing'} failed: ${error instanceof Error ? error.message : 'Unknown error'}`
+          `Auto capture processing failed: ${error instanceof Error ? error.message : 'Unknown error'}`
         )
       );
     }
@@ -316,9 +253,6 @@
   }
 
   onMount(() => {
-    // Initialize auto correction
-    affineCorrection = new AffineCorrection();
-
     // Camera will be started externally via startCamera() method
   });
 

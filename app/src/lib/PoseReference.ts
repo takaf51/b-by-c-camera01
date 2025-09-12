@@ -12,7 +12,6 @@ export interface ReferenceData {
   image: string; // base64 image data
   landmarks: any[] | null;
   timestamp: Date;
-  correctionResult?: any;
 }
 
 export class PoseReference {
@@ -21,7 +20,6 @@ export class PoseReference {
   private referenceLandmarks: any[] | null = null;
   private captureTimestamp: Date | null = null;
   private isSet: boolean = false;
-  private correctionResult: any = null;
 
   /**
    * Before画像の参照情報を設定
@@ -32,7 +30,6 @@ export class PoseReference {
     this.referenceLandmarks = landmarks;
     this.captureTimestamp = new Date();
     this.isSet = true;
-    this.correctionResult = null; // 補正結果をリセット
 
     console.log('📋 Before参照姿勢を設定:', this.referencePose);
     return true;
@@ -51,17 +48,9 @@ export class PoseReference {
       image: this.referenceImage,
       landmarks: this.referenceLandmarks,
       timestamp: this.captureTimestamp,
-      correctionResult: this.correctionResult
     };
   }
 
-  /**
-   * 補正結果を保存
-   */
-  setCorrectionResult(correctionResult: any): void {
-    this.correctionResult = correctionResult;
-    console.log('💫 Before補正結果を保存:', correctionResult?.correctionInfo);
-  }
 
   /**
    * 参照情報をクリア
@@ -72,7 +61,6 @@ export class PoseReference {
     this.referenceLandmarks = null;
     this.captureTimestamp = null;
     this.isSet = false;
-    this.correctionResult = null;
     console.log('🗑️ Before参照姿勢をクリア');
   }
 
@@ -83,14 +71,4 @@ export class PoseReference {
     return this.isSet && this.referencePose !== null;
   }
 
-  /**
-   * 表示用の姿勢データを取得（補正後があれば補正後、なければ元の値）
-   */
-  getDisplayPose(): { roll: number; pitch: number; yaw: number } | null {
-    const reference = this.getReference();
-    if (!reference) return null;
-
-    // 補正結果がある場合は補正後の値を返す
-    return reference.correctionResult?.estimatedCorrectedPose || reference.pose;
-  }
 }

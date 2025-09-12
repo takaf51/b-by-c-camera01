@@ -29,7 +29,6 @@
   export let mirrorMode: boolean = true;
   export let showMesh: boolean = true;
   export let autoCapture: boolean = true;
-  export let enableAutoCorrection: boolean | undefined = undefined;
 
   // Event handlers
 
@@ -78,7 +77,8 @@
   }): PoseComparison | null {
     if (!poseReference.hasReference()) return null;
 
-    const referencePose = poseReference.getDisplayPose();
+    const reference = poseReference.getReference();
+    const referencePose = reference?.pose;
     if (!referencePose) return null;
 
     currentComparison = poseComparator.comparePoses(referencePose, currentPose);
@@ -123,11 +123,6 @@
           beforeInfo.image,
           beforeInfo.landmarks
         );
-
-        // 補正結果がある場合は追加で設定
-        if (beforeInfo.correctionResult) {
-          poseReference.setCorrectionResult(beforeInfo.correctionResult);
-        }
 
         beforeReference = poseReference.getReference();
       }
@@ -228,7 +223,6 @@
   {mirrorMode}
   {showMesh}
   {autoCapture}
-  {enableAutoCorrection}
   onCapture={handleCapture}
   onCancel={handleCancel}
   onError={handleError}

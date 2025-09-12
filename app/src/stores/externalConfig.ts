@@ -12,7 +12,6 @@ interface ExternalConfig {
   kind?: 'before' | 'after';
   apiToken?: string;
   enableTutorial?: boolean;
-  enableAutoCorrection?: boolean;
 }
 
 // デフォルト設定（既存の動作を維持）
@@ -23,7 +22,6 @@ const defaultConfig: ExternalConfig = {
   kind: undefined,
   apiToken: undefined,
   enableTutorial: undefined, // 未設定の場合は既存ロジックを使用
-  enableAutoCorrection: undefined, // 未設定の場合は有効（既存動作）
 };
 
 // 外部設定ストア
@@ -47,7 +45,6 @@ export function initializeExternalConfig(): void {
       kind: settings.KIND,
       apiToken: settings.API_TOKEN,
       enableTutorial: settings.ENABLE_TUTORIAL,
-      enableAutoCorrection: settings.ENABLE_AUTO_CORRECTION,
     });
   } else {
     console.log('📱 No external config found, using defaults');

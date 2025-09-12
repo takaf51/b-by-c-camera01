@@ -30,7 +30,6 @@ export interface BeforeCaptureData {
     faceSize?: number; 
   };
   landmarks: Array<{x: number; y: number; z?: number}>; // 468個の座標点
-  correctionResult?: any; // AffineCorrection結果
 }
 
 export interface ReportCreateRequest {

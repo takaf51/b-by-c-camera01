@@ -14,7 +14,6 @@
     : null;
   $: kind = $externalConfig.kind || null;
   $: enableTutorial = $externalConfig.enableTutorial;
-  $: enableAutoCorrection = $externalConfig.enableAutoCorrection;
 
   // Event handlers
   function handleFlowCapture(event: CustomEvent) {
@@ -41,7 +40,6 @@
   {planReportId}
   {kind}
   {enableTutorial}
-  {enableAutoCorrection}
   on:capture={handleFlowCapture}
   on:complete={handleFlowComplete}
   on:cancel={handleFlowCancel}

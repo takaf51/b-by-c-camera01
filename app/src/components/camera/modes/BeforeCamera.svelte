@@ -20,7 +20,6 @@
   export let mirrorMode: boolean = true;
   export let showMesh: boolean = true;
   export let autoCapture: boolean = true;
-  export let enableAutoCorrection: boolean | undefined = undefined;
 
   // Event handlers
 
@@ -174,7 +173,6 @@
   {mirrorMode}
   {showMesh}
   {autoCapture}
-  {enableAutoCorrection}
   onCapture={handleCapture}
   onCancel={handleCancel}
   onError={handleError}

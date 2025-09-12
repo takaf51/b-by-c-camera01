@@ -52,15 +52,14 @@ window.AppSettings = {
 
 ### 設定可能項目
 
-| 項目                     | 型                    | 説明                                             | 例                            |
-| ------------------------ | --------------------- | ------------------------------------------------ | ----------------------------- |
-| `API_ENDPOINT`           | `string`              | APIエンドポイントのURL                           | `"https://api.example.com"`   |
-| `PLAN_CODE`              | `string`              | プラン識別コード                                 | `"plan-202508-plan1"`         |
-| `PLAN_REPORT_ID`         | `number`              | プランレポートID（チュートリアル表示判定に使用） | `123`                         |
-| `KIND`                   | `"before" \| "after"` | 撮影種別                                         | `"before"` または `"after"`   |
-| `API_TOKEN`              | `string`              | API認証トークン                                  | `"your-api-token-here"`       |
-| `ENABLE_TUTORIAL`        | `boolean`             | チュートリアル表示制御                           | `true`, `false`, または未設定 |
-| `ENABLE_AUTO_CORRECTION` | `boolean`             | 自動補正機能制御                                 | `true`, `false`, または未設定 |
+| 項目              | 型                    | 説明                                             | 例                            |
+| ----------------- | --------------------- | ------------------------------------------------ | ----------------------------- |
+| `API_ENDPOINT`    | `string`              | APIエンドポイントのURL                           | `"https://api.example.com"`   |
+| `PLAN_CODE`       | `string`              | プラン識別コード                                 | `"plan-202508-plan1"`         |
+| `PLAN_REPORT_ID`  | `number`              | プランレポートID（チュートリアル表示判定に使用） | `123`                         |
+| `KIND`            | `"before" \| "after"` | 撮影種別                                         | `"before"` または `"after"`   |
+| `API_TOKEN`       | `string`              | API認証トークン                                  | `"your-api-token-here"`       |
+| `ENABLE_TUTORIAL` | `boolean`             | チュートリアル表示制御                           | `true`, `false`, または未設定 |
 
 ### チュートリアル表示制御（ENABLE_TUTORIAL）
 
@@ -72,20 +71,6 @@ window.AppSettings = {
   - After撮影時: チュートリアルをスキップ
   - Before撮影でPLAN_REPORT_IDがある場合: チュートリアルをスキップ
   - その他の場合（初回Before撮影等）: チュートリアルを表示
-
-### 自動補正機能制御（ENABLE_AUTO_CORRECTION）
-
-**動作仕様:**
-
-- `true`: 自動補正を実行
-  - 撮影後に姿勢データに基づいて画像を自動補正
-  - プレビューには補正済み画像を表示
-  - バックエンドには補正済み画像を送信
-- `false`: 自動補正を無効
-  - 撮影した画像をそのまま使用
-  - プレビューには元の画像を表示
-  - バックエンドには元の画像を送信
-- 未設定（`undefined`）: 自動補正を実行（既存動作を維持）
 
 ### フォールバック動作
 
