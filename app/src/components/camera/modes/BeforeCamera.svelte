@@ -20,6 +20,7 @@
   export let mirrorMode: boolean = true;
   export let showMesh: boolean = true;
   export let autoCapture: boolean = true;
+  export let enableExpressionDetection: boolean | undefined = undefined;
 
   // Event handlers
 
@@ -173,6 +174,7 @@
   {mirrorMode}
   {showMesh}
   {autoCapture}
+  {enableExpressionDetection}
   onCapture={handleCapture}
   onCancel={handleCancel}
   onError={handleError}

@@ -32,6 +32,7 @@
   // Constants
   export const CAPTURE_COUNT: number = 1;
   export let CaptureMode: any;
+  export let enableExpressionDetection: boolean | undefined = undefined;
 
   // MediaPipe instances
   let faceMesh: any;
@@ -106,8 +107,10 @@
     poseGuidanceMessage = '';
     poseGuidanceType = '';
 
-    // Reset expression analysis
-    expressionAnalyzer.resetCalibration();
+    // Reset expression analysis (only if enabled)
+    if (enableExpressionDetection !== false) {
+      expressionAnalyzer.resetCalibration();
+    }
     currentExpression = null;
   }
 
@@ -492,8 +495,12 @@
       // 姿勢計算のログは削除（必要時のみ有効化）
       // console.log('📐 Calculated pose:', pose);
 
-      // Analyze expression
-      currentExpression = expressionAnalyzer.analyzeExpression(landmarks);
+      // Analyze expression (only if enabled)
+      if (enableExpressionDetection !== false) {
+        currentExpression = expressionAnalyzer.analyzeExpression(landmarks);
+      } else {
+        currentExpression = null;
+      }
 
       updateStability(pose);
 
@@ -739,9 +746,10 @@
       pose.faceSize >= MIN_FACE_SIZE;
 
     // 表情チェック - 表情に問題がある場合は安定状態にしない
-    const isGoodExpression = currentExpression
-      ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
-      : true;
+    const isGoodExpression =
+      enableExpressionDetection !== false && currentExpression
+        ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
+        : true; // Expression detection disabled or no expression data, assume OK
 
     // 姿勢と表情の両方が良好な場合のみ安定状態とする
     const isStable = isGoodPose && isGoodExpression;
@@ -974,9 +982,10 @@
     const elapsed = (performance.now() - stableStartTime) / 1000;
 
     // 表情チェック - 表情に問題がある場合は撮影しない
-    const expressionOk = currentExpression
-      ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
-      : true;
+    const expressionOk =
+      enableExpressionDetection !== false && currentExpression
+        ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
+        : true; // Expression detection disabled or no expression data, assume OK
 
     // 姿勢が安定してから3秒経過 + 表情も良好な場合に撮影
     if (
@@ -1106,8 +1115,8 @@
       };
     }
 
-    // 2. 姿勢OKの場合、表情をチェック
-    if (expression) {
+    // 2. 姿勢OKの場合、表情をチェック（表情検知が有効な場合のみ）
+    if (enableExpressionDetection !== false && expression) {
       const expressionGuidance = getExpressionGuidanceData(expression);
       if (expressionGuidance) {
         return {

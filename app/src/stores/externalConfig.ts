@@ -12,6 +12,7 @@ interface ExternalConfig {
   kind?: 'before' | 'after';
   apiToken?: string;
   enableTutorial?: boolean;
+  enableExpressionDetection?: boolean;
 }
 
 // デフォルト設定（既存の動作を維持）
@@ -22,6 +23,7 @@ const defaultConfig: ExternalConfig = {
   kind: undefined,
   apiToken: undefined,
   enableTutorial: undefined, // 未設定の場合は既存ロジックを使用
+  enableExpressionDetection: false,
 };
 
 // 外部設定ストア
@@ -45,6 +47,7 @@ export function initializeExternalConfig(): void {
       kind: settings.KIND,
       apiToken: settings.API_TOKEN,
       enableTutorial: settings.ENABLE_TUTORIAL,
+      enableExpressionDetection: settings.ENABLE_EXPRESSION_DETECTION,
     });
   } else {
     console.log('📱 No external config found, using defaults');

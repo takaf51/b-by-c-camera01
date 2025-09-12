@@ -52,14 +52,15 @@ window.AppSettings = {
 
 ### 設定可能項目
 
-| 項目              | 型                    | 説明                                             | 例                            |
-| ----------------- | --------------------- | ------------------------------------------------ | ----------------------------- |
-| `API_ENDPOINT`    | `string`              | APIエンドポイントのURL                           | `"https://api.example.com"`   |
-| `PLAN_CODE`       | `string`              | プラン識別コード                                 | `"plan-202508-plan1"`         |
-| `PLAN_REPORT_ID`  | `number`              | プランレポートID（チュートリアル表示判定に使用） | `123`                         |
-| `KIND`            | `"before" \| "after"` | 撮影種別                                         | `"before"` または `"after"`   |
-| `API_TOKEN`       | `string`              | API認証トークン                                  | `"your-api-token-here"`       |
-| `ENABLE_TUTORIAL` | `boolean`             | チュートリアル表示制御                           | `true`, `false`, または未設定 |
+| 項目                          | 型                    | 説明                                             | 例                            |
+| ----------------------------- | --------------------- | ------------------------------------------------ | ----------------------------- |
+| `API_ENDPOINT`                | `string`              | APIエンドポイントのURL                           | `"https://api.example.com"`   |
+| `PLAN_CODE`                   | `string`              | プラン識別コード                                 | `"plan-202508-plan1"`         |
+| `PLAN_REPORT_ID`              | `number`              | プランレポートID（チュートリアル表示判定に使用） | `123`                         |
+| `KIND`                        | `"before" \| "after"` | 撮影種別                                         | `"before"` または `"after"`   |
+| `API_TOKEN`                   | `string`              | API認証トークン                                  | `"your-api-token-here"`       |
+| `ENABLE_TUTORIAL`             | `boolean`             | チュートリアル表示制御                           | `true`, `false`, または未設定 |
+| `ENABLE_EXPRESSION_DETECTION` | `boolean`             | 表情検知機能制御                                 | `true`, `false`, または未設定 |
 
 ### チュートリアル表示制御（ENABLE_TUTORIAL）
 
@@ -71,6 +72,20 @@ window.AppSettings = {
   - After撮影時: チュートリアルをスキップ
   - Before撮影でPLAN_REPORT_IDがある場合: チュートリアルをスキップ
   - その他の場合（初回Before撮影等）: チュートリアルを表示
+
+### 表情検知機能制御（ENABLE_EXPRESSION_DETECTION）
+
+**動作仕様:**
+
+- `true`: 表情検知を有効
+  - 撮影時に表情を解析し、不適切な表情（笑顔、眉上げ、目の力み）を検出
+  - 表情に問題がある場合は撮影をブロックし、ガイダンスを表示
+  - 姿勢と表情の両方が良好な場合のみ撮影を許可
+- `false`: 表情検知を無効
+  - 表情の解析と検証をスキップ
+  - 姿勢のみをチェックして撮影判定
+  - 表情関連のガイダンスは表示されない
+- 未設定（`undefined`）: 表情検知を有効（既存動作を維持）
 
 ### フォールバック動作
 

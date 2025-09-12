@@ -14,6 +14,7 @@
     : null;
   $: kind = $externalConfig.kind || null;
   $: enableTutorial = $externalConfig.enableTutorial;
+  $: enableExpressionDetection = $externalConfig.enableExpressionDetection;
 
   // Event handlers
   function handleFlowCapture(event: CustomEvent) {
@@ -40,6 +41,7 @@
   {planReportId}
   {kind}
   {enableTutorial}
+  {enableExpressionDetection}
   on:capture={handleFlowCapture}
   on:complete={handleFlowComplete}
   on:cancel={handleFlowCancel}

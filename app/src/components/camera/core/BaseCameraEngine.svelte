@@ -20,6 +20,7 @@
   export let mirrorMode: boolean = true;
   export let showMesh: boolean = true;
   export let autoCapture: boolean = true;
+  export let enableExpressionDetection: boolean | undefined = undefined;
 
   // Event handlers
   export let onCapture: (result: CameraCaptureResult) => void = () => {};
@@ -175,15 +176,16 @@
 
   // 撮影可能条件をチェック（姿勢 + 表情）
   function canCapture(): boolean {
-    if (!currentPose || !currentExpression) return false;
+    if (!currentPose) return false;
 
     // 姿勢チェック（既存ロジック）
     const poseOk = isReasonablyFrontFacing(currentPose);
 
-    // 表情チェック
-    const expressionOk = currentExpression
-      ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
-      : true;
+    // 表情チェック（表情検知が有効な場合のみ）
+    const expressionOk =
+      enableExpressionDetection !== false && currentExpression
+        ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
+        : true; // Expression detection disabled or no expression data, assume OK
 
     return poseOk && expressionOk;
   }
@@ -268,6 +270,7 @@
     bind:videoElement
     bind:canvasElement
     {showMesh}
+    {enableExpressionDetection}
     currentMode={mode}
     CAPTURE_COUNT={1}
     CaptureMode={{
