@@ -1,7 +1,7 @@
 <script lang="ts">
   import { createEventDispatcher, onMount } from 'svelte';
   import { push } from 'svelte-spa-router';
-  import ConfirmationScreen from './ui/screens/ConfirmationScreen.svelte';
+  import TwoPageConfirmationScreen from './ui/screens/TwoPageConfirmationScreen.svelte';
   import BeforeCamera from './camera/modes/BeforeCamera.svelte';
   import AfterCamera from './camera/modes/AfterCamera.svelte';
   import UploadCompleteModal from './ui/modals/UploadCompleteModal.svelte';
@@ -215,7 +215,7 @@
 
 <div class="camera-flow-container">
   {#if currentStep === 'confirmation'}
-    <ConfirmationScreen
+    <TwoPageConfirmationScreen
       on:confirm={handleConfirmationConfirm}
       on:cancel={handleCancel}
     />
