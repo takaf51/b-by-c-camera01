@@ -183,9 +183,11 @@
 
     // 表情チェック（表情検知が有効な場合のみ）
     const expressionOk =
-      enableExpressionDetection !== false && currentExpression
-        ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
-        : true; // Expression detection disabled or no expression data, assume OK
+      enableExpressionDetection === true
+        ? currentExpression
+          ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
+          : true
+        : true; // Expression detection disabled, assume OK
 
     return poseOk && expressionOk;
   }

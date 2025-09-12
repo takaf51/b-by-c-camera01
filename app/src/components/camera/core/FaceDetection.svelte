@@ -108,7 +108,7 @@
     poseGuidanceType = '';
 
     // Reset expression analysis (only if enabled)
-    if (enableExpressionDetection !== false) {
+    if (enableExpressionDetection === true) {
       expressionAnalyzer.resetCalibration();
     }
     currentExpression = null;
@@ -496,7 +496,7 @@
       // console.log('📐 Calculated pose:', pose);
 
       // Analyze expression (only if enabled)
-      if (enableExpressionDetection !== false) {
+      if (enableExpressionDetection === true) {
         currentExpression = expressionAnalyzer.analyzeExpression(landmarks);
       } else {
         currentExpression = null;
@@ -747,9 +747,11 @@
 
     // 表情チェック - 表情に問題がある場合は安定状態にしない
     const isGoodExpression =
-      enableExpressionDetection !== false && currentExpression
-        ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
-        : true; // Expression detection disabled or no expression data, assume OK
+      enableExpressionDetection === true
+        ? currentExpression
+          ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
+          : true
+        : true; // Expression detection disabled, assume OK
 
     // 姿勢と表情の両方が良好な場合のみ安定状態とする
     const isStable = isGoodPose && isGoodExpression;
@@ -983,9 +985,11 @@
 
     // 表情チェック - 表情に問題がある場合は撮影しない
     const expressionOk =
-      enableExpressionDetection !== false && currentExpression
-        ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
-        : true; // Expression detection disabled or no expression data, assume OK
+      enableExpressionDetection === true
+        ? currentExpression
+          ? expressionAnalyzer.isExpressionAcceptable(currentExpression)
+          : true
+        : true; // Expression detection disabled, assume OK
 
     // 姿勢が安定してから3秒経過 + 表情も良好な場合に撮影
     if (
@@ -1116,7 +1120,7 @@
     }
 
     // 2. 姿勢OKの場合、表情をチェック（表情検知が有効な場合のみ）
-    if (enableExpressionDetection !== false && expression) {
+    if (enableExpressionDetection === true && expression) {
       const expressionGuidance = getExpressionGuidanceData(expression);
       if (expressionGuidance) {
         return {
