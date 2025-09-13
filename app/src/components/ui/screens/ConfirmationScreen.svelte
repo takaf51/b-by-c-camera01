@@ -81,11 +81,6 @@
 
       <div class="warning-section">
         <div class="warning-icon-line">
-          <img
-            src="/assets/images/icon/exclamation-mark.png"
-            alt="注意"
-            class="warning-icon"
-          />
           <p>前後の比較はデータ分析されます。</p>
         </div>
         <div class="warning-text">

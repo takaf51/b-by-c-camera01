@@ -13,7 +13,7 @@
   let scalerElement: HTMLDivElement;
 
   // デザインデータ上のコンテンツの基準となる高さ (px)
-  const BASE_CONTENT_HEIGHT = 740;
+  const BASE_CONTENT_HEIGHT = 760;
 
   /**
    * 画面の高さに応じて、コンテンツのスケールとコンテナの高さを調整する関数
@@ -88,12 +88,7 @@
         <h2 class="confirmation-title">撮影の前にご確認ください</h2>
 
         <div class="warning-section">
-          <div class="warning-icon-line">
-            <img
-              src="/assets/images/icon/exclamation-mark.png"
-              alt="注意"
-              class="warning-icon"
-            />
+          <div class="warning-line">
             <p>前後の比較はデータ分析されます。</p>
           </div>
           <div class="warning-text">
@@ -102,55 +97,85 @@
         </div>
 
         <div class="guidelines-container">
-          <div class="guidelines-grid">
-            <div class="guideline-item good">
-              <div class="guideline-frame">
-                <img
-                  src="/assets/images/upload-guide/good-lighting.png"
-                  alt="太陽光が入らない場所での撮影"
-                  class="guideline-image"
-                />
+          <!-- 上部の2枚セット -->
+          <div class="guideline-set">
+            <div class="guideline-images">
+              <div class="guideline-item good">
+                <div class="guideline-frame">
+                  <img
+                    src="/assets/images/upload-guide/good-lighting.png"
+                    alt="太陽光が入らない場所での撮影"
+                    class="guideline-image"
+                  />
+                </div>
               </div>
-              <p class="guideline-text">太陽光が入らない場所で撮影を行う</p>
+
+              <div class="guideline-item bad">
+                <div class="guideline-frame">
+                  <img
+                    src="/assets/images/upload-guide/bad-lighting.png"
+                    alt="太陽光が入る場所での撮影"
+                    class="guideline-image"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div class="guideline-item bad">
-              <div class="guideline-frame">
-                <img
-                  src="/assets/images/upload-guide/bad-lighting.png"
-                  alt="太陽光が入る場所での撮影"
-                  class="guideline-image"
-                />
-              </div>
-              <p class="guideline-text">
-                時間によって光が変わるので<br />窓の近くは避けましょう
+            <div class="guideline-descriptions">
+              <p class="guideline-text-bold">
+                太陽光が入らない場所で撮影を行う
               </p>
+              <div class="warning-icon-line">
+                <img
+                  src="/assets/images/icon/exclamation-mark.png"
+                  alt="注意"
+                  class="warning-icon"
+                />
+                <p class="guideline-text-normal">
+                  時間によって光が変わるので窓の近くは避けましょう
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- 下部の2枚セット -->
+          <div class="guideline-set">
+            <div class="guideline-images">
+              <div class="guideline-item good">
+                <div class="guideline-frame">
+                  <img
+                    src="/assets/images/upload-guide/good-environment.png"
+                    alt="常に同じ場所・照明での撮影"
+                    class="guideline-image"
+                  />
+                </div>
+              </div>
+
+              <div class="guideline-item bad">
+                <div class="guideline-frame">
+                  <img
+                    src="/assets/images/upload-guide/bad-environment.png"
+                    alt="異なる環境での撮影"
+                    class="guideline-image"
+                  />
+                </div>
+              </div>
             </div>
 
-            <div class="guideline-item good">
-              <div class="guideline-frame">
-                <img
-                  src="/assets/images/upload-guide/good-environment.png"
-                  alt="常に同じ場所・照明での撮影"
-                  class="guideline-image"
-                />
-              </div>
-              <p class="guideline-text">
-                常に同じ場所で、<br />照明が同じ状態で撮影を行う
+            <div class="guideline-descriptions">
+              <p class="guideline-text-bold">
+                常に同じ場所で、照明が同じ状態で撮影を行う
               </p>
-            </div>
-
-            <div class="guideline-item bad">
-              <div class="guideline-frame">
+              <div class="warning-icon-line">
                 <img
-                  src="/assets/images/upload-guide/bad-environment.png"
-                  alt="異なる環境での撮影"
-                  class="guideline-image"
+                  src="/assets/images/icon/exclamation-mark.png"
+                  alt="注意"
+                  class="warning-icon"
                 />
+                <p class="guideline-text-normal">
+                  白い壁の前や照明の状態を常に一定にするのがポイント
+                </p>
               </div>
-              <p class="guideline-text">
-                白い壁の前や照明の状態を<br />常に一定にするのがポイント
-              </p>
             </div>
           </div>
         </div>
@@ -202,10 +227,6 @@
     height: 740px;
     padding: 40px 24px;
     box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    justify-content: space-between;
-
     transform-origin: top;
     transition: transform 0.2s ease-out;
     will-change: transform;
@@ -237,7 +258,7 @@
     margin-bottom: 8px;
   }
 
-  .warning-icon-line p {
+  .warning-line p {
     margin: 0;
     color: #d2294c;
   }
@@ -246,6 +267,7 @@
     width: 18px;
     height: 18px;
     flex-shrink: 0;
+    margin-top: -1px;
   }
 
   .warning-text {
@@ -271,11 +293,23 @@
     min-height: 0;
   }
 
-  .guidelines-grid {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 15px;
-    margin-bottom: 15px;
+  .guideline-set {
+    margin-bottom: 20px;
+  }
+
+  .guideline-set:last-child {
+    margin-bottom: 0;
+  }
+
+  .guideline-images {
+    display: flex;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 10px;
+  }
+
+  .guideline-descriptions {
+    text-align: center;
   }
 
   .guideline-item {
@@ -287,45 +321,11 @@
     width: 100%;
     aspect-ratio: 128/150;
     border-radius: 8px;
-    margin-bottom: 10px;
+    margin-bottom: 0;
     overflow: hidden;
     display: flex;
     align-items: center;
     justify-content: center;
-  }
-
-  .guideline-item.good .guideline-frame::after {
-    content: '○';
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 24px;
-    height: 24px;
-    background: #34c759;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: bold;
-  }
-
-  .guideline-item.bad .guideline-frame::after {
-    content: '×';
-    position: absolute;
-    top: -8px;
-    right: -8px;
-    width: 24px;
-    height: 24px;
-    background: #ff3b30;
-    color: white;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: bold;
   }
 
   .guideline-image {
@@ -335,12 +335,20 @@
     border-radius: 8px;
   }
 
-  .guideline-text {
+  .guideline-text-bold {
+    font-size: 12px;
+    color: #333;
+    line-height: 1.4;
+    margin: 0 0 4px 0;
+    font-weight: 600;
+  }
+
+  .guideline-text-normal {
     font-size: 12px;
     color: #333;
     line-height: 1.4;
     margin: 0;
-    font-weight: 500;
+    font-weight: 400;
   }
 
   .confirm-button {
