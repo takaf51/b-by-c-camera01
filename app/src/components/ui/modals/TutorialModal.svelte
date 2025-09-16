@@ -581,7 +581,7 @@
     height: 200px;
     object-fit: contain;
     border-radius: 12px;
-    background: #f8f9fa;
+    background: transparent;
   }
 
   /* 小画面での調整 */
