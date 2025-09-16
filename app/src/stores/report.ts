@@ -8,7 +8,7 @@ import { createReportUseCase } from '../usecases/ReportUseCase';
 import { createReportRepository } from '../repositories/ReportRepository';
 import { createHttpClientWithExternalConfig } from '../lib/http';
 import { externalConfig } from './externalConfig';
-import type { ReportImage, FacePoints, BeforeCaptureData, ReportError } from '../domain/report';
+import type { ReportImage, UnifiedCaptureData, ReportError } from '../domain/report';
 
 // =============================================================================
 // Store Types (コンポーネント層用)
@@ -17,13 +17,7 @@ import type { ReportImage, FacePoints, BeforeCaptureData, ReportError } from '..
 export interface CameraReportImage {
   kind: 'before' | 'after';
   imageData: string;
-  points?: BeforeCaptureData | CameraFacePoints;
-}
-
-export interface CameraFacePoints {
-  leftEye: { x: number; y: number };
-  rightEye: { x: number; y: number };
-  noseTip: { x: number; y: number };
+  points?: UnifiedCaptureData;
 }
 
 interface ReportStoreState {

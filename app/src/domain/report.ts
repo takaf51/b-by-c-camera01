@@ -10,16 +10,37 @@
 export interface ReportImage {
   kind: 'before' | 'after';
   imageData: string; // base64 data URL
-  points?: BeforeCaptureData | FacePoints;
+  points?: UnifiedCaptureData;
 }
 
+// キーポイント座標（位置合わせ用）
+export interface KeyPoints {
+  leftEye: { x: number; y: number };
+  rightEye: { x: number; y: number };
+  noseTip: { x: number; y: number };
+}
+
+// Before/After共通のデータ構造（README.md仕様に準拠）
+export interface UnifiedCaptureData {
+  pose: { 
+    roll: number; 
+    pitch: number; 
+    yaw: number; 
+    distance?: number; 
+    quality?: number; 
+    faceSize?: number; 
+  };
+  landmarks: Array<{x: number; y: number; z?: number}>; // 468個の座標点
+  keyPoints: KeyPoints; // 主要3点の座標
+}
+
+// 後方互換性のため既存型を維持
 export interface FacePoints {
   leftEye: { x: number; y: number };
   rightEye: { x: number; y: number };
   noseTip: { x: number; y: number };
 }
 
-// README.md構造に合わせたBefore撮影データ
 export interface BeforeCaptureData {
   pose: { 
     roll: number; 
@@ -94,6 +115,47 @@ export function validateFacePoints(points: FacePoints): {
     const point = points[pointName as keyof FacePoints];
     if (!point || typeof point.x !== 'number' || typeof point.y !== 'number') {
       errors.push(`${pointName}の座標が無効です`);
+    }
+  }
+
+  return {
+    isValid: errors.length === 0,
+    errors,
+  };
+}
+
+export function validateUnifiedCaptureData(data: UnifiedCaptureData): {
+  isValid: boolean;
+  errors: string[];
+} {
+  const errors: string[] = [];
+
+  // pose validation
+  if (!data.pose) {
+    errors.push('pose データが必要です');
+  } else {
+    if (typeof data.pose.roll !== 'number') errors.push('pose.roll が無効です');
+    if (typeof data.pose.pitch !== 'number') errors.push('pose.pitch が無効です');
+    if (typeof data.pose.yaw !== 'number') errors.push('pose.yaw が無効です');
+  }
+
+  // landmarks validation
+  if (!Array.isArray(data.landmarks)) {
+    errors.push('landmarks は配列である必要があります');
+  } else if (data.landmarks.length === 0) {
+    errors.push('landmarks データが空です');
+  }
+
+  // keyPoints validation
+  if (!data.keyPoints) {
+    errors.push('keyPoints データが必要です');
+  } else {
+    const requiredPoints = ['leftEye', 'rightEye', 'noseTip'];
+    for (const pointName of requiredPoints) {
+      const point = data.keyPoints[pointName as keyof KeyPoints];
+      if (!point || typeof point.x !== 'number' || typeof point.y !== 'number') {
+        errors.push(`keyPoints.${pointName}の座標が無効です`);
+      }
     }
   }
 

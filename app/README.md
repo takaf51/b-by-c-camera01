@@ -115,14 +115,33 @@ window.AppSettings = {
 
 ## API仕様メモ
 
-### Before撮影時の送信データ（pointsに格納される構造）
+### Before/After撮影時の送信データ（pointsに格納される構造）
+
+Before撮影とAfter撮影で同一のデータ構造を使用します。
 
 ```javascript
 {
   pose: { roll: 1.2, pitch: -0.5, yaw: 0.3, distance: 1.0, quality: 0.85, faceSize: 0.123 },
-  image: "data:image/jpeg;base64,/9j/4AAQ...",
   landmarks: [{x, y, z}, ...], // 468個の3D座標点
-  correctionResult: {...},
-  timestamp: "2024-01-15T10:30:00.000Z"
+  keyPoints: {
+    leftEye: { x: 213, y: 240 },    // 左目座標（ピクセル座標）
+    rightEye: { x: 169, y: 240 },   // 右目座標（ピクセル座標）
+    noseTip: { x: 191, y: 260 }     // 鼻先座標（ピクセル座標）
+  }
 }
 ```
+
+#### フィールド説明
+
+- **pose**: 顔の姿勢情報（角度、距離、品質など）
+- **landmarks**: MediaPipeから取得した468個の顔の特徴点（3D座標）
+- **keyPoints**: 画像位置合わせ用の主要3点の座標（ピクセル座標）
+  - `leftEye`: 左目座標（MediaPipe landmarks[33]）
+  - `rightEye`: 右目座標（MediaPipe landmarks[263]）
+  - `noseTip`: 鼻先座標（MediaPipe landmarks[1]）
+
+#### Before撮影とAfter撮影の使い分け
+
+- **Before撮影**: 全データを基準として保存・解析に使用
+- **After撮影**: 同一構造でBefore画像との比較・位置合わせに使用
+- **keyPoints**: 両方の撮影で効率的な画像位置合わせを実現

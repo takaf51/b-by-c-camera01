@@ -388,7 +388,7 @@ export const cameraHandlers = [
       );
     }
 
-    // モックのBefore参照データ（座標付き）
+    // モックのBefore参照データ（新しい統一構造）
     const mockBeforeData = {
       pose: { 
         roll: 1.2, 
@@ -398,33 +398,15 @@ export const cameraHandlers = [
         quality: 0.85,
         faceSize: 0.123
       },
-      image: "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/mock-base64-image-data",
       landmarks: [
         { x: 0.5, y: 0.4, z: 0.1 },
         { x: 0.52, y: 0.42, z: 0.11 },
         // 実際には468個のランドマークポイント
       ],
-      timestamp: new Date().toISOString(),
-      correctionResult: { 
-        transformMatrix: [[1, 0, 0], [0, 1, 0], [0, 0, 1]],
-        correctionInfo: {
-          scaleX: 1.0,
-          scaleY: 1.0,
-          skewX: 0.0,
-          skewY: 0.0,
-          translateX: 0.0,
-          translateY: 0.0
-        },
-        originalPose: {
-          roll: 1.2,
-          pitch: -0.5,
-          yaw: 0.3
-        },
-        estimatedCorrectedPose: {
-          roll: 0.0,
-          pitch: 0.0,
-          yaw: 0.0
-        }
+      keyPoints: {
+        leftEye: { x: 213, y: 240 },
+        rightEye: { x: 169, y: 240 },
+        noseTip: { x: 191, y: 260 }
       }
     };
 
@@ -475,6 +457,14 @@ export const cameraHandlers = [
             type: value.type,
             lastModified: value.lastModified
           });
+        } else if (key === 'points') {
+          const pointsObj = JSON.parse(value as string);
+          console.log(`${key}:`, pointsObj);
+          if (pointsObj && typeof pointsObj === 'object') {
+            Object.entries(pointsObj).forEach(([k, v]) => {
+              console.log(`  points.${k}:`, v);
+            });
+          }
         } else {
           console.log(`${key}:`, value);
         }

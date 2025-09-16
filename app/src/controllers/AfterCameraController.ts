@@ -5,8 +5,7 @@
 
 import type { CameraCaptureResult } from '../types/camera';
 import type { ReportUseCase } from '../usecases/ReportUseCase';
-import type { CameraFacePoints } from '../stores/report';
-import type { ReportCreateResponse } from '../domain/report';
+import type { UnifiedCaptureData, KeyPoints, ReportCreateResponse } from '../domain/report';
 
 export class AfterCameraController {
   constructor(private reportUseCase: ReportUseCase) {}
@@ -18,26 +17,53 @@ export class AfterCameraController {
     result: CameraCaptureResult,
     programId: string
   ): Promise<ReportCreateResponse> {
-    // 顔座標を抽出
-    const points = this.extractFacePoints(result.landmarks);
+    // 新しい統一データ構造を作成
+    const unifiedCaptureData = this.createUnifiedCaptureData(result);
 
     // reportUseCaseを使って送信し、レスポンスを返す
     const response = await this.reportUseCase.submitReport(programId, {
       kind: 'after',
       imageData: result.imageData,
-      points,
+      points: unifiedCaptureData,
     });
 
     return response;
   }
 
   /**
-   * MediaPipeの顔座標からAPI用の座標情報を抽出
+   * CameraCaptureResultから統一データ構造を作成
+   * @param result - カメラ撮影結果
+   */
+  private createUnifiedCaptureData(result: CameraCaptureResult): UnifiedCaptureData {
+    // keyPointsを抽出
+    const keyPoints = this.extractKeyPoints(result.landmarks);
+
+    return {
+      pose: {
+        roll: result.pose?.roll || 0,
+        pitch: result.pose?.pitch || 0,
+        yaw: result.pose?.yaw || 0,
+        distance: result.pose?.distance,
+        quality: result.pose?.quality,
+        faceSize: result.pose?.faceSize,
+      },
+      landmarks: Array.isArray(result.landmarks) ? result.landmarks : [],
+      keyPoints,
+    };
+  }
+
+  /**
+   * MediaPipeの顔座標からキーポイントを抽出
    * @param landmarks - MediaPipeの顔座標データ
    */
-  private extractFacePoints(landmarks: any): CameraFacePoints | undefined {
+  private extractKeyPoints(landmarks: any): KeyPoints {
     if (!landmarks || !Array.isArray(landmarks)) {
-      return undefined;
+      // デフォルト値を返す
+      return {
+        leftEye: { x: 0, y: 0 },
+        rightEye: { x: 0, y: 0 },
+        noseTip: { x: 0, y: 0 },
+      };
     }
 
     try {
@@ -47,11 +73,15 @@ export class AfterCameraController {
       const noseTip = landmarks[1]; // 鼻先
 
       if (!leftEye || !rightEye || !noseTip) {
-        return undefined;
+        // デフォルト値を返す
+        return {
+          leftEye: { x: 0, y: 0 },
+          rightEye: { x: 0, y: 0 },
+          noseTip: { x: 0, y: 0 },
+        };
       }
 
       // 0-1の正規化座標から実際のピクセル座標へ変換
-      // 固定解像度を使用（実際の実装では画像サイズを渡す必要がある）
       const imageWidth = 640;
       const imageHeight = 480;
 
@@ -69,8 +99,13 @@ export class AfterCameraController {
           y: Math.round(noseTip.y * imageHeight),
         },
       };
-      } catch {
-        return undefined;
-      }
+    } catch {
+      // エラー時はデフォルト値を返す
+      return {
+        leftEye: { x: 0, y: 0 },
+        rightEye: { x: 0, y: 0 },
+        noseTip: { x: 0, y: 0 },
+      };
+    }
   }
 }
