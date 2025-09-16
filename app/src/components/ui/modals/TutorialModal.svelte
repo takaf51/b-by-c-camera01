@@ -249,7 +249,7 @@
   }
 
   .tutorial-content {
-    padding: 32px 20px 20px 20px;
+    padding: 24px;
     overflow-y: auto;
     flex: 1;
     text-align: center;
@@ -272,7 +272,7 @@
     }
 
     .tutorial-content {
-      padding: 16px;
+      padding: 20px;
     }
   }
 
@@ -290,7 +290,7 @@
     }
 
     .tutorial-content {
-      padding: 12px;
+      padding: 16px;
     }
   }
 
@@ -312,8 +312,11 @@
   }
 
   .tutorial-image {
-    width: 280px;
-    height: 400px;
+    width: 360px;
+    height: 500px;
+    max-width: calc(
+      100dvw - 96px
+    ); /* 24px * 4 (モーダル余白 + コンテンツpadding 両側) */
     object-fit: cover;
     border-radius: 12px;
     background: #f5f5f5;
@@ -353,8 +356,11 @@
   }
 
   .tutorial-image-placeholder {
-    width: 280px;
-    height: 200px;
+    width: 360px;
+    height: 280px;
+    max-width: calc(
+      100dvw - 96px
+    ); /* 24px * 4 (モーダル余白 + コンテンツpadding 両側) */
     background: #f8f9fa;
     border: 2px solid #e9ecef;
     border-radius: 12px;
@@ -546,14 +552,14 @@
   .guide-top-row {
     display: flex;
     justify-content: center;
-    margin-bottom: 12px;
+    margin-bottom: 8px;
   }
 
   .guide-bottom-row {
     display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    margin-bottom: 12px;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 16px;
   }
 
   .guide-image-placeholder {
@@ -577,8 +583,11 @@
   }
 
   .guide-image {
-    width: 200px;
-    height: 200px;
+    width: 280px;
+    height: auto;
+    max-width: calc(
+      (100dvw - 104px) / 2
+    ); /* 余白(96px) + gap(8px) を考慮した片側最大幅 */
     object-fit: contain;
     border-radius: 12px;
     background: transparent;
@@ -591,11 +600,11 @@
     }
 
     .guide-top-row {
-      margin-bottom: 10px;
+      margin-bottom: 8px;
     }
 
     .guide-bottom-row {
-      gap: 12px;
+      gap: 8px;
       margin-bottom: 10px;
     }
 
@@ -605,8 +614,8 @@
     }
 
     .guide-image {
-      width: 160px;
-      height: 160px;
+      width: 220px;
+      height: 220px;
     }
 
     .image-placeholder-text {
@@ -634,8 +643,8 @@
     }
 
     .guide-image {
-      width: 130px;
-      height: 130px;
+      width: 180px;
+      height: 180px;
     }
 
     .image-placeholder-text {
