@@ -18,7 +18,6 @@
 
   // Tutorial control props (外部から制御)
   export const showTutorial: boolean = false;
-  export let tutorialMode: 'before' | 'after' = 'before';
   export let enableTutorial: boolean | undefined = undefined; // チュートリアル機能の有効/無効（未設定時はundefined）
   export let enableExpressionDetection: boolean | undefined = undefined; // 表情検知機能の有効/無効（未設定時はundefined）
 
@@ -60,7 +59,6 @@
     // チュートリアルが有効で、表示条件を満たす場合はチュートリアルを表示
     if (enableTutorial && shouldShowTutorial()) {
       showTutorialModal = true;
-      tutorialMode = currentMode;
     } else {
       // チュートリアルがない場合は確認画面から直接カメラ起動
       startCameraDirectly();
@@ -94,7 +92,7 @@
     showTutorialModal = false;
     // チュートリアル完了後はguideステップをスキップして直接カメラ起動
     startCameraDirectly();
-    dispatch('tutorial:complete', { mode: tutorialMode });
+    dispatch('tutorial:complete');
   }
 
   // チュートリアルスキップ時の処理
@@ -102,13 +100,13 @@
     showTutorialModal = false;
     // チュートリアルスキップ時も直接カメラ起動
     startCameraDirectly();
-    dispatch('tutorial:skip', { mode: tutorialMode });
+    dispatch('tutorial:skip');
   }
 
   // チュートリアル閉じる時の処理
   function handleTutorialClose() {
     showTutorialModal = false;
-    dispatch('tutorial:close', { mode: tutorialMode });
+    dispatch('tutorial:close');
   }
 
   function startCameraDirectly() {
@@ -258,7 +256,6 @@
   <!-- Tutorial Modal -->
   <TutorialModal
     bind:show={showTutorialModal}
-    mode={tutorialMode}
     autoStart={false}
     on:complete={handleTutorialComplete}
     on:skip={handleTutorialSkip}
