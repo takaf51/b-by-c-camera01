@@ -5,7 +5,7 @@ import type { CameraConfiguration } from '../domain/cameraConfig';
 import { DEFAULT_CAMERA_CONFIG } from '../domain/cameraConfig';
 import { CameraConfigUseCase } from '../usecases/CameraConfigUseCase';
 import { ApiCameraConfigRepository } from '../repositories/CameraConfigRepository';
-import { createHttpClient } from '../lib/http';
+import { createHttpClientWithExternalConfig } from '../lib/http';
 
 // ストアの状態
 interface CameraConfigState {
@@ -28,8 +28,13 @@ const initialState: CameraConfigState = {
 // 内部ストア
 const cameraConfigStore = writable<CameraConfigState>(initialState);
 
-// ユースケースのインスタンス
-const httpClient = createHttpClient();
+// ユースケースのインスタンス（外部設定対応）
+const httpClient = createHttpClientWithExternalConfig(
+  () => (window as any).CameraSettings?.API_TOKEN || null,
+  () => import.meta.env.VITE_PROGRAM_CODE,
+  () => (window as any).CameraSettings?.PLAN_CODE || 'MOCK_PLAN_CODE',
+  (window as any).CameraSettings?.API_ENDPOINT
+);
 const repository = new ApiCameraConfigRepository(httpClient);
 const useCase = new CameraConfigUseCase(repository);
 
