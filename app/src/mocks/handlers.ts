@@ -640,27 +640,12 @@ export const cameraConfigHandlers = [
       },
     };
 
-    // APIコールの遅延をシミュレート（100-300ms）
-    const delay = 100 + Math.random() * 200;
-    
-    return new Promise(resolve => {
-      setTimeout(() => {
-        // 95%の確率で成功、5%の確率でエラー
-        if (Math.random() < 0.95) {
-          resolve(HttpResponse.json(mockConfig, {
-            status: 200,
-            headers: {
-              'Content-Type': 'application/json',
-            },
-          }));
-        } else {
-          // エラーシナリオ
-          resolve(HttpResponse.json(
-            { error: 'Camera configuration service temporarily unavailable' },
-            { status: 500 }
-          ));
-        }
-      }, delay);
+    // 安定した動作のため、常に成功レスポンスを返す
+    return HttpResponse.json(mockConfig, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
   }),
 

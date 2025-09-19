@@ -5,6 +5,7 @@ import type { CameraConfiguration } from '../domain/cameraConfig';
 import { DEFAULT_CAMERA_CONFIG } from '../domain/cameraConfig';
 import { CameraConfigUseCase } from '../usecases/CameraConfigUseCase';
 import { ApiCameraConfigRepository } from '../repositories/CameraConfigRepository';
+import { createHttpClient } from '../lib/http';
 
 // ストアの状態
 interface CameraConfigState {
@@ -28,7 +29,8 @@ const initialState: CameraConfigState = {
 const cameraConfigStore = writable<CameraConfigState>(initialState);
 
 // ユースケースのインスタンス
-const repository = new ApiCameraConfigRepository();
+const httpClient = createHttpClient();
+const repository = new ApiCameraConfigRepository(httpClient);
 const useCase = new CameraConfigUseCase(repository);
 
 // アクション
@@ -183,4 +185,3 @@ export const mediaPipeConfig = derived(
   currentConfig,
   $config => $config.mediaPipeConfig
 );
-

@@ -1,6 +1,7 @@
 // カメラ設定取得のリポジトリインターフェース
 
 import type { CameraConfiguration, CameraConfigResult } from '../domain/cameraConfig';
+import type { HttpClient } from '../lib/http';
 
 /**
  * カメラ設定取得のリポジトリインターフェース
@@ -39,8 +40,8 @@ export class ApiCameraConfigRepository implements ICameraConfigRepository {
   private readonly cacheExpiryMs: number = 5 * 60 * 1000; // 5分
 
   constructor(
-    private readonly apiEndpoint: string = '/setting/camera',
-    private readonly httpClient: (url: string) => Promise<Response> = fetch
+    private readonly httpClient: HttpClient,
+    private readonly apiEndpoint: string = '/setting/camera'
   ) {}
 
   async getCameraConfig(): Promise<CameraConfigResult> {
@@ -55,16 +56,7 @@ export class ApiCameraConfigRepository implements ICameraConfigRepository {
       }
 
       // API呼び出し
-      const response = await this.httpClient(this.apiEndpoint);
-
-      if (!response.ok) {
-        return {
-          success: false,
-          error: `HTTP ${response.status}: ${response.statusText}`,
-        };
-      }
-
-      const config = await response.json() as CameraConfiguration;
+      const config = await this.httpClient.get<CameraConfiguration>(this.apiEndpoint);
 
       // キャッシュに保存
       this.setCachedConfig(config);
