@@ -19,6 +19,16 @@
     ExpressionAnalyzer,
     type ExpressionData,
   } from '../../../lib/ExpressionAnalyzer';
+  import {
+    cameraConfig,
+    poseTolerances,
+    faceQualityThresholds,
+    detectionTimingSettings,
+    poseCalculationConfig,
+    mediaPipeConfig,
+  } from '../../../stores/cameraConfig';
+  import { getDevicePitchAdjustment } from '../../../domain/cameraConfig';
+  import type { CameraConfiguration } from '../../../domain/cameraConfig';
 
   const dispatch = createEventDispatcher();
 
@@ -54,19 +64,30 @@
   let currentVideoWidth = 0;
   let currentVideoHeight = 0;
 
-  // Constants - PHP版と同じ厳しい設定
-  const FACE_DETECTION_THRESHOLD = 5; // Increased from 3 to 5
-  const FACE_DETECTION_DELAY = 3.0; // 姿勢安定後の自動撮影までの待機時間を3秒に設定
-  // const STABILITY_TIME = 1.5; // 不要になったため削除（FACE_DETECTION_DELAYを使用）
-  const THRESHOLDS = {
-    roll: 10.0, // Reduced from 15.0 to 10.0 degrees
-    pitch: 10.0, // Reduced from 15.0 to 10.0 degrees
-    yaw: 10.0, // Reduced from 15.0 to 10.0 degrees
-  };
+  // Configuration from API (reactive)
+  let config: CameraConfiguration;
+  let FACE_DETECTION_THRESHOLD: number;
+  let FACE_DETECTION_DELAY: number;
+  let THRESHOLDS: { roll: number; pitch: number; yaw: number };
+  let MIN_FACE_SIZE: number;
+  let MIN_FACE_QUALITY: number;
+  let GUIDANCE_UPDATE_INTERVAL: number;
 
-  // Face size and quality thresholds like PHP version
-  const MIN_FACE_SIZE = 0.15; // Minimum face size relative to image
-  const MIN_FACE_QUALITY = 0.6; // Minimum face quality score
+  // Subscribe to camera configuration
+  $: config = $cameraConfig.config;
+  $: FACE_DETECTION_THRESHOLD =
+    config.detectionTimingSettings.stabilityFrameCount;
+  $: FACE_DETECTION_DELAY =
+    config.detectionTimingSettings.autoCaptureDelaySeconds;
+  $: THRESHOLDS = {
+    roll: config.poseTolerances.rollDegrees,
+    pitch: config.poseTolerances.pitchDegrees,
+    yaw: config.poseTolerances.yawDegrees,
+  };
+  $: MIN_FACE_SIZE = config.faceQualityThresholds.minRelativeSize;
+  $: MIN_FACE_QUALITY = config.faceQualityThresholds.minQualityScore;
+  $: GUIDANCE_UPDATE_INTERVAL =
+    config.detectionTimingSettings.guidanceUpdateIntervalMs;
 
   // Pose and stability tracking
   let stablePosition = false;
@@ -80,13 +101,14 @@
   let showPoseGuidance = false;
   let lastGuidanceUpdate = 0;
   let lastGuidanceMessage = '';
-  const GUIDANCE_UPDATE_INTERVAL = 100; // より頻繁にガイダンスを更新
-  // GUIDANCE_DISPLAY_DURATION は使用しない（継続表示のため）
-
-  // syncInterval変数は削除
 
   onMount(async () => {
     try {
+      // Load camera configuration first
+      if (!$cameraConfig.isLoaded) {
+        await cameraConfig.loadConfig();
+      }
+
       await initializeMediaPipe();
     } catch (error) {
       dispatch('error', {
@@ -130,14 +152,15 @@
       },
     });
 
-    // Use same settings as PHP version
+    // Use settings from API configuration
+    const mediaPipeSettings = config.mediaPipeConfig;
     faceMesh.setOptions({
-      maxNumFaces: 1,
-      refineLandmarks: true,
-      minDetectionConfidence: 0.7, // Increased from 0.5
-      minTrackingConfidence: 0.7, // Increased from 0.5
-      selfieMode: false,
-      staticImageMode: false,
+      maxNumFaces: mediaPipeSettings.maxDetectedFaces,
+      refineLandmarks: mediaPipeSettings.enableRefinedLandmarks,
+      minDetectionConfidence: mediaPipeSettings.minDetectionConfidence,
+      minTrackingConfidence: mediaPipeSettings.minTrackingConfidence,
+      selfieMode: mediaPipeSettings.selfieMode,
+      staticImageMode: mediaPipeSettings.staticImageMode,
     });
 
     faceMesh.onResults(onResults);
@@ -683,34 +706,33 @@
         rawPitch = rawPitch + 180;
       }
 
-      // 最終的なピッチ値（デバイス別オフセット）
-      const screenWidth = window.innerWidth;
-      let pitch;
-      if (screenWidth <= 480) {
-        // iPhone: -8度
-        pitch = rawPitch - 65 + 15;
-      } else if (screenWidth <= 1024) {
-        // iPad: +10度（元の重要な調整）
-        pitch = rawPitch - 65 + 10;
-      } else {
-        // PC: オフセットなし
-        pitch = rawPitch - 65;
-      }
+      // 最終的なピッチ値（デバイス別オフセット - API設定使用）
+      const pitchCalibration = config.poseCalculationConfig.pitchCalibration;
+      const deviceAdjustment = getDevicePitchAdjustment(pitchCalibration);
+      const pitch =
+        rawPitch + pitchCalibration.baseOffsetDegrees + deviceAdjustment;
 
-      // ヨー（Y軸回転）- 横方向の向き
+      // ヨー（Y軸回転）- 横方向の向き（API設定使用）
       const eyeMidPoint = {
         x: (leftEye.x + rightEye.x) / 2,
       };
       const noseMidOffset = eyeMidPoint.x - nose.x;
-      const yaw = noseMidOffset * 500;
+      const yaw = noseMidOffset * config.poseCalculationConfig.yawSensitivity;
 
       // 顔のサイズを計算
       const faceSize = calculateFaceSize(landmarks);
 
-      // 距離と品質の計算
+      // 距離と品質の計算（API設定使用）
+      const qualityConfig = config.poseCalculationConfig.qualityCalculation;
       const eyeDistance = Math.sqrt(eyeDiffX * eyeDiffX + eyeDiffY * eyeDiffY);
-      const distance = Math.max(0.5, Math.min(2.0, 1.0 / eyeDistance));
-      const quality = Math.max(0.0, Math.min(1.0, faceSize * 2));
+      const distance = Math.max(
+        qualityConfig.distanceRange.min,
+        Math.min(qualityConfig.distanceRange.max, 1.0 / eyeDistance)
+      );
+      const quality = Math.max(
+        0.0,
+        Math.min(1.0, faceSize * qualityConfig.faceSizeMultiplier)
+      );
 
       const result = {
         roll: Math.round(roll * 10) / 10,

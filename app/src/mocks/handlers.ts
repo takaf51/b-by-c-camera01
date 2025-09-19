@@ -594,9 +594,110 @@ export const cameraHandlers = [
   }),
 ];
 
+// カメラ設定関連のAPIハンドラ
+export const cameraConfigHandlers = [
+  // カメラ設定取得 - 確定API仕様に準拠
+  http.get('/setting/camera', () => {
+    // 確定API仕様のレスポンス形式（整数値は小数点なし）
+    const mockConfig = {
+      poseTolerances: {
+        rollDegrees: 10,
+        pitchDegrees: 10,
+        yawDegrees: 10,
+      },
+      faceQualityThresholds: {
+        minRelativeSize: 0.15,
+        minQualityScore: 0.6,
+      },
+      detectionTimingSettings: {
+        stabilityFrameCount: 5,
+        autoCaptureDelaySeconds: 3,
+        guidanceUpdateIntervalMs: 100,
+      },
+      poseCalculationConfig: {
+        pitchCalibration: {
+          baseOffsetDegrees: -65,
+          mobileAdjustment: 15,
+          tabletAdjustment: 10,
+          desktopAdjustment: 0,
+        },
+        yawSensitivity: 500,
+        qualityCalculation: {
+          faceSizeMultiplier: 2,
+          distanceRange: {
+            min: 0.5,
+            max: 2,
+          },
+        },
+      },
+      mediaPipeConfig: {
+        maxDetectedFaces: 1,
+        enableRefinedLandmarks: true,
+        minDetectionConfidence: 0.7,
+        minTrackingConfidence: 0.7,
+        selfieMode: false,
+        staticImageMode: false,
+      },
+    };
+
+    // APIコールの遅延をシミュレート（100-300ms）
+    const delay = 100 + Math.random() * 200;
+    
+    return new Promise(resolve => {
+      setTimeout(() => {
+        // 95%の確率で成功、5%の確率でエラー
+        if (Math.random() < 0.95) {
+          resolve(HttpResponse.json(mockConfig, {
+            status: 200,
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }));
+        } else {
+          // エラーシナリオ
+          resolve(HttpResponse.json(
+            { error: 'Camera configuration service temporarily unavailable' },
+            { status: 500 }
+          ));
+        }
+      }, delay);
+    });
+  }),
+
+  // カメラ設定更新（将来拡張用）
+  http.put('/setting/camera', async ({ request }) => {
+    try {
+      const config = await request.json() as any;
+      
+      // 簡単なバリデーション
+      if (!config?.poseTolerances || !config?.mediaPipeConfig) {
+        return HttpResponse.json(
+          { error: 'Invalid configuration format' },
+          { status: 400 }
+        );
+      }
+
+      // 遅延をシミュレート
+      await new Promise(resolve => setTimeout(resolve, 200 + Math.random() * 300));
+
+      return HttpResponse.json({
+        success: true,
+        message: 'Camera configuration updated successfully',
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      return HttpResponse.json(
+        { error: 'Invalid JSON format' },
+        { status: 400 }
+      );
+    }
+  }),
+];
+
 export const handlers = [
   ...authHandlers,
   ...programHandlers,
   ...planHandlers,
   ...cameraHandlers,
+  ...cameraConfigHandlers,
 ];

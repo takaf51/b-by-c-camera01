@@ -11,6 +11,7 @@
     type ExpressionData,
   } from '../../../lib/ExpressionAnalyzer';
   import type { CameraCaptureResult } from '../../../types/camera';
+  import { poseTolerances } from '../../../stores/cameraConfig';
 
   const dispatch = createEventDispatcher();
 
@@ -192,16 +193,14 @@
     return poseOk && expressionOk;
   }
 
-  // 姿勢が許容範囲内かチェック（既存の判定ロジック）
+  // 姿勢が許容範囲内かチェック（API設定使用）
   function isReasonablyFrontFacing(pose: any): boolean {
-    const rollThreshold = 10.0;
-    const pitchThreshold = 10.0;
-    const yawThreshold = 10.0;
+    const tolerances = $poseTolerances;
 
     return (
-      Math.abs(pose.roll) < rollThreshold &&
-      Math.abs(pose.pitch) < pitchThreshold &&
-      Math.abs(pose.yaw) < yawThreshold
+      Math.abs(pose.roll) < tolerances.rollDegrees &&
+      Math.abs(pose.pitch) < tolerances.pitchDegrees &&
+      Math.abs(pose.yaw) < tolerances.yawDegrees
     );
   }
 
