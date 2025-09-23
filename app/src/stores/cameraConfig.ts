@@ -63,12 +63,13 @@ const actions = {
       }));
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      // Log detailed error for debugging but provide user-friendly message
+      console.error('カメラ設定の読み込みに失敗しました:', error);
       
       cameraConfigStore.update(state => ({
         ...state,
         isLoading: false,
-        error: errorMessage,
+        error: 'カメラ設定の読み込みに失敗しました。デフォルト設定を使用します。',
         // エラー時もデフォルト設定を使用
         config: DEFAULT_CAMERA_CONFIG,
         isLoaded: true,
@@ -101,12 +102,13 @@ const actions = {
       }));
 
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+      // Log detailed error for debugging but provide user-friendly message
+      console.error('カメラ設定の再取得に失敗しました:', error);
       
       cameraConfigStore.update(state => ({
         ...state,
         isLoading: false,
-        error: errorMessage,
+        error: 'カメラ設定の再取得に失敗しました。デフォルト設定を使用します。',
         config: DEFAULT_CAMERA_CONFIG,
         isLoaded: true,
         lastUpdated: new Date(),

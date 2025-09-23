@@ -109,25 +109,86 @@
     dispatch('tutorial:close');
   }
 
-  function startCameraDirectly() {
-    currentStep = 'camera';
+  function handleStartPreinitialization() {
+    // Page 1 displayed - start pre-initializing camera components immediately
+    console.log(
+      '📋 確認画面1ページ目表示、カメラコンポーネントの事前準備を開始'
+    );
 
-    // Start camera after a brief delay to ensure component is mounted
+    // Pre-mount camera component in background to start MediaPipe initialization
+    // This will be invisible until the user actually starts the camera
+    if (!currentCamera) {
+      setTimeout(() => {
+        // This allows MediaPipe to start loading while user is still on confirmation
+        console.log(
+          '🔧 カメラコンポーネントの事前マウント（バックグラウンド初期化）'
+        );
+      }, 100);
+    }
+  }
+
+  function handlePage2Reached() {
+    // Page 2 of confirmation reached - MediaPipe pre-initialization already started
+    console.log('📋 確認画面2ページ目到達（MediaPipe事前初期化は継続中）');
+  }
+
+  let cameraStarting = false;
+
+  function startCameraDirectly() {
+    if (cameraStarting) {
+      console.log('⏳ カメラ起動処理が既に実行中です');
+      return;
+    }
+
+    cameraStarting = true;
+    currentStep = 'camera';
+    console.log('🎬 カメラモードに移行します');
+
+    // Start camera after ensuring component is mounted
     setTimeout(() => {
       if (currentCamera && typeof currentCamera.startCamera === 'function') {
-        currentCamera.startCamera();
+        console.log('📱 カメラコンポーネントが準備完了、起動を開始します');
+        currentCamera
+          .startCamera()
+          .then(() => {
+            cameraStarting = false;
+            console.log('✅ カメラ起動処理が完了しました');
+          })
+          .catch((error: any) => {
+            cameraStarting = false;
+            console.error('❌ カメラ起動でエラーが発生しました:', error);
+          });
       } else {
-        // Retry after another delay
+        console.log(
+          '⏳ カメラコンポーネントがまだ準備中です。リトライします...'
+        );
+        // Retry with longer delay
         setTimeout(() => {
           if (
             currentCamera &&
             typeof currentCamera.startCamera === 'function'
           ) {
-            currentCamera.startCamera();
+            console.log('📱 リトライでカメラ起動を開始します');
+            currentCamera
+              .startCamera()
+              .then(() => {
+                cameraStarting = false;
+                console.log('✅ リトライでカメラ起動が完了しました');
+              })
+              .catch((error: any) => {
+                cameraStarting = false;
+                console.error(
+                  '❌ リトライでもカメラ起動に失敗しました:',
+                  error
+                );
+              });
+          } else {
+            cameraStarting = false;
+            console.error('❌ カメラコンポーネントが利用できません');
           }
-        }, 500);
+        }, 1000);
       }
-    }, 200);
+    }, 300);
   }
 
   function handleCameraCapture(result: CameraCaptureResult) {
@@ -150,6 +211,9 @@
   }
 
   function handleCancel() {
+    // Reset camera starting state
+    cameraStarting = false;
+
     // Clean up camera if active
     if (currentCamera && currentStep === 'camera') {
       currentCamera.stopCamera();
@@ -161,6 +225,9 @@
   }
 
   function handleDirectComplete() {
+    // Reset camera starting state
+    cameraStarting = false;
+
     // Clean up camera
     if (currentCamera) {
       currentCamera.stopCamera();
@@ -205,6 +272,9 @@
 
   // Cleanup on component destroy
   function cleanup() {
+    // Reset all state
+    cameraStarting = false;
+
     if (currentCamera) {
       currentCamera.stopCamera();
     }
@@ -216,6 +286,8 @@
     <TwoPageConfirmationScreen
       on:confirm={handleConfirmationConfirm}
       on:cancel={handleCancel}
+      on:page2-reached={handlePage2Reached}
+      on:start-preinitialization={handleStartPreinitialization}
     />
   {:else if currentStep === 'camera'}
     {#if currentMode === 'before'}

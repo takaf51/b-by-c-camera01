@@ -42,7 +42,11 @@
 
   function handlePage1Next() {
     console.log('Page 1 Next button clicked');
+    console.log('📄 確認画面2ページ目に移行します');
     currentPage = 2;
+
+    // MediaPipe pre-initialization already started on page 1
+    dispatch('page2-reached');
   }
 
   function handlePage2Back() {
@@ -61,6 +65,10 @@
     adjustScale();
     window.addEventListener('resize', adjustScale);
     setTimeout(adjustScale, 100);
+
+    // Start MediaPipe pre-initialization immediately on page 1
+    console.log('🚀 確認画面1ページ目表示、MediaPipeの事前初期化を開始します');
+    dispatch('start-preinitialization');
 
     return () => {
       window.removeEventListener('resize', adjustScale);

@@ -44,26 +44,42 @@
   // Expression analyzer instance
   let expressionAnalyzer = new ExpressionAnalyzer();
 
-  // Wait for DOM elements to be ready
+  // Wait for DOM elements to be ready with adaptive timeout
   async function waitForDOMElements(): Promise<boolean> {
-    const maxAttempts = 10; // 1 second max (10 * 100ms)
+    const maxAttempts = 20; // 3 seconds max (20 * 150ms)
     let attempts = 0;
+    let waitTime = 100; // Start with 100ms
 
     while (attempts < maxAttempts) {
       if (videoElement && canvasElement) {
+        console.log(
+          `✅ DOM要素が準備完了しました (${attempts * waitTime}ms後)`
+        );
         return true;
       }
 
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, waitTime));
       attempts++;
+
+      // Gradually increase wait time
+      if (attempts > 5) waitTime = 150;
+      if (attempts > 10) waitTime = 200;
     }
 
+    console.log('❌ DOM要素の準備がタイムアウトしました');
     return false;
   }
+
+  // Retry mechanism with progressive backoff
+  let cameraStartAttempts = 0;
+  const maxCameraRetries = 3;
+  let cameraStartupTimeout: number | null = null;
 
   // Public methods
   export async function startCamera(): Promise<void> {
     try {
+      console.log('🚀 カメラ起動を開始します');
+
       // First wait for DOM elements to be ready
       const domReady = await waitForDOMElements();
 
@@ -74,36 +90,111 @@
         return;
       }
 
-      // Then check FaceDetection component
-      if (faceDetection && typeof faceDetection.startCamera === 'function') {
-        await faceDetection.startCamera();
-        isReady = true;
-        dispatch('camera:ready');
-      } else {
-        // Wait a bit and try again
-        setTimeout(async () => {
-          if (
-            faceDetection &&
-            typeof faceDetection.startCamera === 'function'
-          ) {
-            await faceDetection.startCamera();
-            isReady = true;
-            dispatch('camera:ready');
-          } else {
-            const err = new Error('FaceDetection component not available');
-            onError(err);
-            dispatch('camera:error', { error: err });
-          }
-        }, 500);
-      }
+      // Then check FaceDetection component with adaptive retry
+      await startCameraWithRetry();
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
+      console.error('❌ カメラ起動で予期しないエラーが発生しました');
       onError(err);
       dispatch('camera:error', { error: err });
     }
   }
 
+  async function startCameraWithRetry(): Promise<void> {
+    const attempt = async (): Promise<boolean> => {
+      if (faceDetection && typeof faceDetection.startCamera === 'function') {
+        try {
+          await faceDetection.startCamera();
+          // Note: isReady will be set to true when MediaPipe is fully initialized
+          // Don't set isReady here - wait for the cameraStarted event
+          console.log('📷 カメラストリーム取得完了、MediaPipe初期化待機中');
+          return true;
+        } catch (error) {
+          console.log(
+            `❌ カメラ起動試行 ${cameraStartAttempts + 1} が失敗しました`
+          );
+          return false;
+        }
+      }
+      return false;
+    };
+
+    // Setup timeout for automatic retry
+    const timeoutDuration = 8000; // 8 seconds
+    cameraStartupTimeout = window.setTimeout(() => {
+      if (!isReady && cameraStartAttempts < maxCameraRetries) {
+        console.log('⏰ カメラ起動がタイムアウトしました。リトライします...');
+        retryCamera();
+      }
+    }, timeoutDuration);
+
+    // Try immediate start
+    const success = await attempt();
+    if (success) {
+      if (cameraStartupTimeout) {
+        clearTimeout(cameraStartupTimeout);
+        cameraStartupTimeout = null;
+      }
+      return;
+    }
+
+    // If immediate start failed, wait and retry
+    await retryCamera();
+  }
+
+  async function retryCamera(): Promise<void> {
+    cameraStartAttempts++;
+
+    if (cameraStartAttempts >= maxCameraRetries) {
+      console.error('❌ カメラ起動の最大リトライ回数に達しました');
+      const err = new Error(
+        'カメラの起動に失敗しました。ページを再読み込みしてください。'
+      );
+      onError(err);
+      dispatch('camera:error', { error: err });
+      return;
+    }
+
+    // Progressive backoff: 1s, 2s, 3s
+    const retryDelay = cameraStartAttempts * 1000;
+    console.log(
+      `🔄 ${retryDelay}ms後にカメラ起動をリトライします (${cameraStartAttempts}/${maxCameraRetries})`
+    );
+
+    setTimeout(async () => {
+      if (faceDetection && typeof faceDetection.startCamera === 'function') {
+        try {
+          await faceDetection.startCamera();
+          // Don't set isReady here - wait for the cameraStarted event
+          console.log(
+            '📷 リトライでカメラストリーム取得完了、MediaPipe初期化待機中'
+          );
+
+          if (cameraStartupTimeout) {
+            clearTimeout(cameraStartupTimeout);
+            cameraStartupTimeout = null;
+          }
+        } catch (error) {
+          console.log(`❌ リトライ ${cameraStartAttempts} も失敗しました`);
+          await retryCamera();
+        }
+      } else {
+        console.log('❌ FaceDetectionコンポーネントが利用できません');
+        await retryCamera();
+      }
+    }, retryDelay);
+  }
+
   export function stopCamera(): void {
+    // Clear any pending timeouts
+    if (cameraStartupTimeout) {
+      clearTimeout(cameraStartupTimeout);
+      cameraStartupTimeout = null;
+    }
+
+    // Reset retry state
+    cameraStartAttempts = 0;
+
     if (faceDetection) {
       faceDetection.cleanup();
     }
@@ -250,6 +341,19 @@
     dispatch('camera:error', { error });
   }
 
+  function handleFaceDetectionStarted() {
+    // Handle when FaceDetection reports MediaPipe is fully initialized
+    isReady = true;
+    console.log('✅ カメラとMediaPipeが完全に準備完了しました');
+    dispatch('camera:ready');
+
+    // Clear any pending timeouts
+    if (cameraStartupTimeout) {
+      clearTimeout(cameraStartupTimeout);
+      cameraStartupTimeout = null;
+    }
+  }
+
   function handleCancel() {
     onCancel();
     dispatch('capture:cancel');
@@ -279,7 +383,7 @@
       AFTER: 'after',
       CAMERA_STARTUP: 'camera_startup',
     }}
-    on:cameraStarted={handleCameraStarted}
+    on:cameraStarted={handleFaceDetectionStarted}
     on:faceDetected={handleFaceDetected}
     on:autoCapture={handleAutoCapture}
     on:error={handleFaceDetectionError}
@@ -334,7 +438,16 @@
         <!-- カメラ準備中 -->
         <div class="camera-loading">
           <div class="loading-spinner"></div>
-          <p>カメラを準備中...</p>
+          <p>カメラの準備中です...</p>
+          {#if cameraStartAttempts > 0}
+            <p class="retry-info">
+              自動的にリトライしています ({cameraStartAttempts}/{maxCameraRetries})
+            </p>
+          {:else}
+            <p class="loading-detail">
+              ネットワーク環境により時間がかかる場合があります
+            </p>
+          {/if}
         </div>
       {/if}
     {/if}
@@ -506,6 +619,18 @@
   .camera-loading p {
     margin: 0;
     font-size: 16px;
+  }
+
+  .retry-info {
+    margin-top: 10px !important;
+    font-size: 14px !important;
+    color: rgba(255, 255, 255, 0.8) !important;
+  }
+
+  .loading-detail {
+    margin-top: 10px !important;
+    font-size: 13px !important;
+    color: rgba(255, 255, 255, 0.6) !important;
   }
 
   .hidden {

@@ -48,7 +48,14 @@
   let faceMesh: any;
   let camera: any;
   let canvasCtx: CanvasRenderingContext2D | null = null;
+
+  // Initialization state management
   let isStartingCamera = false;
+  let isMediaPipeReady = false;
+  let isCameraConfigReady = false;
+  let isMediaPipeFullyInitialized = false;
+  let hasProcessedFirstFrame = false;
+  let initializationStep = 'idle'; // 'idle' | 'config' | 'mediapipe' | 'camera' | 'processing' | 'ready' | 'error'
 
   // Face detection state
   let faceDetectionCount = 0;
@@ -104,17 +111,29 @@
 
   onMount(async () => {
     try {
-      // Load camera configuration first
-      if (!$cameraConfig.isLoaded) {
-        await cameraConfig.loadConfig();
-      }
+      initializationStep = 'config';
 
+      // Ensure camera configuration is loaded first
+      if (!$cameraConfig.isLoaded) {
+        console.log('📊 カメラ設定を読み込み中...');
+        await cameraConfig.loadConfig();
+        console.log('✅ カメラ設定の読み込み完了');
+      }
+      isCameraConfigReady = true;
+
+      // Pre-initialize MediaPipe in background (don't wait for user action)
+      initializationStep = 'mediapipe';
+      console.log('🔧 MediaPipeの事前初期化を開始...');
       await initializeMediaPipe();
+      isMediaPipeReady = true;
+      initializationStep = 'ready';
+      console.log('✅ MediaPipeの事前初期化完了（カメラ起動待機中）');
     } catch (error) {
+      initializationStep = 'error';
+      console.error('❌ MediaPipeの初期化に失敗しました');
       dispatch('error', {
         message:
-          'Face detection initialization failed: ' +
-          (error instanceof Error ? error.message : String(error)),
+          'カメラの初期化に失敗しました。ページをリロードしてお試しください。',
       });
     }
   });
@@ -169,15 +188,29 @@
   // キャンバス同期機能は削除
 
   async function startCamera() {
+    // Check initialization readiness
+    if (
+      !isMediaPipeReady ||
+      !isCameraConfigReady ||
+      initializationStep !== 'ready'
+    ) {
+      console.log('⏳ カメラの準備がまだ完了していません');
+      return;
+    }
+
     if (!videoElement || !faceMesh) {
+      console.log('❌ 必要なコンポーネントが見つかりません');
       return;
     }
 
     if (isStartingCamera) {
+      console.log('⏳ カメラ起動処理が既に実行中です');
       return;
     }
 
+    initializationStep = 'camera';
     isStartingCamera = true;
+    console.log('📷 カメラ起動を開始します');
     try {
       // MediaPipe Camera utilsを使わずに独自でカメラを制御
       // スマホ向けに縦向きのカメラストリームを取得
@@ -328,42 +361,82 @@
         }
 
         if (!stream) {
-          // 最後の手段：制約なしで取得
-          console.log('📱 All attempts failed, using fallback');
-          constraints = {
-            video: {
-              facingMode: 'user',
-            },
-            audio: false,
-          };
-          stream = await navigator.mediaDevices.getUserMedia(constraints);
+          // 最後の手段：段階的に制約を緩和
+          console.log(
+            '📱 すべての解像度で失敗しました。制約を緩和してリトライします'
+          );
+
+          const fallbackPatterns = [
+            // 段階1: フロントカメラのみ指定
+            { video: { facingMode: 'user' }, audio: false },
+            // 段階2: 任意のカメラ
+            { video: true, audio: false },
+            // 段階3: 最小制約
+            { video: {}, audio: false },
+          ];
+
+          for (const fallback of fallbackPatterns) {
+            try {
+              console.log('📱 フォールバック制約でリトライ中...');
+              stream = await navigator.mediaDevices.getUserMedia(fallback);
+              console.log('✅ フォールバック制約で成功');
+              break;
+            } catch (e) {
+              console.log('❌ フォールバック制約も失敗');
+              continue;
+            }
+          }
+
+          if (!stream) {
+            throw new Error('すべてのカメラ制約で失敗しました');
+          }
         }
 
         finalStream = stream;
       } else if (isMobile && !isPortrait) {
         // スマホ横向きの場合
-        constraints = {
-          video: {
-            facingMode: 'user',
-            width: { min: 640, ideal: 1280, max: 1920 },
-            height: { min: 480, ideal: 720, max: 1080 },
-            aspectRatio: { ideal: 1.777 }, // 16:9 = 1.777
-          },
-          audio: false,
-        };
-        finalStream = await navigator.mediaDevices.getUserMedia(constraints);
+        try {
+          constraints = {
+            video: {
+              facingMode: 'user',
+              width: { min: 640, ideal: 1280, max: 1920 },
+              height: { min: 480, ideal: 720, max: 1080 },
+              aspectRatio: { ideal: 1.777 }, // 16:9 = 1.777
+            },
+            audio: false,
+          };
+          finalStream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (e) {
+          console.log(
+            '📱 横向きの制約が失敗しました。フォールバックを実行します'
+          );
+          // フォールバック: より緩い制約
+          finalStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: 'user' },
+            audio: false,
+          });
+        }
       } else {
         // PCの場合
-        constraints = {
-          video: {
-            facingMode: 'user',
-            width: { ideal: 1280 },
-            height: { ideal: 720 },
-            aspectRatio: { ideal: 1.777 },
-          },
-          audio: false,
-        };
-        finalStream = await navigator.mediaDevices.getUserMedia(constraints);
+        try {
+          constraints = {
+            video: {
+              facingMode: 'user',
+              width: { ideal: 1280 },
+              height: { ideal: 720 },
+              aspectRatio: { ideal: 1.777 },
+            },
+            audio: false,
+          };
+          finalStream = await navigator.mediaDevices.getUserMedia(constraints);
+        } catch (e) {
+          console.log('💻 PCの制約が失敗しました。フォールバックを実行します');
+          // フォールバック: より緩い制約
+          finalStream = await navigator.mediaDevices.getUserMedia({
+            video: true,
+            audio: false,
+          });
+        }
       }
 
       console.log(
@@ -444,12 +517,18 @@
       stableStartTime = null;
       progress = 0;
 
-      dispatch('cameraStarted');
+      initializationStep = 'processing';
+      console.log('📷 カメラストリームの取得が完了しました');
+      console.log('🔄 MediaPipeの完全初期化を待機中...');
+
+      // Don't dispatch cameraStarted yet - wait for MediaPipe to be fully ready
+      // dispatch('cameraStarted'); // Moved to onResults after first frame processing
     } catch (error) {
+      initializationStep = 'error';
+      console.error('❌ カメラ起動に失敗しました');
       dispatch('error', {
         message:
-          'Camera startup failed: ' +
-          (error instanceof Error ? error.message : String(error)),
+          'カメラの起動に失敗しました。しばらく待ってからリトライします。',
       });
     } finally {
       isStartingCamera = false;
@@ -462,6 +541,16 @@
     }
 
     if (!canvasCtx || !canvasElement) return;
+
+    // Check if this is the first successful frame processing
+    if (!hasProcessedFirstFrame && !isMediaPipeFullyInitialized) {
+      hasProcessedFirstFrame = true;
+      isMediaPipeFullyInitialized = true;
+      initializationStep = 'ready';
+      console.log('✅ MediaPipeの初期化が完全に完了しました');
+      console.log('🎉 カメラが使用可能になりました');
+      dispatch('cameraStarted');
+    }
 
     // ビデオの実際のサイズを取得
     const videoWidth =
