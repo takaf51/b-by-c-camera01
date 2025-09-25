@@ -19,6 +19,9 @@ export class MediaPipeAssetManager {
   ];
 
   async init(): Promise<void> {
+    // 永続ストレージをリクエスト（Safari対策）
+    await this.requestPersistentStorage();
+
     return new Promise((resolve, reject) => {
       const request = indexedDB.open(this.dbName, 1);
       
@@ -35,6 +38,24 @@ export class MediaPipeAssetManager {
         }
       };
     });
+  }
+
+  // 永続ストレージのリクエスト（Safari 7日間制限対策）
+  private async requestPersistentStorage(): Promise<void> {
+    if ('storage' in navigator && 'persist' in navigator.storage) {
+      try {
+        const persistent = await navigator.storage.persist();
+        if (persistent) {
+          console.log('✅ 永続ストレージが有効になりました');
+        } else {
+          console.warn('⚠️ 永続ストレージのリクエストが拒否されました（Safari等では7日間で削除される可能性があります）');
+        }
+      } catch (error) {
+        console.warn('永続ストレージのリクエストに失敗:', error);
+      }
+    } else {
+      console.warn('このブラウザは永続ストレージをサポートしていません');
+    }
   }
 
   // ログイン時などに実行：全アセットを事前ダウンロード
