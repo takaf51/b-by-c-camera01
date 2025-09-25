@@ -132,11 +132,24 @@ window.AppSettings = {
 #### アセットの事前ダウンロード
 
 ```javascript
-// MediaPipeアセットを事前ダウンロード（任意のタイミングで実行可能）
-window.bbyc.mediaPipe
-  .preloadAssets()
-  .then(() => console.log('MediaPipeアセット準備完了'))
-  .catch(err => console.error('ダウンロード失敗', err));
+// バックグラウンドで即座に開始（即座に戻る）
+const started = window.bbyc.mediaPipe.preloadAssets();
+if (started) {
+  console.log('バックグラウンドダウンロード開始');
+  // UI操作は即座に続行可能
+}
+
+// 必要に応じて進捗確認
+function checkProgress() {
+  const status = window.bbyc.mediaPipe.getDownloadStatus();
+  if (status.isDownloading) {
+    console.log('ダウンロード中...');
+    setTimeout(checkProgress, 1000); // 1秒後に再確認
+  } else {
+    console.log('ダウンロード完了');
+  }
+}
+checkProgress();
 ```
 
 #### キャッシュサイズの確認

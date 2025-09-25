@@ -2,6 +2,7 @@
  * カメラ専用アプリケーションのエントリーポイント
  * 確認画面から撮影、自動補正、送信までの一連の流れを提供
  */
+/* eslint-disable @typescript-eslint/no-explicit-any */
 import { mount } from 'svelte';
 import './app.css';
 import CameraOnlyApp from './CameraOnlyApp.svelte';
@@ -16,7 +17,8 @@ declare global {
   interface Window {
     bbyc: {
       mediaPipe: {
-        preloadAssets: () => Promise<void>;
+        preloadAssets: () => boolean;
+        getDownloadStatus: () => { isDownloading: boolean; promise: Promise<void> | null };
         clearCache: () => Promise<void>;
         getCacheSize: () => Promise<number>;
       };
@@ -38,7 +40,7 @@ async function initializeMocks() {
 // ビューポート高さの動的調整（古いブラウザ対応）
 function setupViewportHeight() {
   // dvhサポートをチェック
-  if (!CSS.supports('height', '100dvh')) {
+  if (typeof window === 'undefined' || !(window as any).CSS || !(window as any).CSS.supports('height', '100dvh')) {
     console.log('🔧 dvh not supported, using JavaScript fallback');
     
     function setCustomVH() {
@@ -78,14 +80,22 @@ async function initializeCameraApp() {
   // PHP側から呼び出せるグローバルAPIを設定
   window.bbyc = {
     mediaPipe: {
-      preloadAssets: async () => {
-        console.log('🔄 外部からMediaPipeアセット取得をトリガー');
-        return globalAssetManager.preloadAllAssets();
+      // 非同期ダウンロード（即座に戻る）
+      preloadAssets: () => {
+        console.log('🚀 外部からMediaPipeアセット取得をトリガー');
+        return globalAssetManager.preloadAssetsAsync();
       },
+      
+      // ダウンロード状況確認
+      getDownloadStatus: () => {
+        return globalAssetManager.getDownloadStatus();
+      },
+
       clearCache: async () => {
         console.log('🗑️ 外部からMediaPipeアセットキャッシュクリアをトリガー');
         return globalAssetManager.clearCache();
       },
+      
       getCacheSize: async () => {
         const size = await globalAssetManager.getCacheSize();
         console.log(`📊 MediaPipeアセットキャッシュサイズ: ${Math.round(size / 1024)}KB`);

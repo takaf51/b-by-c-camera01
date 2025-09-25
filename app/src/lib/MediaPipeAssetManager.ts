@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 interface MediaPipeAsset {
   filename: string;
   data: ArrayBuffer;
@@ -9,7 +11,9 @@ export class MediaPipeAssetManager {
   private dbName = 'mediapipe-cache';
   private storeName = 'assets';
   private version = '0.5.1675469794'; // MediaPipeのバージョン
-  private db: IDBDatabase | null = null;
+  private db: any = null; // IDBDatabase
+  private isDownloading = false; // ダウンロード中フラグ
+  private downloadPromise: Promise<void> | null = null; // ダウンロード Promise
 
   // 事前取得すべきアセット一覧
   private requiredAssets = [
@@ -19,11 +23,16 @@ export class MediaPipeAssetManager {
   ];
 
   async init(): Promise<void> {
+    // ブラウザ環境チェック
+    if (typeof window === 'undefined' || !(window as any).indexedDB) {
+      throw new Error('IndexedDB is not available');
+    }
+
     // 永続ストレージをリクエスト（Safari対策）
     await this.requestPersistentStorage();
 
     return new Promise((resolve, reject) => {
-      const request = indexedDB.open(this.dbName, 1);
+      const request = (window as any).indexedDB.open(this.dbName, 1);
       
       request.onerror = () => reject(request.error);
       request.onsuccess = () => {
@@ -31,8 +40,8 @@ export class MediaPipeAssetManager {
         resolve();
       };
       
-      request.onupgradeneeded = (event) => {
-        const db = (event.target as IDBOpenDBRequest).result;
+      request.onupgradeneeded = (event: any) => {
+        const db = event.target.result;
         if (!db.objectStoreNames.contains(this.storeName)) {
           db.createObjectStore(this.storeName, { keyPath: 'filename' });
         }
@@ -42,9 +51,9 @@ export class MediaPipeAssetManager {
 
   // 永続ストレージのリクエスト（Safari 7日間制限対策）
   private async requestPersistentStorage(): Promise<void> {
-    if ('storage' in navigator && 'persist' in navigator.storage) {
+    if (typeof window !== 'undefined' && (window as any).navigator && (window as any).navigator.storage && 'persist' in (window as any).navigator.storage) {
       try {
-        const persistent = await navigator.storage.persist();
+        const persistent = await (window as any).navigator.storage.persist();
         if (persistent) {
           console.log('✅ 永続ストレージが有効になりました');
         } else {
@@ -56,6 +65,36 @@ export class MediaPipeAssetManager {
     } else {
       console.warn('このブラウザは永続ストレージをサポートしていません');
     }
+  }
+
+  // 非同期でダウンロードを開始（即座に戻る）
+  preloadAssetsAsync(): boolean {
+    if (this.isDownloading) {
+      console.log('📥 MediaPipeアセットダウンロード既に実行中');
+      return false; // 既に実行中
+    }
+
+    console.log('🚀 MediaPipeアセットの非同期ダウンロードを開始');
+    this.isDownloading = true;
+    
+    // バックグラウンドで実行（戻り値を待たない）
+    this.downloadPromise = this.preloadAllAssets()
+      .catch(error => {
+        console.error('MediaPipeアセットの非同期ダウンロードに失敗:', error);
+      })
+      .finally(() => {
+        this.isDownloading = false;
+      });
+
+    return true; // 開始成功
+  }
+
+  // ダウンロード状況を確認
+  getDownloadStatus(): { isDownloading: boolean; promise: Promise<void> | null } {
+    return {
+      isDownloading: this.isDownloading,
+      promise: this.downloadPromise
+    };
   }
 
   // ログイン時などに実行：全アセットを事前ダウンロード
@@ -148,9 +187,14 @@ export class MediaPipeAssetManager {
     const data = await this.getAsset(filename);
     if (!data) return null;
 
+    if (typeof window === 'undefined' || !(window as any).Blob || !(window as any).URL) {
+      console.warn('Blob または URL API が利用できません');
+      return null;
+    }
+
     const mimeType = this.getMimeType(filename);
-    const blob = new Blob([data], { type: mimeType });
-    return URL.createObjectURL(blob);
+    const blob = new (window as any).Blob([data], { type: mimeType });
+    return (window as any).URL.createObjectURL(blob);
   }
 
   private getMimeType(filename: string): string {
