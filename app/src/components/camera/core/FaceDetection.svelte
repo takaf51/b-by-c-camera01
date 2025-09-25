@@ -29,6 +29,7 @@
   } from '../../../stores/cameraConfig';
   import { getDevicePitchAdjustment } from '../../../domain/cameraConfig';
   import type { CameraConfiguration } from '../../../domain/cameraConfig';
+  import { MediaPipeAssetManager } from '../../../lib/MediaPipeAssetManager';
 
   const dispatch = createEventDispatcher();
 
@@ -109,9 +110,21 @@
   let lastGuidanceUpdate = 0;
   let lastGuidanceMessage = '';
 
+  // MediaPipeアセットマネージャー
+  let assetManager: MediaPipeAssetManager;
+  let localBlobUrls: string[] = []; // 作成したBlob URLを管理
+  let preloadedUrls: Map<string, string> = new Map(); // 事前準備したURL
+
   onMount(async () => {
     try {
       initializationStep = 'config';
+
+      // アセットマネージャーを初期化
+      assetManager = new MediaPipeAssetManager();
+      await assetManager.init();
+
+      // MediaPipeアセットのURLを事前準備
+      await prepareMediaPipeAssets();
 
       // Ensure camera configuration is loaded first
       if (!$cameraConfig.isLoaded) {
@@ -156,6 +169,11 @@
   }
 
   onDestroy(() => {
+    // Blob URLをクリーンアップ
+    localBlobUrls.forEach(url => URL.revokeObjectURL(url));
+    localBlobUrls = [];
+    preloadedUrls.clear();
+
     completeCleanup();
   });
 
@@ -164,10 +182,49 @@
   // Watch for mode changes (debug disabled)
   // $: if (currentMode) { console.log('📱 Mode changed:', currentMode); }
 
+  // MediaPipeアセットのURLを事前準備
+  async function prepareMediaPipeAssets() {
+    const requiredFiles = [
+      'face_mesh_solution_packed_assets.data',
+      'face_mesh_solution_simd_wasm_bin.wasm',
+      'face_mesh_solution_packed_assets_loader.js',
+    ];
+
+    for (const file of requiredFiles) {
+      try {
+        const localUrl = await assetManager.createLocalFileUrl(file);
+        if (localUrl) {
+          console.log(`🎯 ローカルキャッシュから事前準備: ${file}`);
+          preloadedUrls.set(file, localUrl);
+          localBlobUrls.push(localUrl);
+        } else {
+          console.log(`🌐 CDNから取得予定: ${file}`);
+          preloadedUrls.set(
+            file,
+            `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+          );
+        }
+      } catch (error) {
+        console.warn(`アセット準備エラー: ${file}`, error);
+        preloadedUrls.set(
+          file,
+          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
+        );
+      }
+    }
+  }
+
   async function initializeMediaPipe() {
     faceMesh = new FaceMesh({
       locateFile: (file: string) => {
-        return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        // 事前準備したURLを同期的に返す
+        const url =
+          preloadedUrls.get(file) ||
+          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+        console.log(
+          `📁 MediaPipeファイル提供: ${file} -> ${url.substring(0, 50)}...`
+        );
+        return url;
       },
     });
 

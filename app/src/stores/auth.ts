@@ -5,8 +5,9 @@ import { AuthUseCase } from '../usecases/AuthUseCase';
 import {
   HttpAuthRepository,
   LocalStorageTokenStorage,
-} from '../repositories/AuthRepository';
-import { createHttpClient } from '../lib/http';
+  } from '../repositories/AuthRepository';
+  import { createHttpClient } from '../lib/http';
+  import { MediaPipeAssetManager } from '../lib/MediaPipeAssetManager';
 
 // 認証状態の型
 interface AuthStoreState {
@@ -48,6 +49,9 @@ function createAuthUseCase(): AuthUseCase {
 // UseCaseインスタンス
 const authUseCase = createAuthUseCase();
 
+// MediaPipeアセットマネージャーのインスタンス
+const mediaPipeAssetManager = new MediaPipeAssetManager();
+
 // パブリックなStore（読み取り専用）
 export const auth = derived(authState, $state => ({
   isAuthenticated: $state.isAuthenticated,
@@ -78,6 +82,12 @@ export const authActions = {
       isLoading: false,
       error: null,
     }));
+
+    // ログイン成功時にMediaPipeアセットを事前ダウンロード（バックグラウンド）
+    mediaPipeAssetManager.preloadAllAssets().catch(error => {
+      console.warn('MediaPipeアセットの事前ダウンロードに失敗しました:', error);
+      // ログイン自体は成功なので、エラーは警告のみ
+    });
   },
 
   // 認証状態のクリア

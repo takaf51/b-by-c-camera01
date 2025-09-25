@@ -6,6 +6,23 @@ import { mount } from 'svelte';
 import './app.css';
 import CameraOnlyApp from './CameraOnlyApp.svelte';
 import { initializeExternalConfig } from './stores/externalConfig';
+import { MediaPipeAssetManager } from './lib/MediaPipeAssetManager';
+
+// MediaPipeアセットマネージャーのグローバルインスタンス
+let globalAssetManager: MediaPipeAssetManager;
+
+// PHP側から呼び出せるグローバルインターフェース
+declare global {
+  interface Window {
+    bbyc: {
+      mediaPipe: {
+        preloadAssets: () => Promise<void>;
+        clearCache: () => Promise<void>;
+        getCacheSize: () => Promise<number>;
+      };
+    };
+  }
+}
 
 // MSWの初期化（開発環境でのみ）
 async function initializeMocks() {
@@ -48,7 +65,34 @@ async function initializeCameraApp() {
   // MSW初期化（必要に応じて）
   await initializeMocks();
   
+  // MediaPipeアセットマネージャーを初期化
+  globalAssetManager = new MediaPipeAssetManager();
+  await globalAssetManager.init();
 
+  // MediaPipeアセットの事前ダウンロードを即座に実行
+  console.log('🚀 カメラアプリ起動時MediaPipeアセット取得を開始');
+  globalAssetManager.preloadAllAssets().catch(error => {
+    console.warn('MediaPipeアセットの事前ダウンロードに失敗:', error);
+  });
+
+  // PHP側から呼び出せるグローバルAPIを設定
+  window.bbyc = {
+    mediaPipe: {
+      preloadAssets: async () => {
+        console.log('🔄 外部からMediaPipeアセット取得をトリガー');
+        return globalAssetManager.preloadAllAssets();
+      },
+      clearCache: async () => {
+        console.log('🗑️ 外部からMediaPipeアセットキャッシュクリアをトリガー');
+        return globalAssetManager.clearCache();
+      },
+      getCacheSize: async () => {
+        const size = await globalAssetManager.getCacheSize();
+        console.log(`📊 MediaPipeアセットキャッシュサイズ: ${Math.round(size / 1024)}KB`);
+        return size;
+      }
+    }
+  };
 
   // カメラ専用アプリのマウント
   const app = mount(CameraOnlyApp, {

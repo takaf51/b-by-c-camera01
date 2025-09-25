@@ -610,7 +610,7 @@ export const cameraConfigHandlers = [
         minQualityScore: 0.6,
       },
       detectionTimingSettings: {
-        stabilityFrameCount: 5,
+        stabilityFrameCount: 200,
         autoCaptureDelaySeconds: 3,
         guidanceUpdateIntervalMs: 100,
       },
