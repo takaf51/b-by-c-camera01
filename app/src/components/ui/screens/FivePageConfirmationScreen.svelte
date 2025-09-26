@@ -292,10 +292,14 @@
   /* ヘッダーセクション */
   .header-section {
     text-align: center;
-    margin-bottom: 30px;
     flex-shrink: 0;
     position: relative;
     z-index: 100;
+  }
+
+  /* ページ1以外のヘッダーセクション */
+  .content-scaler:not(:has(.page1-layout)) .header-section {
+    margin-bottom: 30px;
   }
 
   /* ページインジケーター（3、4、5ページのみ） */
@@ -361,7 +365,7 @@
     top: 0;
     left: 0;
     right: 0;
-    bottom: 30px;
+    bottom: 0;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -381,20 +385,19 @@
   }
 
   .page1-image.top-left {
-    top: 30px;
-    left: 30px;
-    z-index: 2;
-  }
-
-  .page1-image.bottom-right {
-    bottom: 30px;
-    right: 30px;
+    top: 0;
+    left: 0;
     z-index: 1;
   }
 
+  .page1-image.bottom-right {
+    bottom: 0;
+    right: 0;
+    z-index: 2;
+  }
+
   .page1-img {
-    width: 180px;
-    height: 220px;
+    height: 250px;
     object-fit: cover;
     border-radius: 12px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
@@ -403,7 +406,6 @@
   .page1-text {
     font-size: 14px;
     color: #333;
-    margin: 12px 0;
     text-align: center;
     line-height: 1.3;
     font-weight: 500;
