@@ -12,7 +12,7 @@
   let scalerElement: HTMLDivElement;
 
   // デザインデータ上のコンテンツの基準となる高さ (px)
-  const BASE_CONTENT_HEIGHT = 760;
+  const BASE_CONTENT_HEIGHT = 740;
 
   /**
    * 画面の高さに応じて、コンテンツのスケールとコンテナの高さを調整する関数
@@ -79,26 +79,6 @@
     };
   });
 
-  // ページごとのタイトルと内容
-  $: pageTitle = getPageTitle(currentPage);
-
-  function getPageTitle(page: number): string {
-    switch (page) {
-      case 1:
-        return 'はじめに撮影前の写真を';
-      case 2:
-        return 'はじめに撮影前の写真を';
-      case 3:
-        return '撮影時の姿勢';
-      case 4:
-        return '顔の向きの合わせ方';
-      case 5:
-        return '顔の表情';
-      default:
-        return 'はじめに撮影前の写真を';
-    }
-  }
-
   function getMainTitle(page: number): string {
     switch (page) {
       case 1:
@@ -128,6 +108,9 @@
 >
   <div
     class="confirmation-content"
+    class:page3-bg={currentPage === 3}
+    class:page4-bg={currentPage === 4}
+    class:page5-bg={currentPage === 5}
     bind:this={contentElement}
     on:click|stopPropagation
     on:keydown|stopPropagation
@@ -137,8 +120,6 @@
     <div class="content-scaler" bind:this={scalerElement}>
       <!-- ヘッダー部分 -->
       <div class="header-section">
-        <div class="small-title">{pageTitle}</div>
-
         <!-- ページインジケーター（3、4、5ページ目のみ表示） -->
         {#if currentPage >= 3}
           <div class="page-indicator">
@@ -155,15 +136,7 @@
 
         <h2 class="main-title">{getMainTitle(currentPage)}</h2>
 
-        {#if currentPage <= 2}
-          <div class="subtitle">
-            {#if currentPage === 1}
-              太陽光が入らない場所で
-            {:else}
-              顔に髪がかかって耳が隠れている
-            {/if}
-          </div>
-        {:else if currentPage === 3}
+        {#if currentPage === 3}
           <div class="subtitle">撮影は背景を伸ばして、顔を引く</div>
         {:else if currentPage === 4}
           <div class="subtitle">矢印の方向に合わせて顔の高さ・傾きを調整</div>
@@ -176,97 +149,67 @@
       <div class="main-content">
         {#if currentPage === 1}
           <!-- ページ1: 撮影環境 -->
-          <div class="comparison-grid">
-            <div class="comparison-item good">
-              <div class="image-frame">
-                <div class="placeholder-image">
-                  <p>良い例の画像</p>
-                  <p class="placeholder-note">（画像準備中）</p>
-                </div>
+          <div class="page1-layout">
+            <div class="page1-image-container">
+              <div class="page1-image top-left">
+                <p class="page1-text above">太陽光が入らない場所で</p>
+                <img
+                  src="/assets/images/confirm/page1/bad-sun-light.png"
+                  alt="太陽光が入らない場所での撮影"
+                  class="page1-img"
+                />
               </div>
-              <p class="comparison-text good-text">室内で照明のみ</p>
-            </div>
 
-            <div class="comparison-item bad">
-              <div class="image-frame">
-                <div class="placeholder-image">
-                  <p>悪い例の画像</p>
-                  <p class="placeholder-note">（画像準備中）</p>
-                </div>
+              <div class="page1-image bottom-right">
+                <img
+                  src="/assets/images/confirm/page1/bad-different-light-and-place.png"
+                  alt="異なる環境での撮影"
+                  class="page1-img"
+                />
+                <p class="page1-text below">常に同じ場所で、照明が同じ状態で</p>
               </div>
-              <p class="comparison-text bad-text">背景が無地以外</p>
             </div>
           </div>
         {:else if currentPage === 2}
           <!-- ページ2: 顔の隠れ -->
-          <div class="comparison-grid">
-            <div class="comparison-item good">
-              <div class="image-frame">
-                <div class="placeholder-image">
-                  <p>良い例の画像</p>
-                  <p class="placeholder-note">（画像準備中）</p>
-                </div>
-              </div>
-              <p class="comparison-text good-text">顔に髪い隠れ</p>
+          <div class="page2-pyramid">
+            <div class="pyramid-top">
+              <p class="pyramid-text above">顔に髪がかかって耳が隠れている</p>
+              <img
+                src="/assets/images/confirm/page2/bad-hide-ear.png"
+                alt="顔に髪がかかって耳が隠れている"
+                class="pyramid-image"
+              />
             </div>
-
-            <div class="comparison-item bad">
-              <div class="image-frame">
-                <div class="placeholder-image">
-                  <p>悪い例の画像</p>
-                  <p class="placeholder-note">（画像準備中）</p>
-                </div>
-              </div>
-              <p class="comparison-text bad-text">背景が無地以外</p>
+            <div class="pyramid-middle">
+              <img
+                src="/assets/images/confirm/page2/good-image.png"
+                alt="良い例"
+                class="pyramid-good-image"
+              />
             </div>
-          </div>
-        {:else if currentPage === 3}
-          <!-- ページ3: 撮影時の姿勢 -->
-          <div class="single-image-content">
-            <div class="large-image">
-              <div class="placeholder-image large">
-                <p>撮影時の姿勢の画像</p>
-                <p class="placeholder-note">（画像準備中）</p>
+            <div class="pyramid-bottom">
+              <div class="pyramid-bottom-item">
+                <img
+                  src="/assets/images/confirm/page2/bad-shadow.png"
+                  alt="強い陰影"
+                  class="pyramid-image"
+                />
+                <p class="pyramid-text below">顔に強い陰影</p>
               </div>
-            </div>
-          </div>
-        {:else if currentPage === 4}
-          <!-- ページ4: 顔の向きの合わせ方 -->
-          <div class="multi-image-grid">
-            <div class="reference-image">
-              <div class="placeholder-image">
-                <p>参考画像</p>
-                <p class="placeholder-note">（画像準備中）</p>
-              </div>
-            </div>
-            <div class="guide-images">
-              <div class="guide-item">
-                <div class="placeholder-image small">
-                  <p>上画像</p>
-                </div>
-              </div>
-              <div class="guide-item">
-                <div class="placeholder-image small">
-                  <p>左画像</p>
-                </div>
-              </div>
-              <div class="guide-item">
-                <div class="placeholder-image small">
-                  <p>右画像</p>
-                </div>
+              <div class="pyramid-bottom-item">
+                <img
+                  src="/assets/images/confirm/page2/bad-background.png"
+                  alt="背景が無地以外"
+                  class="pyramid-image"
+                />
+                <p class="pyramid-text below">背景が無地以外</p>
               </div>
             </div>
           </div>
-        {:else if currentPage === 5}
-          <!-- ページ5: 顔の表情 -->
-          <div class="single-image-content">
-            <div class="large-image">
-              <div class="placeholder-image large">
-                <p>顔の表情の画像</p>
-                <p class="placeholder-note">（画像準備中）</p>
-              </div>
-            </div>
-          </div>
+        {:else if currentPage >= 3}
+          <!-- ページ3-5: 背景画像はconfirmation-contentに適用 -->
+          <div class="background-spacer"></div>
         {/if}
       </div>
 
@@ -316,7 +259,7 @@
   }
 
   .confirmation-content {
-    background: white;
+    background: #eeeae1; /* デフォルト：1、2、3ページ用 */
     border-radius: 20px;
     width: 100%;
     max-width: 400px;
@@ -324,18 +267,26 @@
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     will-change: height;
+    position: relative;
+  }
+
+  /* 4、5ページ目の背景色 */
+  .confirmation-content.page4-bg,
+  .confirmation-content.page5-bg {
+    background: #d6d5d1;
   }
 
   .content-scaler {
     width: 100%;
-    height: 740px;
-    padding: 40px 24px;
+    height: 100%;
+    padding: 24px;
     box-sizing: border-box;
     transform-origin: top;
     transition: transform 0.2s ease-out;
     will-change: transform;
     display: flex;
     flex-direction: column;
+    position: relative;
   }
 
   /* ヘッダーセクション */
@@ -343,13 +294,8 @@
     text-align: center;
     margin-bottom: 30px;
     flex-shrink: 0;
-  }
-
-  .small-title {
-    font-size: 14px;
-    color: #666;
-    margin-bottom: 10px;
-    font-weight: 400;
+    position: relative;
+    z-index: 100;
   }
 
   /* ページインジケーター（3、4、5ページのみ） */
@@ -377,6 +323,9 @@
   .indicator-dot.active {
     background: #d2294c;
     color: white;
+    width: 36px;
+    height: 36px;
+    font-size: 16px;
   }
 
   .main-title {
@@ -388,10 +337,11 @@
   }
 
   .subtitle {
-    font-size: 14px;
+    font-size: 15px;
     color: #666;
     margin-bottom: 0;
-    font-weight: 400;
+    font-weight: 700;
+    font-style: bold;
   }
 
   /* メインコンテンツエリア */
@@ -401,117 +351,212 @@
     flex-direction: column;
     justify-content: center;
     min-height: 0;
+    position: relative;
+    overflow: hidden;
   }
 
-  /* 2カラム比較レイアウト（ページ1、2） */
-  .comparison-grid {
+  /* ページ1専用レイアウト */
+  .page1-layout {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 30px;
     display: flex;
-    gap: 20px;
+    align-items: center;
     justify-content: center;
-    align-items: flex-start;
   }
 
-  .comparison-item {
-    flex: 1;
+  .page1-image-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+  }
+
+  .page1-image {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .page1-image.top-left {
+    top: 30px;
+    left: 30px;
+    z-index: 2;
+  }
+
+  .page1-image.bottom-right {
+    bottom: 30px;
+    right: 30px;
+    z-index: 1;
+  }
+
+  .page1-img {
+    width: 180px;
+    height: 220px;
+    object-fit: cover;
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  }
+
+  .page1-text {
+    font-size: 14px;
+    color: #333;
+    margin: 12px 0;
     text-align: center;
-  }
-
-  .image-frame {
-    margin-bottom: 10px;
-  }
-
-  .comparison-text {
-    font-size: 12px;
-    line-height: 1.4;
-    margin: 0;
+    line-height: 1.3;
     font-weight: 500;
   }
 
-  .good-text {
-    color: #333;
+  .page1-text.above {
+    order: -1;
   }
 
-  .bad-text {
-    color: #333;
+  .page1-text.below {
+    order: 1;
   }
 
-  /* 単一画像レイアウト（ページ3、5） */
-  .single-image-content {
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    flex: 1;
-  }
-
-  .large-image {
-    max-width: 300px;
-    width: 100%;
-  }
-
-  /* 複数画像グリッドレイアウト（ページ4） */
-  .multi-image-grid {
+  /* ページ2ピラミッドレイアウト */
+  .page2-pyramid {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 30px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 20px;
-    flex: 1;
     justify-content: center;
+    gap: 16px;
   }
 
-  .reference-image {
-    width: 150px;
-  }
-
-  .guide-images {
+  .pyramid-top {
     display: flex;
-    gap: 15px;
+    flex-direction: column;
+    align-items: center;
     justify-content: center;
   }
 
-  .guide-item {
-    flex: 1;
-    max-width: 80px;
+  .pyramid-middle {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10;
   }
 
-  /* プレースホルダー画像 */
-  .placeholder-image {
-    width: 100%;
-    aspect-ratio: 4/5;
-    background: #f5f5f5;
-    border: 2px dashed #ccc;
+  .pyramid-bottom {
+    display: flex;
+    gap: 16px;
+    justify-content: center;
+    margin-top: 16px;
+  }
+
+  .pyramid-bottom-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  .pyramid-image {
+    width: 160px;
+    height: 200px;
+    object-fit: cover;
     border-radius: 12px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    color: #666;
-    font-size: 12px;
-    padding: 10px;
-    box-sizing: border-box;
   }
 
-  .placeholder-image.large {
-    aspect-ratio: 3/4;
+  .pyramid-good-image {
+    width: 120px;
+    height: 120px;
+    object-fit: cover;
+    border-radius: 50%;
+  }
+
+  .pyramid-text {
     font-size: 14px;
+    color: #333;
+    margin: 12px 0;
+    text-align: center;
+    line-height: 1.3;
+    font-weight: 500;
   }
 
-  .placeholder-image.small {
-    aspect-ratio: 1/1;
-    font-size: 10px;
+  .pyramid-text.above {
+    order: -1;
   }
 
-  .placeholder-note {
-    font-size: 10px;
-    color: #999;
-    margin-top: 4px;
+  .pyramid-text.below {
+    order: 1;
+  }
+
+  /* ページ3-5の背景画像をheader-section下からconfirmation-content下部まで */
+  .confirmation-content.page3-bg {
+    z-index: -1;
+  }
+
+  .confirmation-content.page3-bg::after {
+    content: '';
+    position: absolute;
+    top: 140px; /* header-sectionの概算高さ分下から開始 */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('/assets/images/confirm/page3/image.png');
+    background-size: contain;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    z-index: -1;
+  }
+
+  .confirmation-content.page4-bg {
+    z-index: -1;
+  }
+
+  .confirmation-content.page4-bg::after {
+    content: '';
+    position: absolute;
+    top: 140px; /* header-sectionの概算高さ分下から開始 */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('/assets/images/confirm/page4/image.png');
+    background-size: contain;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    z-index: -1;
+  }
+
+  .confirmation-content.page5-bg {
+    z-index: -1;
+  }
+
+  .confirmation-content.page5-bg::after {
+    content: '';
+    position: absolute;
+    top: 140px; /* header-sectionの概算高さ分下から開始 */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('/assets/images/confirm/page5/image.png');
+    background-size: contain;
+    background-position: center bottom;
+    background-repeat: no-repeat;
+    z-index: -1;
+  }
+
+  /* ページ3-5の背景用スペーサー */
+  .background-spacer {
+    flex: 1;
   }
 
   /* ボタンエリア */
   .button-area {
     display: flex;
-    margin-top: 20px;
+    margin-top: 30px;
     flex-shrink: 0;
+    position: relative;
+    z-index: 100;
   }
 
   /* 1-2ページ用（中央配置） */
