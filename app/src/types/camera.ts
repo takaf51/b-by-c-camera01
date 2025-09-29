@@ -87,7 +87,7 @@ export const POSE_GUIDANCE_MAP = {
   
   // その他の状態
   perfect: {
-    message: '完璧な姿勢です！この状態を保持してください',
+    message: '完璧な姿勢です！\nこの状態を保持してください',
     direction: null,
     type: PoseGuidanceType.SUCCESS
   } as PoseGuidanceData,

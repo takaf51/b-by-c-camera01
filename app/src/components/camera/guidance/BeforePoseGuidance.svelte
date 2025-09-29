@@ -124,8 +124,8 @@
   .guidance-message {
     background: #ffffff;
     color: #d2294c;
-    width: min(270px, 100dvw);
-    height: 47px;
+    width: min(350px, 90dvw);
+    min-height: 47px;
     padding: 12px 16px;
     border-radius: 8px;
     text-align: center;
@@ -140,12 +140,14 @@
     box-sizing: border-box;
     margin: 0;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    white-space: pre-line;
+    line-height: 1.3;
   }
 
   .guidance-message.success {
-    background: #ffffff !important;
-    color: #d2294c !important;
-    border-color: #d2294c !important;
+    background: #00beb9 !important;
+    color: #ffffff !important;
+    border-color: #00beb9 !important;
   }
 
   .guidance-message.warning {

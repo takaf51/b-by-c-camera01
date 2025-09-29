@@ -1200,8 +1200,8 @@
 
       canvasCtx.beginPath();
       canvasCtx.arc(centerX, centerY, radius, -Math.PI / 2, progressAngle);
-      canvasCtx.strokeStyle = progress >= 100 ? '#4CAF50' : '#FFA500';
-      canvasCtx.lineWidth = 8;
+      canvasCtx.strokeStyle = '#00BEB9';
+      canvasCtx.lineWidth = 47;
       canvasCtx.stroke();
     }
 
