@@ -20,6 +20,15 @@
   function adjustScale() {
     if (!scalerElement || !contentElement || !screenElement) return;
 
+    // 1-2ページ目は高さを自動調整、3ページ目以降のみスケール調整
+    if (currentPage <= 2) {
+      // 1-2ページ目：高さ指定を削除してコンテンツに応じた高さにする
+      contentElement.style.height = '';
+      scalerElement.style.transform = '';
+      return;
+    }
+
+    // 3ページ目以降：従来通りのスケール調整
     // 中央表示の場合、上下のパディング（40px）を考慮した利用可能な高さを計算
     const availableHeight = screenElement.clientHeight - 40;
 
@@ -41,7 +50,7 @@
   }
 
   function handleNextPage() {
-    if (currentPage < 5) {
+    if (currentPage < 6) {
       currentPage += 1;
 
       // 2ページ目に到達した際のイベント（MediaPipe初期化用）
@@ -55,6 +64,11 @@
     if (currentPage > 1) {
       currentPage -= 1;
     }
+  }
+
+  // ページが変わった時にスケールを再調整
+  $: if (currentPage) {
+    adjustScale();
   }
 
   function handleFinalConfirm() {
@@ -91,30 +105,10 @@
         return '顔の向きの合わせ方';
       case 5:
         return '顔の表情';
+      case 6:
+        return 'カメラが上手く起動しない時';
       default:
         return '撮影の前にご確認ください';
-    }
-  }
-
-  function getRedText(page: number): string | null {
-    switch (page) {
-      case 1:
-        return 'ワーク前後で写真を比較し、計測を行います。正確な結果を得るため、以下ご注意ください。';
-      case 2:
-        return 'ワーク前後で写真を比較し、計測を行います。正確な結果を得るため、以下ご注意ください。';
-      default:
-        return null;
-    }
-  }
-
-  function getBottomText(page: number): string | null {
-    switch (page) {
-      case 1:
-        return 'おでこの生え際が写るように、前髪はターバンやピンで留めてください。';
-      case 2:
-        return '直射日光を避け、 室内の日光が入らない場所で撮影をしてください。また、顔に影がかからないようご注意ください。';
-      default:
-        return null;
     }
   }
 </script>
@@ -133,6 +127,7 @@
     class:page3-bg={currentPage === 3}
     class:page4-bg={currentPage === 4}
     class:page5-bg={currentPage === 5}
+    class:page6-bg={currentPage === 6}
     bind:this={contentElement}
     on:click|stopPropagation
     on:keydown|stopPropagation
@@ -142,10 +137,10 @@
     <div class="content-scaler" bind:this={scalerElement}>
       <!-- ヘッダー部分 -->
       <div class="header-section">
-        <!-- ページインジケーター（3、4、5ページ目のみ表示） -->
-        {#if currentPage >= 3}
+        <!-- ページインジケーター（3、4、5、6ページ目に表示） -->
+        {#if currentPage >= 3 && currentPage <= 6}
           <div class="page-indicator">
-            {#each [1, 2, 3] as pageNum}
+            {#each [1, 2, 3, 4] as pageNum}
               <div
                 class="indicator-dot"
                 class:active={pageNum === currentPage - 2}
@@ -158,48 +153,80 @@
 
         <h2 class="main-title">{getMainTitle(currentPage)}</h2>
 
-        {#if currentPage <= 2}
-          <!-- 1-2ページ: 赤いテキスト -->
-          {#if getRedText(currentPage)}
-            <div class="red-text">{getRedText(currentPage)}</div>
-          {/if}
-        {:else if currentPage === 3}
-          <div class="subtitle">撮影は背景を伸ばして、顔を引く</div>
+        {#if currentPage === 3}
+          <div class="subtitle">
+            背筋を伸ばして、顎を引いてください。<br
+            />撮影時はカメラの位置と目の高さを<br />水平にしてください。
+          </div>
         {:else if currentPage === 4}
           <div class="subtitle">矢印の方向に合わせて顔の高さ・傾きを調整</div>
         {:else if currentPage === 5}
           <div class="subtitle">位置調整後、真顔へ。撮影は自動で開始</div>
+        {:else if currentPage === 6}
+          <div class="subtitle-7page">
+            写真が上手く起動しない場合は、<br />
+            ブラウザの<span class="red-text">リロード</span
+            >ボタンを押してください。
+            <br /><br />
+            それでも解決しない場合は、<br />
+            アクセスが集中している可能性があるため、<br />
+            時間をあけてアクセスしてください。
+          </div>
         {/if}
       </div>
 
       <!-- メインコンテンツエリア -->
       <div class="main-content">
         {#if currentPage === 1}
-          <!-- ページ1: 撮影環境 -->
+          <!-- ページ1: 撮影環境 - 左右2列レイアウト + 中央画像 -->
           <div class="page1-layout">
+            <div class="image-with-text">
+              <img
+                src="/assets/images/confirm/page1/left.png"
+                alt="頭に過ぎ陰影"
+                class="page-img"
+              />
+              <p class="image-description">頭に過ぎ陰影</p>
+            </div>
+            <div class="image-with-text">
+              <img
+                src="/assets/images/confirm/page1/right.png"
+                alt="背景が無地以外"
+                class="page-img"
+              />
+              <p class="image-description">背景が無地以外</p>
+            </div>
+            <!-- 中央の画像 -->
             <img
-              src="/assets/images/confirm/page1/top.png"
-              alt="撮影環境上部画像"
-              class="page1-top-img"
-            />
-            <img
-              src="/assets/images/confirm/page1/bottom.png"
-              alt="撮影環境下部画像"
-              class="page1-bottom-img"
+              src="/assets/images/confirm/page1/center.png"
+              alt="中央イラスト"
+              class="center-img"
             />
           </div>
         {:else if currentPage === 2}
-          <!-- ページ2: 顔の隠れ -->
+          <!-- ページ2: 顔の隠れ - 左右2列レイアウト + 中央画像 -->
           <div class="page2-layout">
+            <div class="image-with-text">
+              <img
+                src="/assets/images/confirm/page2/left.png"
+                alt="眼鏡をかけている"
+                class="page-img"
+              />
+              <p class="image-description">眼鏡をかけている</p>
+            </div>
+            <div class="image-with-text">
+              <img
+                src="/assets/images/confirm/page2/right.png"
+                alt="顔に髪がかかって耳が隠れている"
+                class="page-img"
+              />
+              <p class="image-description">顔に髪がかかって耳が隠れている</p>
+            </div>
+            <!-- 中央の画像 -->
             <img
-              src="/assets/images/confirm/page2/top.png"
-              alt="撮影時注意点上部画像"
-              class="page2-top-img"
-            />
-            <img
-              src="/assets/images/confirm/page2/bottom.png"
-              alt="撮影時注意点下部画像"
-              class="page2-bottom-img"
+              src="/assets/images/confirm/page2/center.png"
+              alt="中央イラスト"
+              class="center-img"
             />
           </div>
         {:else if currentPage >= 3}
@@ -211,10 +238,7 @@
       <!-- ボタンエリア -->
       <div class="button-area">
         {#if currentPage <= 2}
-          <!-- 1-2ページ: 下部テキスト + 確認しましたボタン -->
-          {#if getBottomText(currentPage)}
-            <div class="bottom-text">{getBottomText(currentPage)}</div>
-          {/if}
+          <!-- 1-2ページ: 確認しましたボタン -->
           <button class="confirm-button" on:click={handleNextPage}>
             確認しました
           </button>
@@ -228,7 +252,11 @@
           <button class="prev-button" on:click={handlePrevPage}> 前へ </button>
           <button class="next-button" on:click={handleNextPage}> 次へ </button>
         {:else if currentPage === 5}
-          <!-- 5ページ: 前へ + 撮影するボタン -->
+          <!-- 5ページ: 前へ + 次へボタン -->
+          <button class="prev-button" on:click={handlePrevPage}> 前へ </button>
+          <button class="next-button" on:click={handleNextPage}> 次へ </button>
+        {:else if currentPage === 6}
+          <!-- 6ページ: 前へ + 撮影するボタン -->
           <button class="prev-button" on:click={handlePrevPage}> 前へ </button>
           <button class="shoot-button" on:click={handleFinalConfirm}>
             撮影する
@@ -267,15 +295,27 @@
     position: relative;
   }
 
+  /* 3ページ目以降の高さを固定 */
+  .confirmation-content.page3-bg,
+  .confirmation-content.page4-bg,
+  .confirmation-content.page5-bg,
+  .confirmation-content.page6-bg {
+    height: 740px;
+  }
+
   /* 4、5ページ目の背景色 */
   .confirmation-content.page4-bg,
   .confirmation-content.page5-bg {
     background: #d6d5d1;
   }
 
+  /* 6ページ目の背景色 */
+  .confirmation-content.page6-bg {
+    background: #eeeae1;
+  }
+
   .content-scaler {
     width: 100%;
-    height: 740px;
     padding: 24px;
     box-sizing: border-box;
     transform-origin: top;
@@ -284,6 +324,14 @@
     display: flex;
     flex-direction: column;
     position: relative;
+  }
+
+  /* 3ページ目以降のcontent-scalerの高さを固定 */
+  .page3-bg .content-scaler,
+  .page4-bg .content-scaler,
+  .page5-bg .content-scaler,
+  .page6-bg .content-scaler {
+    height: 740px;
   }
 
   /* ヘッダーセクション */
@@ -337,24 +385,28 @@
     line-height: 1.4;
   }
 
-  /* 1-2ページの赤いテキスト */
-  .red-text {
-    color: #d2294c;
-    font-size: 14px;
-    font-weight: 400;
-    line-height: 1.6;
-    text-align: center;
-    padding: 0 20px;
-    margin-top: 10px;
-    margin-bottom: 12px;
-  }
-
   .subtitle {
     font-size: 15px;
     color: #666;
     margin-bottom: 0;
     font-weight: 700;
     font-style: bold;
+  }
+
+  /* 6ページ目専用のサブタイトル */
+  .subtitle-7page {
+    font-size: 15px;
+    color: #666;
+    margin-bottom: 0;
+    font-weight: 700;
+    font-style: bold;
+    line-height: 1.6;
+    text-align: center;
+  }
+
+  .subtitle-7page .red-text {
+    color: #d2294c;
+    font-weight: 700;
   }
 
   /* メインコンテンツエリア */
@@ -365,74 +417,75 @@
     justify-content: center;
     min-height: 0;
     position: relative;
-    overflow: hidden;
+    overflow: visible;
+    padding: 24px 0 12px 0;
   }
 
-  /* ページ1専用レイアウト */
+  /* ページ1専用レイアウト - 左右2列 */
   .page1-layout {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    justify-content: space-between;
+    justify-content: center;
+    gap: 16px;
     padding: 0;
-  }
-
-  .page1-top-img {
-    width: auto;
-    max-width: 100%;
+    position: relative;
     height: auto;
-    max-height: 48%;
-    object-fit: contain;
-    align-self: center;
   }
 
-  .page1-bottom-img {
-    width: auto;
-    max-width: 100%;
-    height: auto;
-    max-height: 48%;
-    object-fit: contain;
-    align-self: center;
-  }
-
-  /* ページ2レイアウト */
+  /* ページ2レイアウト - 左右2列 */
   .page2-layout {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    gap: 16px;
+    padding: 0;
+    position: relative;
+    height: auto;
+  }
+
+  /* 画像とテキストのコンテナ */
+  .image-with-text {
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: space-between;
-    padding: 0;
+    flex: 1;
+    max-width: 50%;
+    z-index: 1;
   }
 
-  .page2-top-img {
-    width: auto;
-    max-width: 100%;
+  /* 画像 */
+  .page-img {
+    width: 100%;
     height: auto;
-    max-height: 48%;
     object-fit: contain;
-    align-self: center;
+    border-radius: 8px;
   }
 
-  .page2-bottom-img {
-    width: auto;
-    max-width: 100%;
-    height: auto;
-    max-height: 48%;
-    object-fit: contain;
-    align-self: center;
+  /* 画像下の説明テキスト */
+  .image-description {
+    margin-top: 12px;
+    font-size: 13px;
+    font-weight: 500;
+    color: #2c201e;
+    text-align: center;
+    line-height: 1.4;
   }
 
-  /* ページ3-5の背景画像をheader-section下からconfirmation-content下部まで */
+  /* 中央の画像（丸いイラスト） */
+  .center-img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100px;
+    height: 100px;
+    z-index: 10;
+    pointer-events: none;
+  }
+
+  /* ページ3-6の背景画像をheader-section下からconfirmation-content下部まで */
   .confirmation-content.page3-bg {
     z-index: -1;
   }
@@ -440,13 +493,13 @@
   .confirmation-content.page3-bg::after {
     content: '';
     position: absolute;
-    top: 140px; /* header-sectionの概算高さ分下から開始 */
+    top: 100px; /* header-sectionの概算高さ分下から開始 */
     left: 0;
     right: 0;
     bottom: 0;
     background-image: url('/assets/images/confirm/page3/image.png');
     background-size: contain;
-    background-position: center bottom;
+    background-position: center center;
     background-repeat: no-repeat;
     z-index: -1;
   }
@@ -487,7 +540,25 @@
     z-index: -1;
   }
 
-  /* ページ3-5の背景用スペーサー */
+  .confirmation-content.page6-bg {
+    z-index: -1;
+  }
+
+  .confirmation-content.page6-bg::after {
+    content: '';
+    position: absolute;
+    top: 160px; /* header-sectionとsubtitleの高さ分下から開始 */
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-image: url('/assets/images/confirm/page6/image.png');
+    background-size: contain;
+    background-position: center center;
+    background-repeat: no-repeat;
+    z-index: -1;
+  }
+
+  /* ページ3-6の背景用スペーサー */
   .background-spacer {
     flex: 1;
   }
@@ -502,17 +573,6 @@
     flex-shrink: 0;
     position: relative;
     z-index: 100;
-  }
-
-  /* 下部テキスト（1-2ページ） */
-  .bottom-text {
-    color: #2c201e;
-    font-size: 14px;
-    font-weight: 500;
-    line-height: 1.6;
-    text-align: center;
-    margin-bottom: 20px;
-    padding: 0 10px;
   }
 
   /* 3ページ用（右寄せ） */
