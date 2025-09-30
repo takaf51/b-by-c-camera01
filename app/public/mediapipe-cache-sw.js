@@ -9,7 +9,8 @@
 
 const CACHE_DB_NAME = 'mediapipe-cache';
 const CACHE_STORE_NAME = 'assets';
-const MEDIAPIPE_CDN_PATTERN = /cdn\.jsdelivr\.net\/npm\/@mediapipe\/face_mesh\//;
+// CloudFrontのCDN URLにも対応
+const MEDIAPIPE_CDN_PATTERN = /(cdn\.jsdelivr\.net\/npm\/@mediapipe\/face_mesh|d2a697hridziqi\.cloudfront\.net\/assets\/mediapipe)\//;
 
 // IndexedDBを開く
 function openCacheDB () {

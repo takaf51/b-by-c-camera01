@@ -30,6 +30,7 @@
   import { getDevicePitchAdjustment } from '../../../domain/cameraConfig';
   import type { CameraConfiguration } from '../../../domain/cameraConfig';
   import { MediaPipeAssetManager } from '../../../lib/MediaPipeAssetManager';
+  import { getMediaPipeCdnUrl } from '../../../config/mediapipe';
 
   const dispatch = createEventDispatcher();
 
@@ -207,7 +208,7 @@
         } else {
           // キャッシュがない場合、CDNから直接ダウンロードしてBlob URLを作成
           console.log(`📥 CDNからダウンロード中: ${file}`);
-          const cdnUrl = `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+          const cdnUrl = getMediaPipeCdnUrl(file);
 
           try {
             const response = await fetch(cdnUrl);
@@ -256,10 +257,7 @@
       } catch (error) {
         console.error(`アセット準備エラー: ${file}`, error);
         // エラー時はCDN URLをフォールバック
-        preloadedUrls.set(
-          file,
-          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-        );
+        preloadedUrls.set(file, getMediaPipeCdnUrl(file));
       }
     }
 
@@ -271,9 +269,7 @@
       faceMesh = new FaceMesh({
         locateFile: (file: string) => {
           // 事前準備したURLを同期的に返す
-          const url =
-            preloadedUrls.get(file) ||
-            `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+          const url = preloadedUrls.get(file) || getMediaPipeCdnUrl(file);
           console.log(
             `📁 MediaPipeファイル提供: ${file} -> ${url.substring(0, 50)}...`
           );

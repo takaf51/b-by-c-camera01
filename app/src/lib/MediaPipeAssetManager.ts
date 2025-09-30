@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { getMediaPipeCdnUrl } from '../config/mediapipe';
 
 interface MediaPipeAsset {
   filename: string;
@@ -121,7 +122,7 @@ export class MediaPipeAssetManager {
 
         // ダウンロードして保存
         console.log(`📥 ダウンロード中: ${filename} (${downloadedCount + 1}/${this.requiredAssets.length - cachedCount})`);
-        const url = `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${filename}`;
+        const url = getMediaPipeCdnUrl(filename);
         const response = await fetch(url);
         
         if (!response.ok) {

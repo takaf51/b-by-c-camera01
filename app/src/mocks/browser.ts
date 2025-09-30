@@ -1,6 +1,7 @@
 // MSW ブラウザワーカー設定
 import { setupWorker } from 'msw/browser';
 import { handlers } from './handlers';
+import { isMediaPipeCdnUrl } from '../config/mediapipe';
 
 // ワーカーを設定
 export const worker = setupWorker(...handlers);
@@ -12,39 +13,7 @@ export async function startMocking() {
   }
 
   await worker.start({
-    onUnhandledRequest: (req, print) => {
-      const url = req.url;
-
-      // 以下のリクエストは全て無視（MSWでインターセプトしない）
-      if (
-        // MediaPipeのCDNリクエスト
-        url.includes('cdn.jsdelivr.net/npm/@mediapipe/') ||
-        url.includes('face_mesh') ||
-        url.includes('.wasm') ||
-        url.includes('.data') ||
-        // Viteの開発サーバーリクエスト
-        url.includes('/@') ||
-        url.includes('/__vite') ||
-        url.includes('/node_modules/') ||
-        // 静的アセット
-        /\.(js|css|ts|svelte|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|eot)(\?.*)?$/.test(
-          url
-        )
-      ) {
-        return 'bypass';
-      }
-
-      // API関連パス以外はバイパス（認証パス、plan関連パス、setting関連パスは除く）
-      if (
-        !url.includes('/api/') &&
-        !url.includes('/plan/') &&
-        !url.includes('/login/') &&
-        !url.includes('/register/') &&
-        !url.includes('/setting/')
-      ) {
-        return 'bypass';
-      }
-    },
+    onUnhandledRequest: 'bypass', // デフォルトで全てバイパス
     serviceWorker: {
       url: '/mockServiceWorker.js',
     },
