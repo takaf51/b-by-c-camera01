@@ -8,7 +8,6 @@ import './app.css';
 import CameraOnlyApp from './CameraOnlyApp.svelte';
 import { initializeExternalConfig } from './stores/externalConfig';
 import { MediaPipeAssetManager } from './lib/MediaPipeAssetManager';
-import { registerMediaPipeCacheWorker } from './lib/mediapipeCacheWorker';
 
 // MediaPipeアセットマネージャーのグローバルインスタンス
 let globalAssetManager: MediaPipeAssetManager;
@@ -65,10 +64,10 @@ async function initializeCameraApp() {
   // 外部設定の初期化
   initializeExternalConfig();
   
-  // 本番環境：MediaPipe Cache Service Workerを登録（バックグラウンド）
-  registerMediaPipeCacheWorker().catch(err => {
-    console.warn('MediaPipe Cache SW登録失敗（CDNから直接読み込みます）:', err);
-  });
+  // Service Workerは使用しない（IndexedDB + Blob URLで十分高速）
+  // registerMediaPipeCacheWorker().catch(err => {
+  //   console.warn('MediaPipe Cache SW登録失敗（CDNから直接読み込みます）:', err);
+  // });
   
   // MSW初期化（必要に応じて）
   await initializeMocks();
