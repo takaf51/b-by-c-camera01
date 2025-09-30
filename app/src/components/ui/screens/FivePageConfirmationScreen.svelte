@@ -95,6 +95,28 @@
         return '撮影の前にご確認ください';
     }
   }
+
+  function getRedText(page: number): string | null {
+    switch (page) {
+      case 1:
+        return 'ワーク前後で写真を比較し、計測を行います。正確な結果を得るため、以下ご注意ください。';
+      case 2:
+        return 'ワーク前後で写真を比較し、計測を行います。正確な結果を得るため、以下ご注意ください。';
+      default:
+        return null;
+    }
+  }
+
+  function getBottomText(page: number): string | null {
+    switch (page) {
+      case 1:
+        return 'おでこの生え際が写るように、前髪はターバンやピンで留めてください。';
+      case 2:
+        return '直射日光を避け、 室内の日光が入らない場所で撮影をしてください。また、顔に影がかからないようご注意ください。';
+      default:
+        return null;
+    }
+  }
 </script>
 
 <div
@@ -136,7 +158,12 @@
 
         <h2 class="main-title">{getMainTitle(currentPage)}</h2>
 
-        {#if currentPage === 3}
+        {#if currentPage <= 2}
+          <!-- 1-2ページ: 赤いテキスト -->
+          {#if getRedText(currentPage)}
+            <div class="red-text">{getRedText(currentPage)}</div>
+          {/if}
+        {:else if currentPage === 3}
           <div class="subtitle">撮影は背景を伸ばして、顔を引く</div>
         {:else if currentPage === 4}
           <div class="subtitle">矢印の方向に合わせて顔の高さ・傾きを調整</div>
@@ -150,62 +177,30 @@
         {#if currentPage === 1}
           <!-- ページ1: 撮影環境 -->
           <div class="page1-layout">
-            <div class="page1-image-container">
-              <div class="page1-image top-left">
-                <p class="page1-text above">太陽光が入らない場所で</p>
-                <img
-                  src="/assets/images/confirm/page1/bad-sun-light.png"
-                  alt="太陽光が入らない場所での撮影"
-                  class="page1-img"
-                />
-              </div>
-
-              <div class="page1-image bottom-right">
-                <img
-                  src="/assets/images/confirm/page1/bad-different-light-and-place.png"
-                  alt="異なる環境での撮影"
-                  class="page1-img"
-                />
-                <p class="page1-text below">常に同じ場所で、照明が同じ状態で</p>
-              </div>
-            </div>
+            <img
+              src="/assets/images/confirm/page1/top.png"
+              alt="撮影環境上部画像"
+              class="page1-top-img"
+            />
+            <img
+              src="/assets/images/confirm/page1/bottom.png"
+              alt="撮影環境下部画像"
+              class="page1-bottom-img"
+            />
           </div>
         {:else if currentPage === 2}
           <!-- ページ2: 顔の隠れ -->
-          <div class="page2-pyramid">
-            <div class="pyramid-top">
-              <p class="pyramid-text above">顔に髪がかかって耳が隠れている</p>
-              <img
-                src="/assets/images/confirm/page2/bad-hide-ear.png"
-                alt="顔に髪がかかって耳が隠れている"
-                class="pyramid-image"
-              />
-            </div>
-            <div class="pyramid-middle">
-              <img
-                src="/assets/images/confirm/page2/good-image.png"
-                alt="良い例"
-                class="pyramid-good-image"
-              />
-            </div>
-            <div class="pyramid-bottom">
-              <div class="pyramid-bottom-item">
-                <img
-                  src="/assets/images/confirm/page2/bad-shadow.png"
-                  alt="強い陰影"
-                  class="pyramid-image"
-                />
-                <p class="pyramid-text below">顔に強い陰影</p>
-              </div>
-              <div class="pyramid-bottom-item">
-                <img
-                  src="/assets/images/confirm/page2/bad-background.png"
-                  alt="背景が無地以外"
-                  class="pyramid-image"
-                />
-                <p class="pyramid-text below">背景が無地以外</p>
-              </div>
-            </div>
+          <div class="page2-layout">
+            <img
+              src="/assets/images/confirm/page2/top.png"
+              alt="撮影時注意点上部画像"
+              class="page2-top-img"
+            />
+            <img
+              src="/assets/images/confirm/page2/bottom.png"
+              alt="撮影時注意点下部画像"
+              class="page2-bottom-img"
+            />
           </div>
         {:else if currentPage >= 3}
           <!-- ページ3-5: 背景画像はconfirmation-contentに適用 -->
@@ -216,7 +211,10 @@
       <!-- ボタンエリア -->
       <div class="button-area">
         {#if currentPage <= 2}
-          <!-- 1-2ページ: 確認しましたボタンのみ（中央） -->
+          <!-- 1-2ページ: 下部テキスト + 確認しましたボタン -->
+          {#if getBottomText(currentPage)}
+            <div class="bottom-text">{getBottomText(currentPage)}</div>
+          {/if}
           <button class="confirm-button" on:click={handleNextPage}>
             確認しました
           </button>
@@ -297,8 +295,8 @@
     z-index: 100;
   }
 
-  /* ページ1以外のヘッダーセクション */
-  .content-scaler:not(:has(.page1-layout)) .header-section {
+  /* ページ3以降のヘッダーセクション */
+  .content-scaler:has(.background-spacer) .header-section {
     margin-bottom: 30px;
   }
 
@@ -340,6 +338,18 @@
     line-height: 1.4;
   }
 
+  /* 1-2ページの赤いテキスト */
+  .red-text {
+    color: #d2294c;
+    font-size: 14px;
+    font-weight: 400;
+    line-height: 1.6;
+    text-align: center;
+    padding: 0 20px;
+    margin-top: 10px;
+    margin-bottom: 12px;
+  }
+
   .subtitle {
     font-size: 15px;
     color: #666;
@@ -367,129 +377,60 @@
     right: 0;
     bottom: 0;
     display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .page1-image-container {
-    position: relative;
-    width: 100%;
-    height: 100%;
-  }
-
-  .page1-image {
-    position: absolute;
-    display: flex;
     flex-direction: column;
     align-items: center;
+    justify-content: space-between;
+    padding: 0;
   }
 
-  .page1-image.top-left {
+  .page1-top-img {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 48%;
+    object-fit: contain;
+    align-self: center;
+  }
+
+  .page1-bottom-img {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 48%;
+    object-fit: contain;
+    align-self: center;
+  }
+
+  /* ページ2レイアウト */
+  .page2-layout {
+    position: absolute;
     top: 0;
     left: 0;
-    z-index: 1;
-  }
-
-  .page1-image.bottom-right {
+    right: 0;
     bottom: 0;
-    right: 0;
-    z-index: 2;
-  }
-
-  .page1-img {
-    height: 250px;
-    object-fit: cover;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  }
-
-  .page1-text {
-    font-size: 14px;
-    color: #333;
-    text-align: center;
-    line-height: 1.3;
-    font-weight: 500;
-  }
-
-  .page1-text.above {
-    order: -1;
-  }
-
-  .page1-text.below {
-    order: 1;
-  }
-
-  /* ページ2ピラミッドレイアウト */
-  .page2-pyramid {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 30px;
     display: flex;
     flex-direction: column;
     align-items: center;
-    justify-content: center;
-    gap: 16px;
+    justify-content: space-between;
+    padding: 0;
   }
 
-  .pyramid-top {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
+  .page2-top-img {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 48%;
+    object-fit: contain;
+    align-self: center;
   }
 
-  .pyramid-middle {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    z-index: 10;
-  }
-
-  .pyramid-bottom {
-    display: flex;
-    gap: 16px;
-    justify-content: center;
-    margin-top: 16px;
-  }
-
-  .pyramid-bottom-item {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-  }
-
-  .pyramid-image {
-    width: 160px;
-    height: 200px;
-    object-fit: cover;
-    border-radius: 12px;
-  }
-
-  .pyramid-good-image {
-    width: 120px;
-    height: 120px;
-    object-fit: cover;
-    border-radius: 50%;
-  }
-
-  .pyramid-text {
-    font-size: 14px;
-    color: #333;
-    margin: 12px 0;
-    text-align: center;
-    line-height: 1.3;
-    font-weight: 500;
-  }
-
-  .pyramid-text.above {
-    order: -1;
-  }
-
-  .pyramid-text.below {
-    order: 1;
+  .page2-bottom-img {
+    width: auto;
+    max-width: 100%;
+    height: auto;
+    max-height: 48%;
+    object-fit: contain;
+    align-self: center;
   }
 
   /* ページ3-5の背景画像をheader-section下からconfirmation-content下部まで */
@@ -555,24 +496,34 @@
   /* ボタンエリア */
   .button-area {
     display: flex;
+    flex-direction: column;
+    align-items: center;
     margin-top: 30px;
     flex-shrink: 0;
     position: relative;
     z-index: 100;
   }
 
-  /* 1-2ページ用（中央配置） */
-  .button-area:has(.confirm-button:only-child) {
-    justify-content: center;
+  /* 下部テキスト（1-2ページ） */
+  .bottom-text {
+    color: #2c201e;
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.6;
+    text-align: center;
+    margin-bottom: 20px;
+    padding: 0 10px;
   }
 
   /* 3ページ用（右寄せ） */
   .button-area:has(.right-aligned) {
+    flex-direction: row;
     justify-content: flex-end;
   }
 
   /* 4-5ページ用（両端配置） */
   .button-area:has(.prev-button) {
+    flex-direction: row;
     justify-content: space-between;
     gap: 20px;
   }
