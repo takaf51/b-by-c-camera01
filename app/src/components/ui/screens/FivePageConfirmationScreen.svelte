@@ -261,7 +261,6 @@
     border-radius: 20px;
     width: 100%;
     max-width: 400px;
-    max-height: 90vh;
     box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     overflow: hidden;
     will-change: height;
@@ -276,7 +275,7 @@
 
   .content-scaler {
     width: 100%;
-    height: 100%;
+    height: 740px;
     padding: 24px;
     box-sizing: border-box;
     transform-origin: top;
@@ -498,7 +497,8 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    margin-top: 30px;
+    margin-top: auto;
+    padding-top: 20px;
     flex-shrink: 0;
     position: relative;
     z-index: 100;

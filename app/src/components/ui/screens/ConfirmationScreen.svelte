@@ -178,7 +178,7 @@
 
   .content-scaler {
     width: 100%;
-
+    height: 740px;
     padding: 40px 24px;
     box-sizing: border-box;
     display: flex;

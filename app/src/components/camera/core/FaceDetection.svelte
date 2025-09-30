@@ -215,31 +215,37 @@
   }
 
   async function initializeMediaPipe() {
-    faceMesh = new FaceMesh({
-      locateFile: (file: string) => {
-        // 事前準備したURLを同期的に返す
-        const url =
-          preloadedUrls.get(file) ||
-          `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
-        console.log(
-          `📁 MediaPipeファイル提供: ${file} -> ${url.substring(0, 50)}...`
-        );
-        return url;
-      },
-    });
+    try {
+      faceMesh = new FaceMesh({
+        locateFile: (file: string) => {
+          // 事前準備したURLを同期的に返す
+          const url =
+            preloadedUrls.get(file) ||
+            `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+          console.log(
+            `📁 MediaPipeファイル提供: ${file} -> ${url.substring(0, 50)}...`
+          );
+          return url;
+        },
+      });
 
-    // Use settings from API configuration
-    const mediaPipeSettings = config.mediaPipeConfig;
-    faceMesh.setOptions({
-      maxNumFaces: mediaPipeSettings.maxDetectedFaces,
-      refineLandmarks: mediaPipeSettings.enableRefinedLandmarks,
-      minDetectionConfidence: mediaPipeSettings.minDetectionConfidence,
-      minTrackingConfidence: mediaPipeSettings.minTrackingConfidence,
-      selfieMode: mediaPipeSettings.selfieMode,
-      staticImageMode: mediaPipeSettings.staticImageMode,
-    });
+      // Use settings from API configuration
+      const mediaPipeSettings = config.mediaPipeConfig;
+      faceMesh.setOptions({
+        maxNumFaces: mediaPipeSettings.maxDetectedFaces,
+        refineLandmarks: mediaPipeSettings.enableRefinedLandmarks,
+        minDetectionConfidence: mediaPipeSettings.minDetectionConfidence,
+        minTrackingConfidence: mediaPipeSettings.minTrackingConfidence,
+        selfieMode: mediaPipeSettings.selfieMode,
+        staticImageMode: mediaPipeSettings.staticImageMode,
+      });
 
-    faceMesh.onResults(onResults);
+      faceMesh.onResults(onResults);
+      console.log('✅ FaceMesh設定完了、onResultsコールバック登録完了');
+    } catch (error) {
+      console.error('❌ MediaPipe初期化エラー:', error);
+      throw error;
+    }
   }
 
   // キャンバス同期機能は削除
@@ -526,18 +532,31 @@
 
       // MediaPipeにフレームを送る処理を独自に実装
       let animationId: number;
+      let frameCount = 0;
       const sendFrame = async () => {
         if (faceMesh && videoElement && videoElement.readyState >= 2) {
           try {
             await faceMesh.send({ image: videoElement });
+            frameCount++;
+            // 最初のフレーム送信をログ
+            if (frameCount === 1) {
+              console.log('✅ 最初のフレームをMediaPipeに送信成功');
+            }
           } catch (error) {
-            console.error('Error sending frame to FaceMesh:', error);
+            console.error('❌ MediaPipeフレーム送信エラー:', error);
+            console.error('エラー詳細:', {
+              faceMesh: !!faceMesh,
+              videoElement: !!videoElement,
+              readyState: videoElement?.readyState,
+              error: error,
+            });
           }
         }
         animationId = requestAnimationFrame(sendFrame);
       };
 
       // フレーム送信を開始
+      console.log('🎬 フレーム送信ループを開始します');
       sendFrame();
 
       // カメラ停止時にアニメーションをクリーンアップするために保存
@@ -593,11 +612,19 @@
   }
 
   function onResults(results: any) {
+    // 最初の呼び出しをログ
+    if (!hasProcessedFirstFrame) {
+      console.log('🎯 onResults が初めて呼ばれました');
+    }
+
     if (!canvasCtx && canvasElement) {
       canvasCtx = canvasElement.getContext('2d')!;
     }
 
-    if (!canvasCtx || !canvasElement) return;
+    if (!canvasCtx || !canvasElement) {
+      console.warn('⚠️ canvasCtx または canvasElement が準備できていません');
+      return;
+    }
 
     // Check if this is the first successful frame processing
     if (!hasProcessedFirstFrame && !isMediaPipeFullyInitialized) {
