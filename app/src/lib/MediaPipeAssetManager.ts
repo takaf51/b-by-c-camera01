@@ -16,10 +16,13 @@ export class MediaPipeAssetManager {
   private downloadPromise: Promise<void> | null = null; // ダウンロード Promise
 
   // 事前取得すべきアセット一覧
+  // MediaPipeが実際に読み込むファイルをすべて含める
   private requiredAssets = [
     'face_mesh_solution_packed_assets.data',
     'face_mesh_solution_simd_wasm_bin.wasm',
-    'face_mesh_solution_packed_assets_loader.js'
+    'face_mesh_solution_packed_assets_loader.js',
+    'face_mesh_solution_simd_wasm_bin.js',  // loaderスクリプト
+    'face_mesh.binarypb'  // モデルデータ
   ];
 
   async init(): Promise<void> {
@@ -161,8 +164,8 @@ export class MediaPipeAssetManager {
     });
   }
 
-  // IndexedDBに保存
-  private async saveAsset(filename: string, data: ArrayBuffer): Promise<void> {
+  // IndexedDBに保存（publicメソッドに変更 - 外部からも保存できるように）
+  async saveAsset(filename: string, data: ArrayBuffer): Promise<void> {
     if (!this.db) await this.init();
 
     return new Promise((resolve, reject) => {

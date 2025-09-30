@@ -184,34 +184,86 @@
 
   // MediaPipeアセットのURLを事前準備
   async function prepareMediaPipeAssets() {
+    // MediaPipeが実際に読み込むファイルをすべて含める
     const requiredFiles = [
       'face_mesh_solution_packed_assets.data',
       'face_mesh_solution_simd_wasm_bin.wasm',
       'face_mesh_solution_packed_assets_loader.js',
+      'face_mesh_solution_simd_wasm_bin.js', // loaderスクリプト
+      'face_mesh.binarypb', // モデルデータ
     ];
+
+    console.log('🔧 MediaPipeアセットの事前準備を開始...');
 
     for (const file of requiredFiles) {
       try {
-        const localUrl = await assetManager.createLocalFileUrl(file);
+        // まずローカルキャッシュを確認
+        let localUrl = await assetManager.createLocalFileUrl(file);
+
         if (localUrl) {
           console.log(`🎯 ローカルキャッシュから事前準備: ${file}`);
           preloadedUrls.set(file, localUrl);
           localBlobUrls.push(localUrl);
         } else {
-          console.log(`🌐 CDNから取得予定: ${file}`);
-          preloadedUrls.set(
-            file,
-            `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
-          );
+          // キャッシュがない場合、CDNから直接ダウンロードしてBlob URLを作成
+          console.log(`📥 CDNからダウンロード中: ${file}`);
+          const cdnUrl = `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
+
+          try {
+            const response = await fetch(cdnUrl);
+            if (!response.ok) {
+              throw new Error(
+                `HTTP ${response.status}: ${response.statusText}`
+              );
+            }
+
+            const data = await response.arrayBuffer();
+            console.log(
+              `✅ ダウンロード完了: ${file} (${Math.round(data.byteLength / 1024)}KB)`
+            );
+
+            // Blob URLを作成
+            const mimeType = file.endsWith('.wasm')
+              ? 'application/wasm'
+              : file.endsWith('.js')
+                ? 'application/javascript'
+                : 'application/octet-stream';
+            const blob = new Blob([data], { type: mimeType });
+            const blobUrl = URL.createObjectURL(blob);
+
+            preloadedUrls.set(file, blobUrl);
+            localBlobUrls.push(blobUrl);
+
+            // バックグラウンドでIndexedDBにも保存（次回用）
+            assetManager.saveAsset(file, data).catch(err => {
+              console.warn(
+                `IndexedDBへの保存に失敗（次回はCDNから再取得します）: ${file}`,
+                err
+              );
+            });
+          } catch (downloadError) {
+            console.error(
+              `❌ CDNからのダウンロードに失敗: ${file}`,
+              downloadError
+            );
+            // 最後の手段としてCDN URLを直接使用（MediaPipeに任せる）
+            console.warn(
+              `⚠️ フォールバック: MediaPipeに直接CDNから読み込ませます`
+            );
+            preloadedUrls.set(file, cdnUrl);
+          }
         }
       } catch (error) {
-        console.warn(`アセット準備エラー: ${file}`, error);
+        console.error(`アセット準備エラー: ${file}`, error);
+        // エラー時はCDN URLをフォールバック
         preloadedUrls.set(
           file,
           `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`
         );
       }
     }
+
+    console.log('✅ MediaPipeアセットの事前準備完了');
   }
 
   async function initializeMediaPipe() {

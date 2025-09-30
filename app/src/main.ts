@@ -6,6 +6,7 @@ import { get } from 'svelte/store';
 import { initializeExternalConfig } from './stores/externalConfig';
 import { cameraConfig } from './stores/cameraConfig';
 import { MediaPipeAssetManager } from './lib/MediaPipeAssetManager';
+import { registerMediaPipeCacheWorker } from './lib/mediapipeCacheWorker';
 
 // MediaPipeアセットマネージャーのグローバルインスタンス
 let globalAssetManager: MediaPipeAssetManager;
@@ -38,6 +39,11 @@ async function initializeMocks() {
 async function initializeApp() {
   // 外部設定の初期化（既存の動作には影響なし）
   initializeExternalConfig();
+
+  // 本番環境：MediaPipe Cache Service Workerを登録（バックグラウンド）
+  registerMediaPipeCacheWorker().catch(err => {
+    console.warn('MediaPipe Cache SW登録失敗（CDNから直接読み込みます）:', err);
+  });
 
   // MSW初期化（必要に応じて）
   await initializeMocks();
