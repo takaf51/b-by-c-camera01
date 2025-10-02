@@ -107,6 +107,7 @@
           await faceDetection.startCamera();
           // Note: isReady will be set to true when MediaPipe is fully initialized
           // Don't set isReady here - wait for the cameraStarted event
+          // IMPORTANT: Don't clear timeout here - wait for cameraStarted event
           console.log('📷 カメラストリーム取得完了、MediaPipe初期化待機中');
           return true;
         } catch (error) {
@@ -125,21 +126,25 @@
       if (!isReady && cameraStartAttempts < maxCameraRetries) {
         console.log('⏰ カメラ起動がタイムアウトしました。リトライします...');
         retryCamera();
+      } else if (!isReady && cameraStartAttempts >= maxCameraRetries) {
+        console.error(
+          '❌ タイムアウト: カメラ起動の最大リトライ回数に達しました'
+        );
+        const err = new Error(
+          'カメラの起動に失敗しました。ページを再読み込みしてください。'
+        );
+        onError(err);
+        dispatch('camera:error', { error: err });
       }
     }, timeoutDuration);
 
     // Try immediate start
     const success = await attempt();
-    if (success) {
-      if (cameraStartupTimeout) {
-        clearTimeout(cameraStartupTimeout);
-        cameraStartupTimeout = null;
-      }
-      return;
+    if (!success) {
+      // If immediate start failed, wait and retry
+      await retryCamera();
     }
-
-    // If immediate start failed, wait and retry
-    await retryCamera();
+    // If success, keep the timeout running and wait for cameraStarted event
   }
 
   async function retryCamera(): Promise<void> {
@@ -170,10 +175,28 @@
             '📷 リトライでカメラストリーム取得完了、MediaPipe初期化待機中'
           );
 
+          // Setup new timeout for this retry attempt
+          const timeoutDuration = 8000; // 8 seconds
           if (cameraStartupTimeout) {
             clearTimeout(cameraStartupTimeout);
-            cameraStartupTimeout = null;
           }
+          cameraStartupTimeout = window.setTimeout(() => {
+            if (!isReady && cameraStartAttempts < maxCameraRetries) {
+              console.log(
+                '⏰ リトライ後もタイムアウトしました。再リトライします...'
+              );
+              retryCamera();
+            } else if (!isReady && cameraStartAttempts >= maxCameraRetries) {
+              console.error(
+                '❌ タイムアウト: カメラ起動の最大リトライ回数に達しました'
+              );
+              const err = new Error(
+                'カメラの起動に失敗しました。ページを再読み込みしてください。'
+              );
+              onError(err);
+              dispatch('camera:error', { error: err });
+            }
+          }, timeoutDuration);
         } catch (error) {
           console.log(`❌ リトライ ${cameraStartAttempts} も失敗しました`);
           await retryCamera();

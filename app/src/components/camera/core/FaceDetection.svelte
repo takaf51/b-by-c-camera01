@@ -581,6 +581,7 @@
       // MediaPipeにフレームを送る処理を独自に実装
       let animationId: number;
       let frameCount = 0;
+      let frameSendErrorCount = 0;
       const sendFrame = async () => {
         if (faceMesh && videoElement && videoElement.readyState >= 2) {
           try {
@@ -590,13 +591,32 @@
             if (frameCount === 1) {
               console.log('✅ 最初のフレームをMediaPipeに送信成功');
             }
+            // エラーからの復帰をログ
+            if (frameSendErrorCount > 0 && frameCount % 30 === 0) {
+              console.log(
+                `🔄 フレーム送信が復帰しました (エラー回数: ${frameSendErrorCount})`
+              );
+              frameSendErrorCount = 0;
+            }
           } catch (error) {
+            frameSendErrorCount++;
             console.error('❌ MediaPipeフレーム送信エラー:', error);
             console.error('エラー詳細:', {
               faceMesh: !!faceMesh,
               videoElement: !!videoElement,
               readyState: videoElement?.readyState,
+              frameCount,
+              frameSendErrorCount,
               error: error,
+            });
+          }
+        } else {
+          // 条件が満たされていない場合のログ（最初の数回のみ）
+          if (frameCount === 0) {
+            console.warn('⚠️ フレーム送信条件未達:', {
+              faceMesh: !!faceMesh,
+              videoElement: !!videoElement,
+              readyState: videoElement?.readyState,
             });
           }
         }
@@ -605,6 +625,11 @@
 
       // フレーム送信を開始
       console.log('🎬 フレーム送信ループを開始します');
+      console.log('📊 初期状態:', {
+        faceMesh: !!faceMesh,
+        videoElement: !!videoElement,
+        readyState: videoElement?.readyState,
+      });
       sendFrame();
 
       // カメラ停止時にアニメーションをクリーンアップするために保存
@@ -663,6 +688,14 @@
     // 最初の呼び出しをログ
     if (!hasProcessedFirstFrame) {
       console.log('🎯 onResults が初めて呼ばれました');
+      console.log('📊 onResults初回状態:', {
+        hasProcessedFirstFrame,
+        isMediaPipeFullyInitialized,
+        initializationStep,
+        canvasCtx: !!canvasCtx,
+        canvasElement: !!canvasElement,
+        results: !!results,
+      });
     }
 
     if (!canvasCtx && canvasElement) {
@@ -670,7 +703,10 @@
     }
 
     if (!canvasCtx || !canvasElement) {
-      console.warn('⚠️ canvasCtx または canvasElement が準備できていません');
+      console.warn('⚠️ canvasCtx または canvasElement が準備できていません', {
+        canvasCtx: !!canvasCtx,
+        canvasElement: !!canvasElement,
+      });
       return;
     }
 
@@ -681,6 +717,7 @@
       initializationStep = 'ready';
       console.log('✅ MediaPipeの初期化が完全に完了しました');
       console.log('🎉 カメラが使用可能になりました');
+      console.log('📤 cameraStarted イベントをディスパッチします');
       dispatch('cameraStarted');
     }
 
