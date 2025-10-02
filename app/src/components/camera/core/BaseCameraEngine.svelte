@@ -121,7 +121,8 @@
     };
 
     // Setup timeout for automatic retry
-    const timeoutDuration = 8000; // 8 seconds
+    // 30秒に設定：ユーザーがカメラ許可ダイアログを操作する時間を考慮
+    const timeoutDuration = 30000; // 30 seconds
     console.log(`⏱️ タイムアウトを設定します: ${timeoutDuration}ms`);
     cameraStartupTimeout = window.setTimeout(() => {
       console.log(
@@ -182,7 +183,8 @@
           );
 
           // Setup new timeout for this retry attempt
-          const timeoutDuration = 8000; // 8 seconds
+          // 30秒に設定：ユーザーがカメラ許可ダイアログを操作する時間を考慮
+          const timeoutDuration = 30000; // 30 seconds
           if (cameraStartupTimeout) {
             clearTimeout(cameraStartupTimeout);
           }

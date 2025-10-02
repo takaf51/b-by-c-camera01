@@ -707,8 +707,17 @@
         message:
           'カメラの起動に失敗しました。しばらく待ってからリトライします。',
       });
+      throw error; // エラーを再スローしてBaseCameraEngineのリトライロジックを動作させる
     } finally {
       isStartingCamera = false;
+      // getUserMedia待機中にタイムアウトまたは中断された場合、initializationStepをリセット
+      // 'camera'のまま残っていると、次のリトライ時に条件チェックで弾かれてしまう
+      if (initializationStep === 'camera') {
+        console.warn(
+          "🔄 カメラ起動が中断されました。initializationStepを'ready'にリセットします"
+        );
+        initializationStep = 'ready';
+      }
     }
   }
 
