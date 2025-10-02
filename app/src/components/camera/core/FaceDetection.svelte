@@ -299,40 +299,66 @@
   // キャンバス同期機能は削除
 
   async function startCamera() {
+    console.log('🔍 FaceDetection.startCamera()が呼ばれました');
+    console.log('📊 初期化状態チェック:', {
+      isMediaPipeReady,
+      isCameraConfigReady,
+      initializationStep,
+      videoElement: !!videoElement,
+      faceMesh: !!faceMesh,
+      isStartingCamera,
+    });
+
     // Check initialization readiness
     if (
       !isMediaPipeReady ||
       !isCameraConfigReady ||
       initializationStep !== 'ready'
     ) {
-      console.log('⏳ カメラの準備がまだ完了していません');
-      return;
+      const errorMsg = 'カメラの準備がまだ完了していません';
+      console.warn(`⏳ ${errorMsg}`, {
+        isMediaPipeReady,
+        isCameraConfigReady,
+        initializationStep,
+      });
+      throw new Error(errorMsg);
     }
 
     if (!videoElement || !faceMesh) {
-      console.log('❌ 必要なコンポーネントが見つかりません');
-      return;
+      const errorMsg = '必要なコンポーネントが見つかりません';
+      console.error(`❌ ${errorMsg}`, {
+        videoElement: !!videoElement,
+        faceMesh: !!faceMesh,
+      });
+      throw new Error(errorMsg);
     }
 
     if (isStartingCamera) {
-      console.log('⏳ カメラ起動処理が既に実行中です');
-      return;
+      const errorMsg = 'カメラ起動処理が既に実行中です';
+      console.warn(`⏳ ${errorMsg}`);
+      throw new Error(errorMsg);
     }
 
     initializationStep = 'camera';
     isStartingCamera = true;
-    console.log('📷 カメラ起動を開始します');
+    console.log('📷 FaceDetection: getUserMedia()を呼び出す直前です');
     try {
       // MediaPipe Camera utilsを使わずに独自でカメラを制御
       // スマホ向けに縦向きのカメラストリームを取得
       const isMobile = /iPhone|iPad|Android/i.test(navigator.userAgent);
       const isPortrait = window.innerHeight > window.innerWidth;
+      console.log('📱 デバイス情報:', {
+        isMobile,
+        isPortrait,
+        userAgent: navigator.userAgent,
+      });
 
       let constraints: MediaStreamConstraints | undefined;
       let finalStream: MediaStream;
 
       // スマホ縦向きの場合、複数の解像度を試す
       if (isMobile && isPortrait) {
+        console.log('📱 スマホ縦向きモード: カメラデバイスを列挙します');
         // 利用可能な全解像度を取得して縦向きを探す
         try {
           const devices = await navigator.mediaDevices.enumerateDevices();
@@ -342,9 +368,11 @@
           console.log('📱 Available video devices:', videoDevices.length);
 
           // まずは制約なしでカメラ能力を確認
+          console.log('📷 getUserMedia()を呼び出します（テスト用）');
           const testStream = await navigator.mediaDevices.getUserMedia({
             video: { facingMode: 'user' },
           });
+          console.log('✅ getUserMedia()成功（テスト用）');
           const testTrack = testStream.getVideoTracks()[0];
           const capabilities = testTrack.getCapabilities();
           testStream.getTracks().forEach(track => track.stop());

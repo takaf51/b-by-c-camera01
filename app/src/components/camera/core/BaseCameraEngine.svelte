@@ -122,7 +122,11 @@
 
     // Setup timeout for automatic retry
     const timeoutDuration = 8000; // 8 seconds
+    console.log(`⏱️ タイムアウトを設定します: ${timeoutDuration}ms`);
     cameraStartupTimeout = window.setTimeout(() => {
+      console.log(
+        `⏰ タイムアウトが発火しました (isReady=${isReady}, attempts=${cameraStartAttempts}/${maxCameraRetries})`
+      );
       if (!isReady && cameraStartAttempts < maxCameraRetries) {
         console.log('⏰ カメラ起動がタイムアウトしました。リトライします...');
         retryCamera();
@@ -135,6 +139,8 @@
         );
         onError(err);
         dispatch('camera:error', { error: err });
+      } else if (isReady) {
+        console.log('✅ タイムアウト時点でカメラは既に準備完了していました');
       }
     }, timeoutDuration);
 
@@ -209,8 +215,11 @@
   }
 
   export function stopCamera(): void {
+    console.log('🛑 カメラを停止します');
+
     // Clear any pending timeouts
     if (cameraStartupTimeout) {
+      console.log('🔓 タイムアウトをクリアします（カメラ停止のため）');
       clearTimeout(cameraStartupTimeout);
       cameraStartupTimeout = null;
     }
@@ -372,8 +381,13 @@
 
     // Clear any pending timeouts
     if (cameraStartupTimeout) {
+      console.log('🔓 タイムアウトをクリアします（カメラ準備完了のため）');
       clearTimeout(cameraStartupTimeout);
       cameraStartupTimeout = null;
+    } else {
+      console.warn(
+        '⚠️ タイムアウトが存在しませんでした（既にクリア済みまたは未設定）'
+      );
     }
   }
 
