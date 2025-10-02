@@ -7,10 +7,10 @@ export default defineConfig({
   server: {
     port: 3000, // お好みのポート番号に変更
     host: true, // 外部からアクセスを許可する場合
-    https: {
-      key: './localhost+3-key.pem',
-      cert: './localhost+3.pem'
-    }, // mkcertで生成した信頼できる証明書を使用
+    // https: {
+    //   key: './localhost+3-key.pem',
+    //   cert: './localhost+3.pem'
+    // }, // mkcertで生成した信頼できる証明書を使用
     proxy: {
       // CloudFrontのCORS問題を回避するプロキシ（開発環境のみ）
       '/cloudfront-proxy': {
